@@ -1,6 +1,8 @@
 from tomobase.log import logger
-
-class TiltSeriesItem():
+from tomobase.napari.layer_widgets.sinogram import SinogramDataWidget
+from tomobase.napari.layer_widgets.image import ImageDataWidget
+from tomobase.napari.layer_widgets.volume import VolumeDataWidget
+class DataTypeItem():
     """
     Represents an  available datatype in the library.
     
@@ -12,19 +14,14 @@ class TiltSeriesItem():
         value(): Returns the index of the data type
         
     """
-    def __init__(self, index, entity, widget):
+    def __init__(self, index, widget):
         self._index = index
-        self._entity = entity
         self._widget = widget
         
     @property
     def index(self):
         return self._index
     
-    @property
-    def entity(self):
-        return self._entity
-
     @property
     def widget(self):
         return self._widget
@@ -39,7 +36,7 @@ class TiltSeriesItem():
         return self._index
 
 
-class TiltSchemeDict():
+class DataItemDict():
     """
     A Dictionary like class used to store the available data types in the library. Has convenience functions for registering data types. To   
     
@@ -55,26 +52,23 @@ class TiltSchemeDict():
     
     def __new__(cls, **kwargs):
         if cls._instance is None:
-            cls._instance = super(AttributeDict, cls).__new__(cls)
+            cls._instance = super(DataItemDict, cls).__new__(cls)
         return cls._instance
     
     def __init__(self, **kwargs):
         self._items = int(0)
         self._dict = {}
         for key, value in kwargs.items():
-            self._dict[key] = TiltSeriesItem(self._items, value)
+            self._dict[key] = DataItemDict(self._items, value)
             self._items += 1
             
     def __setattr__(self, key, value):
         if key in ['_items', '_dict']:
             super().__setattr__(key, value)
         else:
-            self._dict[key] = TiltSeriesItem(self._items, value)
+            self._dict[key] = DataItemDict(self._items, value)
             self._items += 1
 
-
-    def update():
-        #check every class in every file inside plugins/tiltschemes folder 
         
     def append(self, **kwargs):
         """
@@ -104,6 +98,14 @@ class TiltSchemeDict():
             if key == index:
                 return self._dict[key]
         raise Exception(f"Index {index} not found in TOMOBASE_DATATYPES")
+    
+    def items(self):
+        """
+        Returns an iterator over the (key, value) pairs in the dictionary.
+        
+        Returns:
+            iterator: an iterator over the (key, value) pairs in the dictionary
+        """
+        return self._dict.items()
          
-TOMOACQUIRE_TILTSCHEMES = TiltSchemeDict()   
-TOMOACQUIRE_TILTSCHEMES.update()    
+TOMOBASE_DATATYPES = DataItemDict( IMAGE=ImageDataWidget, SINOGRAME=SinogramDataWidget, VOLUME=VolumeDataWidget)
