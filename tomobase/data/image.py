@@ -9,11 +9,11 @@ collections.Iterable = collections.abc.Iterable
 from abc import ABC, abstractmethod
 import sys
 
-from tomobase.registration import TOMOBASE_ENVIRONMENT_REGISTRATION
+from tomobase.registrations import TOMOBASE_ENVIRONMENT_REGISTRATION
 if TOMOBASE_ENVIRONMENT_REGISTRATION.hyperspy:
     import hyperspy.api as hs
 
-from tomobase.registration import TOMOBASE_DATATYPES
+from tomobase.registrations import TOMOBASE_DATATYPES
 from tomobase.data.base import Data
 
 class Image(Data):

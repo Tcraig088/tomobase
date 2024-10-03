@@ -6,13 +6,13 @@ collections.Iterable = collections.abc.Iterable
 
 from abc import ABC, abstractmethod
 
-from tomobase.registration import TOMOBASE_ENVIRONMENT_REGISTRATION
+from tomobase.registrations import TOMOBASE_ENVIRONMENT_REGISTRATION
 if TOMOBASE_ENVIRONMENT_REGISTRATION.hyperspy:
     import hyperspy.api as hs
     
     
 from tomobase.data.base import Data 
-from tomobase.registration import TOMOBASE_DATATYPES
+from tomobase.registrations import TOMOBASE_DATATYPES
 from tomobase.data.image import Image
 
 
@@ -154,16 +154,26 @@ class Volume(Data):
         'tiff': _write_tiff,
     }
 
-    def _to_napari_layer(self):
-        layer = {}
-        layer['data'] = self.data
-        layer['name'] = 'Volume'
-        layer['scale'] = (self.pixelsize, self.pixelsize, self.pixelsize)
-        metadata = {
-            'type': TOMOBASE_DATATYPES.VOLUME.value(),
-        }
-        layer['metadata'] = {'ct metadata': metadata}
-        return layer
+    def _to_napari_layer(self, astuple = True ,**kwargs):
+        layer_info = {}
+        
+        layer_info['name'] = kwargs.get('name', 'Volume')
+        layer_info['scale'] = kwargs.get('pixelsize' ,(self.pixelsize, self.pixelsize, self.pixelsize))
+        metadata = {'type': TOMOBASE_DATATYPES.VOLUME.value()}
+        for key, value in kwargs['viewsettings'].items():
+            layer_info[key] = value
+            
+        for key, value in kwargs.items():
+            if key != 'name' and key != 'pixelsize' and key != 'viewsettings':
+                metadata[key] = value
+        layer_info['metadata'] = {'ct metadata': metadata}
+        layer = [self.data, layer_info ,'image']
+        
+        if astuple:
+            return layer
+        else:
+            import napari
+            napari.layer.Layer.create(*layer)
     
     @classmethod
     def _from_napari_layer(cls, layer):
