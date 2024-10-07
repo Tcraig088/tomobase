@@ -4,6 +4,10 @@ import numpy as np
 import imageio as iio
 import napari
 
+from scipy.io import savemat, loadmat
+
+
+
 from qtpy.QtWidgets import QApplication, QFileDialog
 import collections
 collections.Iterable = collections.abc.Iterable
@@ -63,9 +67,41 @@ class Sinogram(Data):
         pixelsize = content.axes_manager[0].scale
         return Sinogram(data, angles, pixelsize)
 
+
+    @staticmethod
+    def _read_mat(path):
+        obj = loadmat(path)
+        #if obj has a series or stack key
+        
+        if 'series' in obj:
+            key = 'series'
+        elif 'stack' in obj:
+            key = 'stack'
+        else:
+            key = None
+            
+        if key is not None:
+            d = obj[key]['data'][0][0]
+            a = obj[key]['angles'][0][0]
+            p = obj[key]['pixelsize'][0][0]
+        else:
+            d = obj['obj']['data'][0][0]
+            a = obj['obj']['angles'][0][0]
+            p = obj['obj']['pixelsize'][0][0]
+
+        ts = Sinogram(d.squeeze(), a.squeeze(), p.squeeze())
+        return ts
+    
     def _write_mrc(self, filename, **kwargs):
         raise NotImplementedError
 
+
+
+    def _write_mat(self, filename, **kwargs):
+        myrec = {'data':self.data, 'angles':self.angles, 'pixelsize':self.pixelsize} 
+        savemat(filename, {'obj': myrec})
+    
+    
     @staticmethod
     def _read_emi_stack(filename, **kwargs):
         # List all EMI files in the directory of the selected file
@@ -93,6 +129,7 @@ class Sinogram(Data):
     _readers = {}
     _writers = {
         'mrc': _write_mrc,
+        'mat': _write_mat,
         'ali': _write_mrc,
     }
 
@@ -119,5 +156,6 @@ Sinogram._readers = {
     'mrc': Sinogram._read_mrc,
     'ali': Sinogram._read_mrc,
     'emi': Sinogram._read_emi_stack,
+    'mat': Sinogram._read_mat,
 }
 

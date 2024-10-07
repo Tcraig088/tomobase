@@ -2,11 +2,9 @@ import astra
 import numpy as np
 
 
-
 def _circle_mask(n):
     y, x = np.meshgrid(np.linspace(-1, 1, n), np.linspace(-1, 1, n))
     return x ** 2 + y ** 2 <= 1
-
 
 def _get_default_iterations(method):
     if 'em' in method.lower():
