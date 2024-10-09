@@ -1,1 +1,1 @@
-from tomobase.registrations.registers import *
+from tomobase.registrations.globals import *

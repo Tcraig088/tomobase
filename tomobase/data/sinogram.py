@@ -133,17 +133,28 @@ class Sinogram(Data):
         'ali': _write_mrc,
     }
 
-    def _to_napari_layer(self):
-        layer = {}
-        layer['data'] = self.data
-        layer['name'] = 'Sinogram'
-        layer['scale'] = (self.pixelsize, self.pixelsize, 1)
-        metadata = {
-            'type': TOMOBASE_DATATYPES.SINOGRAM.value(),
-            'angles': self.angles
-        }
-        layer['metadata'] = {'ct metadata': metadata}
-        return layer
+    def _to_napari_layer(self, astuple = True ,**kwargs):
+        layer_info = {}
+        
+        layer_info['name'] = kwargs.get('name', 'Sinogram')
+        layer_info['scale'] = kwargs.get('pixelsize' ,(self.pixelsize, self.pixelsize, self.pixelsize))
+        metadata = {'type': TOMOBASE_DATATYPES.SINOGRAM.value(),
+                    'angles': self.angles}
+        
+        for key, value in kwargs['viewsettings'].items():
+            layer_info[key] = value
+            
+        for key, value in kwargs.items():
+            if key != 'name' and key != 'pixelsize' and key != 'viewsettings':
+                metadata[key] = value
+        layer_info['metadata'] = {'ct metadata': metadata}
+        layer = (self.data, layer_info ,'image')
+        
+        if astuple:
+            return layer
+        else:
+            import napari
+            return napari.layers.Layer.create(*layer)
     
     @classmethod
     def _from_napari_layer(cls, layer):

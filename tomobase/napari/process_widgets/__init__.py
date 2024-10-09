@@ -1,0 +1,1 @@
+from tomobase.napari.process_widgets.project import ProjectWidget
