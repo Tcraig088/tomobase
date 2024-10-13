@@ -1,1 +1,0 @@
-from tomobase.registrations.globals import *

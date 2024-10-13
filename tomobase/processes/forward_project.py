@@ -5,6 +5,7 @@ from scipy import ndimage
 
 from tomobase.utils import _create_projector
 from tomobase.data import Volume, Sinogram
+from tomobase.log import logger
 
 def project(volume, angles, use_gpu=True, verbose=True):
     """Create a sinogram from a volume using forward projection.
@@ -29,8 +30,6 @@ def project(volume, angles, use_gpu=True, verbose=True):
 
     z, y, x = data.shape
     proj_id = _create_projector(x, y, angles, use_gpu)
-
-    message = f"Creating projection images using the {'GPU' if use_gpu else 'CPU'}..."
     iterator = range(z)
 
     sino = np.empty((z, len(angles), max(x, y)))

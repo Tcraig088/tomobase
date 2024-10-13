@@ -6,13 +6,13 @@ collections.Iterable = collections.abc.Iterable
 
 from abc import ABC, abstractmethod
 
-from tomobase.registrations import TOMOBASE_ENVIRONMENT_REGISTRATION
-if TOMOBASE_ENVIRONMENT_REGISTRATION.hyperspy:
+from tomobase.registrations.environment import TOMOBASE_ENVIRONMENT
+if TOMOBASE_ENVIRONMENT.hyperspy:
     import hyperspy.api as hs
     
     
 from tomobase.data.base import Data 
-from tomobase.registrations import TOMOBASE_DATATYPES
+from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.data.image import Image
 
 
@@ -167,6 +167,13 @@ class Volume(Data):
             if key != 'name' and key != 'pixelsize' and key != 'viewsettings':
                 metadata[key] = value
         layer_info['metadata'] = {'ct metadata': metadata}
+        
+        
+        
+        if self.data.ndims == 3:
+            self.data.transpose(2,1,0)
+        elif self.data.ndims == 4:
+            self.data.transpose(2,3,1,0)
         layer = [self.data, layer_info ,'image']
         
         if astuple:
@@ -179,6 +186,11 @@ class Volume(Data):
     def _from_napari_layer(cls, layer):
         if layer.metadata['ct metadata']['type'] != TOMOBASE_DATATYPES.VOLUME.value():
             raise ValueError(f'Layer of type {layer.metadata["ct metadata"]["type"]} not recognized')
+        
+        if layer.data.ndims == 3:
+            layer.data.transpose(2,1,0)
+        elif layer.data.ndims == 4:
+            layer.data.transpose(0,2,3,1)
         volume = Volume(layer.data, layer.scale[0])
         return volume
     

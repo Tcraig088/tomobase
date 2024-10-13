@@ -36,4 +36,4 @@ class EnvironmentRegistration():
         self._hyperspy_checked = True
         return self._hyperspy_available
     
-
+TOMOBASE_ENVIRONMENT = EnvironmentRegistration()

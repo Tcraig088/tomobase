@@ -117,7 +117,7 @@ class TiltSchemeItemDict():
             elif self._dict[key].controller is None:
                 self._dict[key]._controller = value 
             else:
-                logger.warning(f"Data Type '{key}' has already been registered in the library.")
+                pass
         else:
             if isinstance(value, type) and issubclass(value, QWidget):
                 self._dict[key] = TiltSchemeItem(self._items, widget=value)
@@ -149,3 +149,5 @@ class TiltSchemeItemDict():
         """
         return self._dict.items()
   
+TOMOBASE_TILTSCHEMES = TiltSchemeItemDict()  
+TOMOBASE_TILTSCHEMES.update()   

@@ -9,11 +9,11 @@ collections.Iterable = collections.abc.Iterable
 from abc import ABC, abstractmethod
 import sys
 
-from tomobase.registrations import TOMOBASE_ENVIRONMENT_REGISTRATION
-if TOMOBASE_ENVIRONMENT_REGISTRATION.hyperspy:
+from tomobase.registrations.environment import TOMOBASE_ENVIRONMENT
+if TOMOBASE_ENVIRONMENT.hyperspy:
     import hyperspy.api as hs
 
-from tomobase.registrations import TOMOBASE_DATATYPES
+from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.data.base import Data
 
 class Image(Data):
@@ -76,10 +76,38 @@ class Image(Data):
         layer['metadata'] = {'ct metadata': metadata}
         return layer
     
+    def _to_napari_layer(self, astuple = True ,**kwargs):
+        layer_info = {}
+        
+        layer_info['name'] = kwargs.get('name', 'Image')
+        layer_info['scale'] = kwargs.get('pixelsize' ,(self.pixelsize, self.pixelsize))
+        metadata = {'type': TOMOBASE_DATATYPES.IMAGE.value(),
+                    'metadata': self.metadata}
+        
+        for key, value in kwargs['viewsettings'].items():
+            layer_info[key] = value
+            
+        for key, value in kwargs.items():
+            if key != 'name' and key != 'pixelsize' and key != 'viewsettings':
+                metadata[key] = value
+        layer_info['metadata'] = {'ct metadata': metadata}
+        
+        if self.data.ndims == 3:
+            self.data.transpose(2,1,0)
+        layer = (self.data, layer_info ,'image')
+        
+        if astuple:
+            return layer
+        else:
+            import napari
+            return napari.layers.Layer.create(*layer)
+    
     @classmethod
     def _from_napari_layer(cls, layer):
         if layer.metadata['ct metadata']['type'] != TOMOBASE_DATATYPES.IMAGE:
             raise ValueError(f'Layer of type {layer.metadata["ct metadata"]["type"]} not recognized')
+        if layer.data.ndims == 3:
+            layer.data.transpose(2,1,0)
         image = Image(layer.data, layer.scale[0])
         image.metadata = layer.metadata['ct metadata']['metadata']
         return image

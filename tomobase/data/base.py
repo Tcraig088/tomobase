@@ -7,8 +7,8 @@ collections.Iterable = collections.abc.Iterable
 
 from abc import ABC, abstractmethod
 
-from tomobase.registrations import TOMOBASE_ENVIRONMENT_REGISTRATION
-if TOMOBASE_ENVIRONMENT_REGISTRATION.hyperspy:
+from tomobase.registrations.environment import TOMOBASE_ENVIRONMENT
+if TOMOBASE_ENVIRONMENT.hyperspy:
     import hyperspy.api as hs
 
 class Data(ABC):
