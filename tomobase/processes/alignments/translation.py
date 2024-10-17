@@ -1,6 +1,6 @@
 
 import numpy as np
-import copy
+from copy import copy
 import napari
 
 from scipy.ndimage import center_of_mass, shift, rotate
@@ -11,8 +11,38 @@ from tomobase.enums import TransformCategories
 from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QDoubleSpinBox
 from qtpy.QtCore import Qt
 
+@tomobase_hook_process(name='Pad Tiltseries', category=TransformCategories.ALIGN)
+def pad_sinogram(sino, x:int=0, y:int=0, inplace: bool =True):
+    """_summary_
+
+    Args:
+        sino (_type_): _description_
+        x (int, optional): _description_. Defaults to 0.
+        y (int, optional): _description_. Defaults to 0.
+        inplace (bool, optional): _description_. Defaults to True.
+
+    Raises:
+        ValueError: _description_
+
+    Returns:
+        _type_: _description_
+    """
+    if not inplace:
+        sino = copy(sino)
+
+    pad_x = x - sino.data.shape[0]
+    pad_y = y - sino.data.shape[1]
+    if pad_x < 0 or pad_y < 0:
+        raise ValueError("Cannot pad to a smaller size")
+    sino.data = np.pad(sino.data, ((pad_x//2, pad_x//2), (pad_y//2, pad_y//2), (0, 0)), mode='constant')
+
+    return sino
+
+
+
+
 @tomobase_hook_process(name='Align Sinogram XCorrelation', category=TransformCategories.ALIGN)
-def align_sinogram_xcorr(sino, inplace=True, verbose=True, shifts=None, return_shifts=False):
+def align_sinogram_xcorr(sino, inplace: bool =True, shifts= None, extend_return:bool=False):
     """Align all projection images to each other using cross-correlation
 
     This method can only align projection images to each other with an accuracy
@@ -59,7 +89,7 @@ def align_sinogram_xcorr(sino, inplace=True, verbose=True, shifts=None, return_s
     for i in range(sino.data.shape[2]):
         sino.data[:, :, i] = np.roll(sino.data[:, :, i], shifts[i, :], axis=(0, 1))
 
-    if return_shifts:
+    if extend_return:
         return sino, shifts
     else:
         return sino

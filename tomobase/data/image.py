@@ -92,7 +92,7 @@ class Image(Data):
                 metadata[key] = value
         layer_info['metadata'] = {'ct metadata': metadata}
         
-        if self.data.ndims == 3:
+        if len(self.data.shape) == 3:
             self.data.transpose(2,1,0)
         layer = (self.data, layer_info ,'image')
         
@@ -106,7 +106,7 @@ class Image(Data):
     def _from_napari_layer(cls, layer):
         if layer.metadata['ct metadata']['type'] != TOMOBASE_DATATYPES.IMAGE:
             raise ValueError(f'Layer of type {layer.metadata["ct metadata"]["type"]} not recognized')
-        if layer.data.ndims == 3:
+        if len(layer.data.shape) == 3:
             layer.data.transpose(2,1,0)
         image = Image(layer.data, layer.scale[0])
         image.metadata = layer.metadata['ct metadata']['metadata']

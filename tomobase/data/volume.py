@@ -166,14 +166,15 @@ class Volume(Data):
         for key, value in kwargs.items():
             if key != 'name' and key != 'pixelsize' and key != 'viewsettings':
                 metadata[key] = value
-        layer_info['metadata'] = {'ct metadata': metadata}
+                
+        if len(self.data.shape) == 3:
+            self.data = self.data.transpose(2,0,1)
+            metadata['axis_labels'] = ['z', 'y', 'x']
+        elif len(self.data.shape) == 4:
+            self.data = self.data.transpose(2,3,0,1)
+            metadata['axis_labels'] = ['Signals','z', 'y', 'x']
         
-        
-        
-        if self.data.ndims == 3:
-            self.data.transpose(2,1,0)
-        elif self.data.ndims == 4:
-            self.data.transpose(2,3,1,0)
+        layer_info['metadata'] = {'ct metadata': metadata}  
         layer = [self.data, layer_info ,'image']
         
         if astuple:
@@ -187,11 +188,11 @@ class Volume(Data):
         if layer.metadata['ct metadata']['type'] != TOMOBASE_DATATYPES.VOLUME.value():
             raise ValueError(f'Layer of type {layer.metadata["ct metadata"]["type"]} not recognized')
         
-        if layer.data.ndims == 3:
-            layer.data.transpose(2,1,0)
-        elif layer.data.ndims == 4:
-            layer.data.transpose(0,2,3,1)
-        volume = Volume(layer.data, layer.scale[0])
+        if len(layer.data.shape) == 3:
+            data = layer.data.transpose(1,2,0)
+        elif len(layer.data.shape) == 4:
+            data = layer.data.transpose(2, 3, 0, 1)
+        volume = Volume(data, layer.scale[0])
         return volume
     
 Volume._readers = {

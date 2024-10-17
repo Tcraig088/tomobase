@@ -4,7 +4,7 @@ import matplotlib
 
 from tomobase.data import Sinogram, Volume
 
-def acquisition_xy_plot(sino: Sinogram, saveas: str = None):
+def acquisition_xy_plot(angles1, angles2, angles3):
     """Plot the sinogram
 
     Arguments:
@@ -15,19 +15,20 @@ def acquisition_xy_plot(sino: Sinogram, saveas: str = None):
     """
     
     fig = go.Figure()
-    if hasattr(sino, 'time') is False:
-        time = np.linspace(1, sino.angles.shape[0], sino.angles.shape[0])
-    else:
-        time = sino.time
+
+    
+    time1 = np.linspace(1, angles1.shape[0], angles1.shape[0])
+    time2 = np.linspace(1, angles2.shape[0], angles2.shape[0])
+    time3 = np.linspace(1, angles3.shape[0], angles3.shape[0])
     
     cm = matplotlib.cm.get_cmap('viridis')
-    norm_time = (time - np.min(time)) / (np.max(time) - np.min(time))
+    norm_time = (time1 - np.min(time1)) / (np.max(time1) - np.min(time1))
     colors = [cm(t) for t in norm_time]
     colors = ['rgb({}, {}, {})'.format(int(c[0]*255), int(c[1]*255), int(c[2]*255)) for c in colors]
     
     
-    fig.add_trace(go.Scatter(x=time, y=sino.angles, mode='markers+lines', marker=dict(color=colors)))
-    
+    fig.add_trace(go.Scatter(x=time1, y=angles1, mode='lines'))
+
     fig.update_layout(
         plot_bgcolor='white',
         paper_bgcolor='white',
@@ -43,6 +44,7 @@ def acquisition_xy_plot(sino: Sinogram, saveas: str = None):
             title='Time'
         ),
         yaxis=dict(
+            range = [-90, 90],
             showline=True,
             linewidth=2,
             linecolor='black',
@@ -60,5 +62,4 @@ def acquisition_xy_plot(sino: Sinogram, saveas: str = None):
     
     
     fig.show()
-    if saveas is not None:
-        fig.write_image(saveas)
+    return fig

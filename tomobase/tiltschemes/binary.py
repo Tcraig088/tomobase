@@ -53,26 +53,50 @@ class Binary(Tiltscheme):
         
         self.offset = 0
         self.runs = 1
-        self.target = 1
-        self.prescan = True
-        
+        self.target = 2
+        self.offset_prior = 1
+        self.offset_step = 0.5
+        self.offset_forward = 0
+        self.offset_backward = 0
+        self.i = 0
+    
     def get_angle(self):
         target_angle = self.angle_max - self.step
         angle = self.angle + self.step
-        logger.debug(f'Angle: {angle} is conventional: {self.conventional}')
+        logger.debug(f'Angle: {angle}')
+        if angle > target_angle + (self.offset*np.abs(self.step)):
+            self.angle = target_angle + self.get_offset()
+            logger.debug('triggered_max, angle: %s, offset: %s' % (self.angle, self.get_offset()))
+            self.step = -1*self.step
+        elif angle < self.angle_min + (self.offset*np.abs(self.step)):
+            self.angle = self.angle_min + self.get_offset()
+            logger.debug('triggered_min, angle: %s, offset: %s' % (self.angle, self.get_offset()))
+            self.step = -1*self.step
+        else:
+            self.angle = self.angle + self.step
+        return np.round(self.angle,2)
+    
+      
+    def get_angle_new(self):
+        target_angle = self.angle_max - self.step
+        angle = self.angle + self.step
+        logger.debug(f'Angle: {angle}')
         if self.index == 0:
             self.angle = self.angle_min 
         elif angle >= self.angle_max:
             if self.conventional:
                 self.angle = self.angle_min + (self.get_offset()*self.step)
             else:
-                self.forward_offset = self.get_offset()
-                self.angle = self.angle + (self.forward_offset*np.abs(self.step))
+                self.useforward = True
+                logger.debug(f'triggered_max')
+                offset_value = self.get_offset()
+                self.angle = self.angle + offset_value
                 self.step = -1*self.step
-        elif (self.step < 0) and (angle <= self.angle_min + (self.forward_offset*np.abs(self.step))):
-            self.forward_offset = self.get_offset()
+        elif (self.step < 0) and (angle <= self.angle_min + offset_value):
+            self.useforward = False
+            logger.debug(f'triggered_min')
             self.step = -1*self.step
-            self.angle = self.angle_min + (self.forward_offset*np.abs(self.step))
+            self.angle = self.angle_min + self.get_offset()
         else:
             self.angle = self.angle + self.step    
         self.index += 1
@@ -88,29 +112,36 @@ class Binary(Tiltscheme):
 
 
     def get_offset(self):
-        offset_int = 0.5**(self.target-1)
-        offset_prior = 0.5**(self.target-2)
-        logger.debug(f'target: {self.target}')
-        
+        logger.debug(f'Offset int: {self.offset_step}, Offset prior: {self.offset_prior}')
+        if self.target == 2:
+            self.offset_prior = 1
+            self.offset_step = 0.5
+        elif self.target == 4:
+            self.offset_prior = 0.5
+            self.offset_step = 0.5
+        elif self.target == 8:
+            self.offset_prior = 0.5
+            self.offset_step = 0.25
+        else: 
+            self.offset_prior = self.offset_prior/2
+            self.offset_step = self.offset_step/2
+            
+        if self.runs % 2 == 0:
+            offset = self.offset + self.offset_prior
+            logger.debug(f'Offset remainder: {offset}')
+            offset = offset
+        else: 
+            self.offset = (self.offset_step/2) + (self.i*self.offset_step)
+            logger.debug(f'Offset increment: {self.offset}')
+            offset = self.offset
+            self.i += 1 
+            
         if self.runs == self.target:
             self.target = self.target*2
             self.runs = 1
-            logger.debug(f'reset')
+            self.i = 0
         else:
             self.runs += 1
-        
-        if self.runs == 1:
-            self.offset = offset_int
-            logger.debug(f'Offset first: {self.offset}')
-            offset = self.offset
-        elif self.runs % 2 == 0:
-            offset = self.offset + offset_prior
-            logger.debug(f'Offset remainder: {offset}')
-            offset = offset
-        else:
-            self.offset = self.offset + (2*offset_int)
-            logger.debug(f'Offset increment: {self.offset}')
-            offset = self.offset
             
-        return offset
+        return offset*np.abs(self.step)
             

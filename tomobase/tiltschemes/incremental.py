@@ -50,8 +50,12 @@ class Incremental(Tiltscheme):
     def get_angle(self):
         angle = self.angle_start + (self.index*self.step)
         self.index += 1
-        if angle + self.step > self.angle_end:
-            self.isfinished = True
+        if self.angle_end > self.angle_start:
+            if angle + self.step > self.angle_end:
+                self._isfinished = True
+        else:
+            if angle + self.step < self.angle_end:
+                self._isfinished = True
         return angle
     
     def get_angle_array(self, indices):

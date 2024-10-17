@@ -104,7 +104,7 @@ class DataItemDict():
             DataTypeItem: the datatype item at the specified index
         """
         for key, item in self._dict.items():
-            if key == index:
+            if item.index == index:
                 return self._dict[key]
         raise Exception(f"Index {index} not found in TOMOBASE_DATATYPES")
     
@@ -116,5 +116,21 @@ class DataItemDict():
             iterator: an iterator over the (key, value) pairs in the dictionary
         """
         return self._dict.items()
-         
+    
+    def key(self, index):
+        """
+        Returns the key of the datatype at the specified index.
+        
+        Args:
+            index (int): The index of the datatype to return
+
+        Returns:
+            str: the key of the datatype at the specified index
+        """
+        for key, item in self._dict.items():
+            if item.index == index:
+                return key
+            
+        raise Exception(f"Index {index} not found in TOMOBASE_DATATYPES")
+    
 TOMOBASE_DATATYPES = DataItemDict( IMAGE=ImageDataWidget, SINOGRAM=SinogramDataWidget, VOLUME=VolumeDataWidget)

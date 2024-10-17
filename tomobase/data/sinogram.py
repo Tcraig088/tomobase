@@ -5,7 +5,7 @@ import imageio as iio
 import napari
 
 from scipy.io import savemat, loadmat
-
+import mrcz
 
 
 from qtpy.QtWidgets import QApplication, QFileDialog
@@ -59,12 +59,10 @@ class Sinogram(Data):
 
     @staticmethod
     def _read_mrc(filename, **kwargs):
-        # TODO make this method independent of Hyperspy
-        content = hs.load(filename, lazy=False, reader='mrc')
-        data = np.asarray(content.data, dtype=float)
-        data = np.transpose(data, (2, 1, 0))  # TODO check orientation
-        angles = np.asarray(content.metadata.Acquisition_instrument.TEM.Stage.tilt_alpha)[:data.shape[2]]
-        pixelsize = content.axes_manager[0].scale
+        data, metadata = mrcz.readMRC(filename)
+        print(metadata)
+        pixelsize = metadata['pixelsize'][0]
+        angles = metadata['angles']
         return Sinogram(data, angles, pixelsize)
 
 
@@ -93,8 +91,7 @@ class Sinogram(Data):
         return ts
     
     def _write_mrc(self, filename, **kwargs):
-        raise NotImplementedError
-
+        mrcz.writeMRC(self.data, filename, meta={'angles': self.angles},pixelsize=[self.pixelsize, self.pixelsize, self.pixelsize])
 
 
     def _write_mat(self, filename, **kwargs):
@@ -141,19 +138,23 @@ class Sinogram(Data):
         metadata = {'type': TOMOBASE_DATATYPES.SINOGRAM.value(),
                     'angles': self.angles}
         
-        for key, value in kwargs['viewsettings'].items():
-            layer_info[key] = value
+        if 'viewsettings' in kwargs:
+            for key, value in kwargs['viewsettings'].items():
+                layer_info[key] = value
             
         for key, value in kwargs.items():
             if key != 'name' and key != 'pixelsize' and key != 'viewsettings':
                 metadata[key] = value
-        layer_info['metadata'] = {'ct metadata': metadata}
-        
-        if self.data.ndims == 3:
-            self.data.transpose(2,1,0)
-        elif self.data.ndims == 4:
-            self.data.transpose(2,3,1,0)
+                
+        if len(self.data.shape) == 3:
+            self.data = self.data.transpose(2,0,1)
+            metadata['axis_labels'] = ['Projections', 'y', 'x']
+        elif len(self.data.shape) == 4:
+            self.data = self.data.transpose(2,3,0,1)
+            metadata['axis_labels'] = ['Signals','Projections', 'y', 'x']
+            
         layer = (self.data, layer_info ,'image')
+        layer_info['metadata'] = {'ct metadata': metadata}
         
         if astuple:
             return layer
@@ -166,11 +167,11 @@ class Sinogram(Data):
         if layer.metadata['ct metadata']['type'] != TOMOBASE_DATATYPES.SINOGRAM.value():
             raise ValueError(f'Layer of type {layer.metadata["ct metadata"]["type"]} not recognized')
         
-        if layer.data.ndims == 3:
-            layer.data.transpose(2,1,0)
-        elif layer.data.ndims == 4:
-            layer.data.transpose(0,2,3,1)
-        sinogram = Sinogram(layer.data, layer.metadata['ct metadata']['angles'], layer.scale[0])
+        if len(layer.data.shape) == 3:
+            data = layer.data.transpose(1,2,0)
+        elif len(layer.data.shape) == 4:
+            data = layer.data.transpose(2, 3, 0, 1)
+        sinogram = Sinogram(data, layer.metadata['ct metadata']['angles'], layer.scale[0])
         return sinogram
 
 Sinogram._readers = {

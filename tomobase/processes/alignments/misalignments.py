@@ -1,9 +1,10 @@
 import numpy as np
-import copy
+from copy import deepcopy
 import napari
+from scipy.ndimage import rotate
+from skimage.util import random_noise
 
-
-from scipy.ndimage import center_of_mass, circshift, rotate
+from scipy.ndimage import center_of_mass, rotate
 from tomobase.hooks import tomobase_hook_process
 from tomobase.enums import TransformCategories
 
@@ -12,7 +13,11 @@ from qtpy.QtCore import Qt
 
 
 @tomobase_hook_process(name='Add Noise', category=TransformCategories.ALIGN)
-def add_noise(sino, gaussian_mean=0, gaussian_sigma=1, poisson_noise= 0.5, inplace=True):
+def add_noise(sino, 
+              gaussian_mean:float=0, 
+              gaussian_sigma:float=1,
+              poisson_noise:float= 0.5, 
+              inplace:bool=True):
     """Add Gaussian and Poisson noise to the sinogram.
 
     Arguments:
@@ -33,26 +38,22 @@ def add_noise(sino, gaussian_mean=0, gaussian_sigma=1, poisson_noise= 0.5, inpla
             The result
     """
     if not inplace:
-        sino = copy.deepcopy(sino)
+        sino = deepcopy(sino)
 
     # Add Gaussian noise
     gaussian_noise = np.random.normal(gaussian_mean, gaussian_sigma, sino.data.shape)
     sino.data += gaussian_noise
 
     # Add Poisson noise
-    if poisson_noise>0:
-        min_val = np.min(sino.data)
-        if min_val < 0:
-            sino.data -= min_val
-            sino.data = np.random.poisson(sino.data)
-            sino.data += min_val
-        else:
-            sino.data = np.random.poisson(sino.data)
+    sino.data = random_noise(sino.data, mode="poisson")
 
     return sino
 
-@tomobase_hook_process(name='Random Translation', category=TransformCategories.ALIGN)
-def random_translation(sino, offset=0.25, inplace=True, return_offset=False):
+@tomobase_hook_process(name='Translational Misalignment', category=TransformCategories.ALIGN)
+def translational_misalignment(sino, 
+                               offset:float=0.25, 
+                               inplace:bool=True, 
+                               extend_return:bool=False):
     """Align the projection images to their collective center of mass
 
     This function uses 3rd order spline interpolation to achieve sub-pixel
@@ -76,14 +77,57 @@ def random_translation(sino, offset=0.25, inplace=True, return_offset=False):
             The result
     """
     if not inplace:
+        sino = deepcopy(sino)
+
+    shifts = np.zeros((sino.data.shape[2], 2))
+    for i in range(sino.data.shape[2]):
+        if i == 0:
+            shifts[i, :] = 0
+            continue
+        image_offset_x = int(np.round(sino.data.shape[0] * np.random.uniform(-offset, offset)))
+        image_offset_y = int(np.round(sino.data.shape[1] * np.random.uniform(-offset, offset)))
+        sino.data[:, :, i] = np.roll(sino.data[:, :, i], (image_offset_x, image_offset_y), axis=(0, 1))
+        shifts[i, :] = (image_offset_x, image_offset_y)
+    if extend_return:
+        return sino, shifts
+    else:
+        return sino
+    
+    
+@tomobase_hook_process(name='Rotational Misalignment', category=TransformCategories.ALIGN)
+def rotational_misalignment(sino, 
+                            tilt_theta:float = 3,
+                            tilt_alpha:float=2, 
+                            backlash:float=0.5, 
+                            backlash_backwards:bool =  True, 
+                            inplace:bool=True, 
+                            extend_return:bool=False):
+    """ Rotate the projection images to simulate drift in the tilt axis
+    if not inplace:
         sino = copy(sino)
+    """
+    if not inplace:
+        sino = deepcopy(sino)
+        
+    if extend_return:
+        angles_original =  deepcopy(sino.angles)
+        
+    rotations = np.zeros(sino.data.shape[2])
+    for i in range(sino.data.shape[2]):
+        rotations[i] = tilt_theta * np.random.uniform(-1, 1)
+        sino.data[:, :, i] = rotate(sino.data[:, :, i], rotations[i], reshape=False)
+    
 
     for i in range(sino.data.shape[2]):
-        image_offset_x = np.round(sino.data.shape[0] * np.random.uniform(-offset, offset))
-        image_offset_y = np.round(sino.data.shape[1] * np.random.uniform(-offset, offset))
-        sino.data[:, :, i] = np.roll(sino.data[:, :, i], (image_offset_x, image_offset_y), order=3)
-
-    if return_offset:
-        return sino, offset
+        offset = tilt_alpha * np.random.uniform(-1, 1)
+        if i > 0:
+            if backlash_backwards and sino.angles[i] < sino.angles[i-1]:
+                offset += backlash
+            elif not backlash_backwards and sino.angles[i] > sino.angles[i-1]:
+                offset += backlash
+        sino.angles = sino.angles + offset  
+             
+    if extend_return:
+        return sino, rotations, angles_original
     else:
         return sino

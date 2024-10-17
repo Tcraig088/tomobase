@@ -33,4 +33,4 @@ class TomographyMenuWidget(QMenu):
         self.viewer.window.add_dock_widget(ProjectWidget(self.viewer), name='Forward Projection', area='right')
         
     def onAlignmentTriggered(self, name, process):
-        self.viewer.window.add_dock_widget(AlignWidget(name, process, self.viewer), name='Alignment', area='right')
+        self.viewer.window.add_dock_widget(AlignWidget(name, process, self.viewer), name='Alignment: '+ name, area='right')

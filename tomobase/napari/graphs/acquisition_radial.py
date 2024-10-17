@@ -5,7 +5,7 @@ import matplotlib
 from tomobase.data import Sinogram, Volume
 
 
-def acquisition_radial_plot(sino: Sinogram, start=None, frame=None):
+def acquisition_radial_plot(**kwargs):
     """Plot the sinogram in a radial half-circle
 
     Arguments:
@@ -13,9 +13,20 @@ def acquisition_radial_plot(sino: Sinogram, start=None, frame=None):
             The sinogram to plot
     """
 
-
-    if hasattr(sino, 'time') is False:
-        time = np.linspace(1, sino.angles.shape[0], sino.angles.shape[0])
+    sino = kwargs.get('sinogram', None)
+    angles = kwargs.get('angles', None)
+    start = kwargs.get('start', None)
+    frame = kwargs.get('frame', None)
+    times = kwargs.get('times', None)
+    
+    if sino is None:
+        if angles is None:
+            raise ValueError('Either a Sinogram or a list of angles should be provided.')
+    elif hasattr(sino, 'times'):
+        times = sino.times
+        
+    if times is None:
+        time = np.linspace(1, angles.shape[0], angles.shape[0])
         time_title = 'Time (s)'
     else:
         time = sino.time
@@ -48,42 +59,54 @@ def acquisition_radial_plot(sino: Sinogram, start=None, frame=None):
         showlegend=False
     )
     if start is not None and frame is not None:
-        angles = sino.angles[start:start+frame]
-    else:
-        angles = sino.angles
+        angles = angles[start:start+frame]
 
+    # append 0 at start and end of radia
+    radia = np.ones(100)
+    radia = np.insert(radia, 0, 0)
+    radia = np.append(radia, 0) 
+    theta = np.linspace(-90, -70, 100) 
+    theta = np.insert(theta, 0, 0)
+    theta = np.append(theta, 0)
     traces.append(go.Scatterpolar(
-        
-        r=[0, 1, 1, 0],
-        theta=[0, -90, -70, 0],
+        r=radia,
+        theta=theta,
         mode='lines',
         fill='toself',
         line=dict(color='black'),
         showlegend=False
     ))
     
+    theta = np.linspace(90, 70, 100) 
+    theta = np.insert(theta, 0, 0)
+    theta = np.append(theta, 0)
     traces.append(go.Scatterpolar(
-        r=[0, 1, 1, 0],
-        theta=[0, 90, 70, 0],
+        r=radia,
+        theta=theta,
         mode='lines',
         fill='toself',
         line=dict(color='black'),
         showlegend=False
     ))
     
-    
+    theta = np.linspace(-70,np.min(angles), 100) 
+    theta = np.insert(theta, 0, 0)
+    theta = np.append(theta, 0)
     traces.append(go.Scatterpolar(
-        r=[0, 1, 1, 0],
-        theta=[0, -70, np.min(angles), 0],
+        r=radia,
+        theta=theta,
         mode='lines',
         fill='toself',
         line=dict(color='grey'),
         showlegend=False
     ))
     
+    theta = np.linspace(70,np.max(angles), 100) 
+    theta = np.insert(theta, 0, 0)
+    theta = np.append(theta, 0)
     traces.append(go.Scatterpolar(
-        r=[0, 1, 1, 0],
-        theta=[0, 70, np.max(angles), 0],
+        r=radia,
+        theta=theta,
         mode='lines',
         fill='toself',
         line=dict(color='grey'),
@@ -132,3 +155,4 @@ def acquisition_radial_plot(sino: Sinogram, start=None, frame=None):
     fig = go.Figure(data=traces+ [colorbar_trace], layout=layout)
 
     fig.show()
+    return fig
