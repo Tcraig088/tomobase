@@ -64,17 +64,6 @@ class Image(Data):
     def _write_image(self, filename, **kwargs):
         iio.imwrite(filename, self.data)
 
-    def _to_napari_layer(self):
-        layer = {}
-        layer['data']= self.data
-        layer['name'] =  'Image'
-        layer['scale'] = (self.pixelsize, self.pixelsize)
-        metadata = {
-            'type': TOMOBASE_DATATYPES.IMAGE,
-            'metadata': self.metadata
-        }
-        layer['metadata'] = {'ct metadata': metadata}
-        return layer
     
     def _to_napari_layer(self, astuple = True ,**kwargs):
         layer_info = {}
