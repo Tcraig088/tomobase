@@ -8,7 +8,6 @@ from tomobase.log import logger
 from tomobase.data import Volume, Sinogram
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.registrations.tiltschemes import TOMOBASE_TILTSCHEMES
-from tomobase.processes import project
 from tomobase.napari.components import CollapsableWidget
 from tomobase.napari.utils import get_value, get_widget
 
@@ -46,6 +45,7 @@ class AlignWidget(QWidget):
         self.layout.addWidget(self.label_data, 0, 0)
         self.layout.addWidget(self.combobox_select, 0, 1)
 
+        i=0 
         for i, key in enumerate(self.custom_widgets['Name']):
             self.layout.addWidget(self.custom_widgets['Label'][i], i+1, 0)
             self.layout.addWidget(self.custom_widgets['Widget'][i], i+1, 1)

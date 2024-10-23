@@ -6,7 +6,11 @@ from scipy import ndimage
 from tomobase.utils import _create_projector
 from tomobase.data import Volume, Sinogram
 from tomobase.log import logger
+from tomobase.hooks import tomobase_hook_process
+from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 
+
+@tomobase_hook_process(name='Project', category=TOMOBASE_TRANSFORM_CATEGORIES.PROJECT.value())
 def project(volume, angles, use_gpu=True, verbose=True):
     """Create a sinogram from a volume using forward projection.
 

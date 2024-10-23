@@ -6,12 +6,14 @@ import napari
 from scipy.ndimage import center_of_mass, shift, rotate
 
 from tomobase.hooks import tomobase_hook_process
-from tomobase.enums import TransformCategories
+from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 
 from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QDoubleSpinBox
 from qtpy.QtCore import Qt
 
-@tomobase_hook_process(name='Pad Tiltseries', category=TransformCategories.ALIGN)
+_subcategories = {}
+_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value()] = 'Translation'
+@tomobase_hook_process(name='Pad Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories = _subcategories)
 def pad_sinogram(sino, x:int=0, y:int=0, inplace: bool =True):
     """_summary_
 
@@ -41,7 +43,7 @@ def pad_sinogram(sino, x:int=0, y:int=0, inplace: bool =True):
 
 
 
-@tomobase_hook_process(name='Align Sinogram XCorrelation', category=TransformCategories.ALIGN)
+@tomobase_hook_process(name='Align Sinogram XCorrelation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories = _subcategories)
 def align_sinogram_xcorr(sino, inplace: bool =True, shifts= None, extend_return:bool=False):
     """Align all projection images to each other using cross-correlation
 
@@ -95,7 +97,7 @@ def align_sinogram_xcorr(sino, inplace: bool =True, shifts= None, extend_return:
         return sino
 
 
-@tomobase_hook_process(name='Centre of Mass', category=TransformCategories.ALIGN)
+@tomobase_hook_process(name='Centre of Mass', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories = _subcategories)
 def align_sinogram_center_of_mass(sino, inplace=True, offset=None, return_offset=False):
     """Align the projection images to their collective center of mass
 

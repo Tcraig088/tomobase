@@ -1,5 +1,7 @@
 import types
 import inspect
+from copy import deepcopy
+from tomobase.log import logger
 
 def tomobase_hook_tiltscheme(name: str):
     """a decorator used to mark a class as a tiltscheme. The class is either a standard class used to define the tiltscheme or a QWidget used to attach to napari. 
@@ -42,8 +44,21 @@ def _process_function_decorator(func, **kwargs):
         raise ValueError("category is required")
     includes = kwargs.get("includes", None)
     excludes = kwargs.get("excludes", None)
-    subcategories = kwargs.get("subcategories", None)
+    subcategories = deepcopy(kwargs.get("subcategories", {}))
+
+    subcategory_added = False
+    if isinstance(category, list):
+        for item in category:
+            if item not in subcategories:
+                subcategories[item] = name
+                subcategory_added = True
+    elif category not in subcategories:
+            subcategories[category] = name
+            subcategory_added = True
     
+    if not subcategory_added:
+        subcategories = add_name_to_dict(subcategories, name)
+
     func.tomobase_name = name
     func.tomobase_category = category
     func.is_tomobase_process = True
@@ -51,6 +66,8 @@ def _process_function_decorator(func, **kwargs):
     func.tomobase_excludes = excludes
     func.tomobase_subcategories = subcategories
     return func
+
+
 
 def _process_class_decorator(cls, **kwargs):
     name = kwargs.get("name", None)
@@ -61,7 +78,19 @@ def _process_class_decorator(cls, **kwargs):
         raise ValueError("Category is required")
     includes = kwargs.get("includes", None)
     excludes = kwargs.get("excludes", None)
-    subcategories = kwargs.get("subcategories", None)
+    subcategories = kwargs.get("subcategories", {})
+    
+    if isinstance(category, list):
+        for item in category:
+            if item not in subcategories:
+                subcategories[item] = name
+    else:
+        if category not in subcategories:
+            subcategories[category] = name
+            
+    subcategories = add_name_to_dict(subcategories, name)
+        
+    
     
     cls.tomobase_name = name
     cls.tomobase_category = category
@@ -71,3 +100,20 @@ def _process_class_decorator(cls, **kwargs):
     cls.tomobase_subcategories = subcategories
 
     return cls
+
+def add_name_to_dict(d, name):
+    """
+    Recursively replace bottom string values in a dictionary of dictionaries with a dictionary containing that string value.
+    
+    Arguments:
+        d (dict): The dictionary to process.
+    
+    Returns:
+        dict: The processed dictionary with bottom string values replaced.
+    """
+    for key, value in d.items():
+        if isinstance(value, dict):
+            d[key] = add_name_to_dict(value, name)
+        elif isinstance(value, str):
+            d[key] = {value: name}
+    return d

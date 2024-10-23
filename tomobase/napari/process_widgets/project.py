@@ -8,12 +8,13 @@ from tomobase.log import logger
 from tomobase.data import Volume, Sinogram
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.registrations.tiltschemes import TOMOBASE_TILTSCHEMES
-from tomobase.processes import project
+
 
 class ProjectWidget(QWidget):
-    def __init__(self, viewer: 'napari.viewer.Viewer', parent=None):
+    def __init__(self, name, process, viewer: 'napari.viewer.Viewer', parent=None):
         super().__init__(parent)
- 
+
+        self.process = process.controller
         self.viewer = viewer
         self.label_data = QLabel('Volume:')
         self.combobox_select = QComboBox()
@@ -124,7 +125,7 @@ class ProjectWidget(QWidget):
             volume = Volume._from_napari_layer(self.viewer.layers.selection.active)
             scheme = self.widget_tiltscheme.setTiltScheme() 
             angles = np.array([scheme.get_angle() for i in range(scheme.index, self.spin_angles.value())])
-            sino = project(volume, angles)
+            sino = self.process(volume, angles)
             
             _dict ={}
             _dict['viewsettings'] = {}

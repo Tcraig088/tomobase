@@ -1,5 +1,5 @@
 from tomobase.log import logger
-from tomobase.enums import TransformCategories
+from tomobase.registrations.transforms import TransformItemDict, TOMOBASE_TRANSFORM_CATEGORIES
 
 from collections.abc import Iterable
 
@@ -88,7 +88,7 @@ class ProcessCategoryItemDict():
         """
         if key in self._dict:
             if self._dict[key].widget is None:
-                self._dict[key]._widget = value
+                self._dict[key]._widget = None
             elif self._dict[key].controller is None:
                 self._dict[key]._controller = value 
             else:
@@ -146,11 +146,9 @@ class ProcessItemDict():
         return cls._instance
     
     def __init__(self):
-        self.image_transforms = ProcessCategoryItemDict()
-        self.alignments = ProcessCategoryItemDict()
-        self.reconstructions = ProcessCategoryItemDict()
-        self.post_processs = ProcessCategoryItemDict()
-        logger.info("ProcessItemDict Initialized")
+        self._dict = {}
+        for key, value in TOMOBASE_TRANSFORM_CATEGORIES.items():
+            self._dict[key] = ProcessCategoryItemDict()
         
     def update(self):
         """
@@ -162,7 +160,6 @@ class ProcessItemDict():
         if spec is None or spec.origin is None:
             raise ImportError("Cannot find the 'tomoacquire' package")
 
-        logger.info(f"Spec Origin: {spec.origin}")
         # Construct the path to the 'tiltseries' folder within the 'plugins' folder
         path = os.path.dirname(spec.origin)
         process_path = os.path.join(path, 'processes')
@@ -185,25 +182,20 @@ class ProcessItemDict():
     def _update_process(self, obj):
         if isinstance(obj.tomobase_category, Iterable):
             for category in obj.tomobase_category:
-                match category:
-                    case TransformCategories.IMAGETRANSFORM:
-                        self.image_transforms.append(obj.tomobase_name,obj)
-                    case TransformCategories.ALIGN:
-                        self.alignments.append(obj.tomobase_name,obj)
-                    case TransformCategories.RECONSTRUCT:
-                        self.reconstructions.append(obj.tomobase_name,obj)
-                    case TransformCategories.POSTPROCESS:
-                        self.post_processs.append(obj.tomobase_name,obj)
-        else:
-            match obj.tomobase_category:
-                case TransformCategories.IMAGETRANSFORM:
-                    self.image_transforms.append(obj.tomobase_name,obj)
-                case TransformCategories.ALIGN:
-                    self.alignments.append(obj.tomobase_name,obj)
-                case TransformCategories.RECONSTRUCT:
-                    self.reconstructions.append(obj.tomobase_name,obj)
-                case TransformCategories.POSTPROCESS:
-                    self.post_processs.append(obj.tomobase_name,obj)
+                for key, value in TOMOBASE_TRANSFORM_CATEGORIES.items():
+                    if TOMOBASE_TRANSFORM_CATEGORIES[key].value() == category:
+                        self._dict[key].append(obj.tomobase_name, obj)
+                        TOMOBASE_TRANSFORM_CATEGORIES[key].append(obj.tomobase_subcategories) 
 
+        else:
+            for key, value in TOMOBASE_TRANSFORM_CATEGORIES.items():
+                if TOMOBASE_TRANSFORM_CATEGORIES[key].value() == obj.tomobase_category:
+                    self._dict[key].append(obj.tomobase_name, obj)
+                    TOMOBASE_TRANSFORM_CATEGORIES[key].append(obj.tomobase_subcategories) 
+
+    
+    def items(self):
+        return self._dict.items()      
+          
 TOMOBASE_PROCESSES = ProcessItemDict()
 TOMOBASE_PROCESSES.update()

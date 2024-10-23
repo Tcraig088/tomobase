@@ -1,5 +1,6 @@
 import os
 import glob
+import h5py
 import numpy as np
 import imageio as iio
 import napari
@@ -55,6 +56,24 @@ class Sinogram(Data):
                               "images as tilt angles."))
         super().__init__(data, pixelsize)
         self.angles = np.asarray(angles)
+
+
+    @staticmethod
+    def _read_h5(filename):
+        f = h5py.File(filename, 'r')
+        nt = len(f.keys())-2
+        times = np.zeros(nt)
+        angles = np.zeros(nt)
+        for i in range(nt):
+            key = 'image '+str(i)
+            if i == 0:
+                nx, ny = f[key]['HAADF'].shape
+                data = np.zeros([nx,ny,nt])
+            data[:,:,i] = f[key]['HAADF']
+            times[i] = np.array(f[key]['acquisition timee (s)']).item()
+            angles[i] = np.array(f[key]['alpha tilt (deg)']).item()
+
+        return Sinogram(data, angles)
 
 
     @staticmethod
@@ -179,5 +198,6 @@ Sinogram._readers = {
     'ali': Sinogram._read_mrc,
     'emi': Sinogram._read_emi_stack,
     'mat': Sinogram._read_mat,
+    'h5': Sinogram._read_h5,
 }
 
