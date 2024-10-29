@@ -20,6 +20,5 @@ class QWidget:
         
         self.widget = None 
         
-        self.
         self.layout = QVBoxLayout()
         pass

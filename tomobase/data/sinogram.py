@@ -27,17 +27,25 @@ from tomobase.data.image import Image
 class Sinogram(Data):
     """A stack of projection images
 
+    The sinogram is a stack of projection images, indexed using the
+    (rows, columns, slices) standard, which corresponds to (y, x, alpha).
+    
     Attributes:
         data (numpy.ndarray)
             The data as a stack of images. The data is indexed using the
-            (rows, columns, slices) standard, which corresponds to (y, x, alpha)
+            (rows, columns, slices) standard, which corresponds to
+            (y, x, alpha)
         angles (numpy.ndarray)
             The tilt angles in degrees corresponding to the projection images
         pixelsize (float)
-            The width of the pixels in nanometer (default 1.0)
+            The width of the pixels in nanometer
+            
+    Methods:
+        _read_h5(filename)
+            Read a sinogram from an HDF5 file(.h5) 
     """
 
-    def __init__(self, data, angles, pixelsize=1.0):
+    def __init__(self, data, angles, pixelsize=1.0, metadata={}):
         """Create a sinogram
 
         Arguments:
@@ -54,7 +62,7 @@ class Sinogram(Data):
         if len(angles) != data.shape[2]:
             raise ValueError(("There should be the same number of projection "
                               "images as tilt angles."))
-        super().__init__(data, pixelsize)
+        super().__init__(data, pixelsize, metadata)
         self.angles = np.asarray(angles)
 
 
@@ -112,11 +120,9 @@ class Sinogram(Data):
     def _write_mrc(self, filename, **kwargs):
         mrcz.writeMRC(self.data, filename, meta={'angles': self.angles},pixelsize=[self.pixelsize, self.pixelsize, self.pixelsize])
 
-
     def _write_mat(self, filename, **kwargs):
         myrec = {'data':self.data, 'angles':self.angles, 'pixelsize':self.pixelsize} 
         savemat(filename, {'obj': myrec})
-    
     
     @staticmethod
     def _read_emi_stack(filename, **kwargs):
@@ -148,51 +154,74 @@ class Sinogram(Data):
         'mat': _write_mat,
         'ali': _write_mrc,
     }
-
-    def _to_napari_layer(self, astuple = True ,**kwargs):
-        layer_info = {}
-        
-        layer_info['name'] = kwargs.get('name', 'Sinogram')
-        layer_info['scale'] = kwargs.get('pixelsize' ,(self.pixelsize, self.pixelsize, self.pixelsize))
-        metadata = {'type': TOMOBASE_DATATYPES.SINOGRAM.value(),
-                    'angles': self.angles}
-        
-        if 'viewsettings' in kwargs:
-            for key, value in kwargs['viewsettings'].items():
-                layer_info[key] = value
-            
-        for key, value in kwargs.items():
-            if key != 'name' and key != 'pixelsize' and key != 'viewsettings':
-                metadata[key] = value
-                
+    
+    def _transpose_to_view(self):
+        """ Transpose the data from the standard orientation for data processessing to the view orientation.
+        """
         if len(self.data.shape) == 3:
-            self.data = self.data.transpose(2,0,1)
-            metadata['axis_labels'] = ['Projections', 'y', 'x']
+            self.data = self.data.transpose(2,1,0)
         elif len(self.data.shape) == 4:
-            self.data = self.data.transpose(2,3,0,1)
-            metadata['axis_labels'] = ['Signals','Projections', 'y', 'x']
+            self.data = self.data.transpose(2,3,1,0)
+
             
-        layer = (self.data, layer_info ,'image')
-        layer_info['metadata'] = {'ct metadata': metadata}
-        
-        if astuple:
-            return layer
+    @classmethod
+    def _transpose_from_view(cls, data):
+        """ Transpose the data from the view orientation to the standard orientation for data processessing.
+        """
+        if len(data.shape) == 3:
+            data = data.transpose(2,1,0)
         else:
-            import napari
-            return napari.layers.Layer.create(*layer)
+            data = data.transpose(3,2,0,1)
+        return data
+    
+    def to_data_tuple(self, attributes:dict={}, metadata:dict={}):
+        """_summary_
+
+        Args:
+            attributes (dict, optional): _description_. Defaults to {}.
+            metadata (dict, optional): _description_. Defaults to {}.
+
+        Returns:
+            layerdata: Napari Layer Data Tuple
+        """
+        
+        attributes = attributes
+        attributes['name'] = attributes.get('name', 'Sinogram')
+        attributes['scale'] = attributes.get('pixelsize' ,(self.pixelsize, self.pixelsize, self.pixelsize))
+        attributes['colormap'] = attributes.get('colormap', 'gray')
+        attributes['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
+        
+        metadata = metadata
+        metadata['type'] = TOMOBASE_DATATYPES.SINOGRAM.value()
+        metadata['angles'] = self.angles
+        metadata['axis'] = ['Projection', 'y', 'x'] if len(self.data.shape) == 3 else ['Projection', 'Signal', 'y', 'x']
+        
+        for key, value in self.metadata.items():
+            metadata[key] = value
+
+        attributes['metadata'] = {'ct metadata': metadata}
+        self.data = self._transpose_to_view()
+        layerdata = (self.data, attributes, 'image')
+        
+        return layerdata
     
     @classmethod
-    def _from_napari_layer(cls, layer):
-        if layer.metadata['ct metadata']['type'] != TOMOBASE_DATATYPES.SINOGRAM.value():
-            raise ValueError(f'Layer of type {layer.metadata["ct metadata"]["type"]} not recognized')
-        
-        if len(layer.data.shape) == 3:
-            data = layer.data.transpose(1,2,0)
-        elif len(layer.data.shape) == 4:
-            data = layer.data.transpose(2, 3, 0, 1)
-        sinogram = Sinogram(data, layer.metadata['ct metadata']['angles'], layer.scale[0])
-        return sinogram
+    def from_data_tuple(cls, layerdata, attributes=None):
+        if attributes is None:
+            data = layerdata[0]
+            attributes = layerdata[1]
+        else:
+            data = layerdata
 
+        metadata = attributes['metadata']['ct metadata']
+        angles = metadata.pop('angles')
+        metadata.pop('axis')
+        metadata.pop('type')
+        scale = attributes['scale'][0]
+
+        return cls(cls._transpose_from_view(data, angles, scale, metadata))
+
+# Register the readers
 Sinogram._readers = {
     'mrc': Sinogram._read_mrc,
     'ali': Sinogram._read_mrc,

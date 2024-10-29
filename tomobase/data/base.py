@@ -7,6 +7,7 @@ collections.Iterable = collections.abc.Iterable
 
 from abc import ABC, abstractmethod
 
+from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.registrations.environment import TOMOBASE_ENVIRONMENT
 if TOMOBASE_ENVIRONMENT.hyperspy:
     import hyperspy.api as hs
@@ -24,9 +25,10 @@ class Data(ABC):
      - implement the methods _to_napari_layer and _from_napari_layer inorder to create napari image layers from the data and vice versa
     """
 
-    def __init__(self, data, pixelsize):
+    def __init__(self, data, pixelsize, metadata={}):
         self.data = data
         self.pixelsize = pixelsize
+        self.metadata = metadata
 
     @classmethod
     def from_file(cls, filename=None, **kwargs):
@@ -60,6 +62,17 @@ class Data(ABC):
         except KeyError:
             raise ValueError(f"The given file type {ext.upper()} is not supported.")
 
+    @classmethod
+    def get_type_id(cls):
+        """Return the type ID of the class
+
+        Returns:
+            str
+                The type ID of the class
+        """
+        class_name_upper = cls.__name__.upper()
+        return TOMOBASE_DATATYPES[class_name_upper].value()
+    
     @classmethod
     def from_layer(cls, layer):
         """Create an instance of the class from a napari layer

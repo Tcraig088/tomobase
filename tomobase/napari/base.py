@@ -4,10 +4,9 @@ from qtpy.QtWidgets import QMenu
 from qtpy.QtCore import Qt
 
 from tomobase.log import logger
-from tomobase.napari.process_widgets import ProjectWidget, AlignWidget
+
 from tomobase.registrations.processes import TOMOBASE_PROCESSES
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-
 
 class TomographyMenuWidget(QMenu):  
     def __init__(self, viewer: 'napari.viewer.Viewer', parent=None):
@@ -30,10 +29,11 @@ class TomographyMenuWidget(QMenu):
                     widget = value.widget
                 name = process_category + ' ' + key
                 
-                self.menu[process_category][key].triggered.connect(lambda checked, w = widget, k=key, v=value: self.onProcessTriggered(w, k, v))
+                _dict = {'category': [TOMOBASE_TRANSFORM_CATEGORIES[process_category].value()], 'name': name, 'controller': value}
+                self.menu[process_category][key].triggered.connect(lambda checked, w = widget, k=_dict: self.onProcessTriggered(w, k))
         
-    def onProcessTriggered(self, widget, name, process):
-        self.viewer.window.add_dock_widget(widget(name, process, self.viewer), name=name, area='right')
+    def onProcessTriggered(self, widget, process):
+        self.viewer.window.add_dock_widget(widget(process, self.viewer), name=process['name'], area='right')
         
 
     def traverseMenu(self, item, previous=None):

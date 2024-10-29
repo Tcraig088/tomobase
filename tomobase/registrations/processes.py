@@ -169,7 +169,6 @@ class ProcessItemDict():
             for filename in files:
                 if filename.endswith('.py'):
                     module_path = os.path.relpath(os.path.join(root, filename), start=path)
-                    logger.info(f"Module Path: {module_path}")
                     module_name = 'tomobase.'+ module_path.replace(os.sep, '.')[:-3]
                     module = importlib.import_module(module_name)
                     for name, obj in inspect.getmembers(module, inspect.isclass):

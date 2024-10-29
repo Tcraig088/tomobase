@@ -3,6 +3,18 @@ from tomobase.log import logger
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QLabel, QCheckBox, QComboBox, QGridLayout, QSpinBox, QDoubleSpinBox, QLineEdit
 
 
+def connect(widget: QWidget, func):
+    if isinstance(widget, QSpinBox):
+        widget.valueChanged.connect(func)
+    elif isinstance(widget, QDoubleSpinBox):
+        widget.valueChanged.connect(func)
+    elif isinstance(widget, QLineEdit):
+        widget.textChanged.connect(func)
+    elif isinstance(widget, QCheckBox):
+        widget.stateChanged.connect(func)
+    else:
+        logger.warning(f'Widget {widget} has an unsupported type')
+
 def get_value(widget: QWidget):
     if isinstance(widget, QSpinBox):
         return widget.value()

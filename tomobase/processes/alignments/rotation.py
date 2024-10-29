@@ -7,6 +7,7 @@ from scipy.ndimage import center_of_mass, shift, rotate
 
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
+from tomobase.data import Sinogram
 
 from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QDoubleSpinBox
 from qtpy.QtCore import Qt
@@ -14,7 +15,7 @@ from qtpy.QtCore import Qt
 _subcategories = {}
 _subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value()] = 'Tilt Axis'
 @tomobase_hook_process(name='Align Tilt Shift', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
-def align_tilt_axis_shift(sino, method='sirt', offsets=None, offset=None,
+def align_tilt_axis_shift(sino: Sinogram, method='sirt', offsets=None, offset=None,
                           inplace=True, verbose=True, return_offset=False, **kwargs):
     """Align the horizontal shift of the tilt axis of a sinogram other using
     reprojection
@@ -74,7 +75,7 @@ def align_tilt_axis_shift(sino, method='sirt', offsets=None, offset=None,
     
     
 @tomobase_hook_process(name='Align Tilt Rotation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
-def align_tilt_axis_rotation(sino, method='sirt', angles=None, angle=None,
+def align_tilt_axis_rotation(sino: Sinogram, method='sirt', angles=None, angle=None,
                              inplace=True, verbose=True, return_angle=False, **kwargs):
     """Align the rotation of the tilt axis of a sinogram other using
     reprojection

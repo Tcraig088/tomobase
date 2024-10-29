@@ -11,7 +11,7 @@ from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 
 
 @tomobase_hook_process(name='Project', category=TOMOBASE_TRANSFORM_CATEGORIES.PROJECT.value())
-def project(volume, angles, use_gpu=True, verbose=True):
+def project(volume, angles, use_gpu=True):
     """Create a sinogram from a volume using forward projection.
 
     Arguments:

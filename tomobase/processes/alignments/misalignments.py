@@ -7,6 +7,8 @@ from skimage.util import random_noise
 from scipy.ndimage import center_of_mass, rotate
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
+from tomobase.data import Sinogram
+
 
 from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QDoubleSpinBox
 from qtpy.QtCore import Qt
@@ -14,7 +16,7 @@ from qtpy.QtCore import Qt
 _subcategories = {}
 _subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value()] = 'Misalignment'
 @tomobase_hook_process(name='Add Noise', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
-def add_noise(sino, 
+def add_noise(sino: Sinogram, 
               gaussian_mean:float=0, 
               gaussian_sigma:float=1,
               poisson_noise:float= 0.5, 
@@ -51,7 +53,7 @@ def add_noise(sino,
     return sino
 
 @tomobase_hook_process(name='Translational Misalignment', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
-def translational_misalignment(sino, 
+def translational_misalignment(sino: Sinogram, 
                                offset:float=0.25, 
                                inplace:bool=True, 
                                extend_return:bool=False):
@@ -96,7 +98,7 @@ def translational_misalignment(sino,
     
     
 @tomobase_hook_process(name='Rotational Misalignment', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
-def rotational_misalignment(sino, 
+def rotational_misalignment(sino: Sinogram, 
                             tilt_theta:float = 3,
                             tilt_alpha:float=2, 
                             backlash:float=0.5, 

@@ -7,6 +7,7 @@ from scipy.ndimage import center_of_mass, shift, rotate
 
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
+from tomobase.data import Sinogram
 
 from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QDoubleSpinBox
 from qtpy.QtCore import Qt
@@ -14,7 +15,7 @@ from qtpy.QtCore import Qt
 _subcategories = {}
 _subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value()] = 'Translation'
 @tomobase_hook_process(name='Pad Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories = _subcategories)
-def pad_sinogram(sino, x:int=0, y:int=0, inplace: bool =True):
+def pad_sinogram(sino:Sinogram, x:int=0, y:int=0, inplace: bool =True):
     """_summary_
 
     Args:
@@ -44,7 +45,7 @@ def pad_sinogram(sino, x:int=0, y:int=0, inplace: bool =True):
 
 
 @tomobase_hook_process(name='Align Sinogram XCorrelation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories = _subcategories)
-def align_sinogram_xcorr(sino, inplace: bool =True, shifts= None, extend_return:bool=False):
+def align_sinogram_xcorr(sino:Sinogram, inplace: bool =True, shifts= None, extend_return:bool=False):
     """Align all projection images to each other using cross-correlation
 
     This method can only align projection images to each other with an accuracy
@@ -98,7 +99,7 @@ def align_sinogram_xcorr(sino, inplace: bool =True, shifts= None, extend_return:
 
 
 @tomobase_hook_process(name='Centre of Mass', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories = _subcategories)
-def align_sinogram_center_of_mass(sino, inplace=True, offset=None, return_offset=False):
+def align_sinogram_center_of_mass(sino:Sinogram, inplace:bool=True, extend_return:bool=False):
     """Align the projection images to their collective center of mass
 
     This function uses 3rd order spline interpolation to achieve sub-pixel
@@ -121,15 +122,17 @@ def align_sinogram_center_of_mass(sino, inplace=True, offset=None, return_offset
         Sinogram
             The result
     """
+    
+    
     if not inplace:
         sino = copy(sino)
 
-    if offset is None:
-        offset = np.asarray(sino.data.shape[:2]) / 2 - center_of_mass(np.sum(sino.data, axis=2))
+
+    offset = np.asarray(sino.data.shape[:2]) / 2 - center_of_mass(np.sum(sino.data, axis=2))
 
     sino.data = shift(sino.data, (offset[0], offset[1], 0))
 
-    if return_offset:
+    if extend_return:
         return sino, offset
     else:
         return sino

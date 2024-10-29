@@ -20,6 +20,8 @@ requirements:
     - scipy
     - imageio
     - progress
+    - h5py
+    - mrcz
 
 outputs:
   - name: tomobase
