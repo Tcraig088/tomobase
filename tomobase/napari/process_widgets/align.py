@@ -84,8 +84,7 @@ class AlignWidget(ProcessWidget):
         layer = sino.to_data_tuple(attributes={'name': layer.name + ' ' + self.name})
         self.viewer.dims.ndisplay = 2
         self.viewer.add_layer(layer)
-        
-        self.layers.               
+             
     def onConfirm(self):
         isvalid = True
         layer = self.layer_select.getLayer()
