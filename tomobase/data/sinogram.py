@@ -3,11 +3,13 @@ import glob
 import h5py
 import numpy as np
 import imageio as iio
-import napari
+import stackview
+
+from copy import deepcopy
+from tomobase.log import logger
 
 from scipy.io import savemat, loadmat
 import mrcz
-
 
 from qtpy.QtWidgets import QApplication, QFileDialog
 import collections
@@ -155,14 +157,22 @@ class Sinogram(Data):
         'ali': _write_mrc,
     }
     
-    def _transpose_to_view(self):
+    def _transpose_to_view(self, use_copy=False):
         """ Transpose the data from the standard orientation for data processessing to the view orientation.
         """
+        if use_copy:
+            data = deepcopy(self.data)
+            if len(data.shape) == 3:
+                data = data.transpose(2,1,0)
+            elif len(data.shape) == 4:
+                data = data.transpose(2,3,1,0)
+            return data
+        
         if len(self.data.shape) == 3:
             self.data = self.data.transpose(2,1,0)
         elif len(self.data.shape) == 4:
             self.data = self.data.transpose(2,3,1,0)
-
+        return self.data
             
     @classmethod
     def _transpose_from_view(cls, data):
@@ -184,7 +194,7 @@ class Sinogram(Data):
         Returns:
             layerdata: Napari Layer Data Tuple
         """
-        
+        logger.debug('Converting Sinogram to Napari Layer Data Tuple: Shape: %s, Angles: %s, Pixelsize: %s', self.data.shape, self.angles, self.pixelsize)
         attributes = attributes
         attributes['name'] = attributes.get('name', 'Sinogram')
         attributes['scale'] = attributes.get('pixelsize' ,(self.pixelsize, self.pixelsize, self.pixelsize))
@@ -208,18 +218,21 @@ class Sinogram(Data):
     @classmethod
     def from_data_tuple(cls, layerdata, attributes=None):
         if attributes is None:
-            data = layerdata[0]
-            attributes = layerdata[1]
+            data = layerdata.data
+            scale = layerdata.scale[0]
+            layer_metadata = layerdata.metadata
         else:
             data = layerdata
+            scale = attributes['scale'][0]
+            layer_metadata = attributes['metadata']
 
-        metadata = attributes['metadata']['ct metadata']
+        layer_metadata = deepcopy(layer_metadata)
+        metadata = layer_metadata['ct metadata']
         angles = metadata.pop('angles')
         metadata.pop('axis')
         metadata.pop('type')
-        scale = attributes['scale'][0]
 
-        return cls(cls._transpose_from_view(data, angles, scale, metadata))
+        return cls(cls._transpose_from_view(data), angles, scale, metadata)
 
 # Register the readers
 Sinogram._readers = {

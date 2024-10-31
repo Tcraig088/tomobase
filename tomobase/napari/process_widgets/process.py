@@ -3,6 +3,7 @@ import napari
 import inspect
 from collections.abc import Iterable
 import time
+import copy as deepcopy
 
 from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QLineEdit, QVBoxLayout, QCheckBox, QPushButton, QGridLayout, QDoubleSpinBox
 from qtpy.QtCore import Qt
@@ -103,8 +104,9 @@ class ProcessWidget(QWidget):
             return
         
         self.isinitialized = True
-        layer = self.layer_select.getLayer()
-        sino = Sinogram._from_napari_layer(layer)  
+        self.selected_layer = self.layer_select.getLayer()
+        sino = Sinogram.from_data_tuple(self.selected_layer)  
+        
         dict_args = {'sino':sino}
         for i, key in enumerate(self.custom_widgets['Name']):
             dict_args[self.custom_widgets['Name'][i]] = get_value(self.custom_widgets['Widget'][i])
@@ -116,27 +118,15 @@ class ProcessWidget(QWidget):
             connect(widget, self.updateTempLayer)
         
         self.layers = []
-        if isinstance(presets, Iterable):
-            for i in presets:
-                if isinstance(i, Sinogram):
-                    _dict = {}
-                    _dict['viewsettings'] = {}
-                    _dict['viewsettings']['colormap'] = 'gray'  
-                    _dict['viewsettings']['contrast_limits'] = [0,np.max(i.data)]
-                    self.viewer.dims.ndisplay = 2
-                    layer = i._to_napari_layer(astuple=False, **_dict)
-                    self.viewer.add_layer(layer)
-                    self.layers.append(layer)
-        else:
-            if isinstance(presets, Sinogram):
-                _dict = {}
-                _dict['viewsettings'] = {}
-                _dict['viewsettings']['colormap'] = 'gray'  
-                _dict['viewsettings']['contrast_limits'] = [0,np.max(presets.data)]
+        if not isinstance(presets, Iterable):
+            presets = [presets]
+            
+        for i in presets:
+            if isinstance(i, Sinogram):
                 self.viewer.dims.ndisplay = 2
-                layer = presets._to_napari_layer(astuple=False, **_dict)
-                self.viewer.add_layer(layer)
-                self.layers.append(layer)
+                layerdata = i.to_data_tuple()
+                layer = self.viewer._add_layer_from_data(*layerdata)
+                self.layers.append(*layer)
                 
     def onConfirm(self):
         pass
@@ -159,6 +149,6 @@ class ProcessWidget(QWidget):
         if not isinstance(outputs, Iterable):
             outputs = [outputs]
         for i, layer in enumerate(self.layers):
-            layer.data = outputs[i].data
+            layer.data = outputs[i]._transpose_to_view(use_copy=True)
             layer.refresh()
         self.isrunning = False

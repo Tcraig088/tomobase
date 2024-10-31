@@ -73,19 +73,6 @@ class Data(ABC):
         class_name_upper = cls.__name__.upper()
         return TOMOBASE_DATATYPES[class_name_upper].value()
     
-    @classmethod
-    def from_layer(cls, layer):
-        """Create an instance of the class from a napari layer
-
-        Arguments:
-            layer (napari.layers.Layer)
-                The layer from which to create the data
-
-        Returns:
-            Data
-                The data
-        """
-        return cls._from_napari_layer(layer)
 
     def show(self, viewer = None):
         """Display the data in an image viewer
@@ -125,13 +112,7 @@ class Data(ABC):
         except KeyError:
             raise ValueError(f"The given file type {ext.upper()} is not supported.")
 
-    @abstractmethod
-    def _to_napari_layer(self):
-        pass
 
-    @abstractmethod
-    def _from_napari_layer(layer):
-        pass
 
     @property
     @abstractmethod

@@ -46,19 +46,17 @@ class AlignWidget(ProcessWidget):
                 layer.refresh()
                 return
         
-        layer = sino.to_data_tuple(attributes={'name': layer.name + ' ' + self.name})
+        layerdata = sino.to_data_tuple(attributes={'name': layer.name + ' ' + self.name})
         self.viewer.dims.ndisplay = 2
-        self.viewer.add_layer(layer)
-        
-        
-        
+        self.viewer._add_layer_from_data(*layerdata)
+         
     def _onConfirmClass(self):
         layer = self.layer_select.getLayer()
         if layer is None:
             logger.error('No layer selected or the selected layer is not a sinogram')
             return
         
-        sino = Sinogram.from_data_tuple(layer)
+        sino = Sinogram.from_data_tuple(self.selected_layer)
         values = {}
         for i, key in enumerate(self.custom_widgets['Name']):
             values[key] = get_value(self.custom_widgets['Widget'][i])
@@ -78,47 +76,18 @@ class AlignWidget(ProcessWidget):
         
         if 'inplace' in values:
             if values['inplace'] == True:
-                layer.refresh()
+                self.selected_layer.refresh()
                 return
         
-        layer = sino.to_data_tuple(attributes={'name': layer.name + ' ' + self.name})
+        layerdata = sino.to_data_tuple(attributes={'name': layer.name + ' ' + self.name})
         self.viewer.dims.ndisplay = 2
-        self.viewer.add_layer(layer)
+        self.viewer._add_layer_from_data(*layerdata)
              
     def onConfirm(self):
-        isvalid = True
-        layer = self.layer_select.getLayer()
-        
-        if isvalid:
-            name = layer.name
-            sino = Sinogram._from_napari_layer(layer)
-            
-            dict_args = {}
-            for i, key in enumerate(self.custom_widgets['Name']):
-                dict_args[self.custom_widgets['Name'][i]] = get_value(self.custom_widgets['Widget'][i])
-                
-            if not inspect.isclass(self.process): 
-                logger.debug(f'Running {self.name} with {dict_args}')
-                outs = self.process(sino, **dict_args)
-                if 'extend_returns' in dict_args:
-                    sino = outs.pop(0)
-                else:
-                    sino = outs
-                    
-                if 'inplace' in dict_args:
-                    if dict_args['inplace'] == True:
-                        layer.refresh()
-                        return
-
-                logger.info(f'Process {self.name} completed')
-                _dict ={}
-                _dict['viewsettings'] = {}
-                _dict['viewsettings']['colormap'] = 'gray'  
-                _dict['viewsettings']['contrast_limits'] = [0,np.max(sino.data)]
-                _dict['name'] = name +' ' + self.name
-                self.viewer.dims.ndisplay = 2
-                layer = sino._to_napari_layer(astuple=False, **_dict)
-                self.viewer.add_layer(layer)
+        if inspect.isfunction(self.process):
+            self._onConfirmFunction()
+        else:
+            self._onConfirmClass()
 
     
         
