@@ -135,4 +135,3 @@ class ProjectWidget(QWidget):
             self.viewer.dims.ndisplay = 2
             layer = sino._to_napari_layer(astuple=False, **_dict)
             self.viewer.add_layer(layer)
-            

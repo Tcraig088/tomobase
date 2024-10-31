@@ -10,11 +10,11 @@ from tomobase.registrations.environment import TOMOBASE_ENVIRONMENT
 if TOMOBASE_ENVIRONMENT.hyperspy:
     import hyperspy.api as hs
     
-    
+from tomobase.log import logger  
 from tomobase.data.base import Data 
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.data.image import Image
-
+from copy import deepcopy
 
 def _rescale(data, lower=0, upper=1, inplace=True):
     """Rescale data by scaling it to a given range. Private version for internal use only.
@@ -59,7 +59,7 @@ class Volume(Data):
             The width of the voxels in nanometer
     """
 
-    def __init__(self, data, pixelsize=1.0):
+    def __init__(self, data, pixelsize=1.0, metadata = {}):
         """Create a volume
         Arguments:
             data (numpy.ndarray)
@@ -68,7 +68,7 @@ class Volume(Data):
             pixelsize (float)
                 The width of the voxels in nanometer (default 1.0)
         """
-        super().__init__(data, pixelsize)
+        super().__init__(data, pixelsize, metadata)
 
     @staticmethod
     def _read_rec(filename, normalize=True, **kwargs):
@@ -154,46 +154,81 @@ class Volume(Data):
         'tiff': _write_tiff,
     }
 
-    def _to_napari_layer(self, astuple = True ,**kwargs):
-        layer_info = {}
+    def _transpose_to_view(self, use_copy=False):
+        """ Transpose the data from the standard orientation for data processessing to the view orientation.
+        """
+        if use_copy:
+            data = deepcopy(self.data)
+            if len(data.shape) == 3:
+                data = data.transpose(2,1,0)
+            elif len(data.shape) == 4:
+                data = data.transpose(2,3,1,0)
+            return data
         
-        layer_info['name'] = kwargs.get('name', 'Volume')
-        layer_info['scale'] = kwargs.get('pixelsize' ,(self.pixelsize, self.pixelsize, self.pixelsize))
-        metadata = {'type': TOMOBASE_DATATYPES.VOLUME.value()}
-        for key, value in kwargs['viewsettings'].items():
-            layer_info[key] = value
-            
-        for key, value in kwargs.items():
-            if key != 'name' and key != 'pixelsize' and key != 'viewsettings':
-                metadata[key] = value
-                
         if len(self.data.shape) == 3:
-            self.data = self.data.transpose(2,0,1)
-            metadata['axis_labels'] = ['z', 'y', 'x']
+            self.data = self.data.transpose(2,1,0)
         elif len(self.data.shape) == 4:
-            self.data = self.data.transpose(2,3,0,1)
-            metadata['axis_labels'] = ['Signals','z', 'y', 'x']
-        
-        layer_info['metadata'] = {'ct metadata': metadata}  
-        layer = [self.data, layer_info ,'image']
-        
-        if astuple:
-            return layer
+            self.data = self.data.transpose(2,3,1,0)
+        return self.data
+            
+    @classmethod
+    def _transpose_from_view(cls, data):
+        """ Transpose the data from the view orientation to the standard orientation for data processessing.
+        """
+        if len(data.shape) == 3:
+            data = data.transpose(2,1,0)
         else:
-            import napari
-            napari.layer.Layer.create(*layer)
+            data = data.transpose(3,2,0,1)
+        return data
+    
+    def to_data_tuple(self, attributes:dict={}, metadata:dict={}):
+        """_summary_
+
+        Args:
+            attributes (dict, optional): _description_. Defaults to {}.
+            metadata (dict, optional): _description_. Defaults to {}.
+
+        Returns:
+            layerdata: Napari Layer Data Tuple
+        """
+        logger.debug('Converting Sinogram to Napari Layer Data Tuple: Shape: %s, Angles: %s, Pixelsize: %s', self.data.shape, self.angles, self.pixelsize)
+        attributes = attributes
+        attributes['name'] = attributes.get('name', 'Volume')
+        attributes['colormap'] = 'magma'  
+        attributes['rendering'] = 'attenuated_mip'
+        attributes['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
+        
+        metadata = metadata
+        metadata['type'] = TOMOBASE_DATATYPES.SINOGRAM.value()
+        metadata['axis'] = ['Projection', 'y', 'x'] if len(self.data.shape) == 3 else ['Projection', 'Signal', 'y', 'x']
+        
+        for key, value in self.metadata.items():
+            metadata[key] = value
+
+        attributes['metadata'] = {'ct metadata': metadata}
+        self.data = self._transpose_to_view()
+        layerdata = (self.data, attributes, 'image')
+        
+        return layerdata
     
     @classmethod
-    def _from_napari_layer(cls, layer):
-        if layer.metadata['ct metadata']['type'] != TOMOBASE_DATATYPES.VOLUME.value():
-            raise ValueError(f'Layer of type {layer.metadata["ct metadata"]["type"]} not recognized')
-        
-        if len(layer.data.shape) == 3:
-            data = layer.data.transpose(1,2,0)
-        elif len(layer.data.shape) == 4:
-            data = layer.data.transpose(2, 3, 0, 1)
-        volume = Volume(data, layer.scale[0])
-        return volume
+    def from_data_tuple(cls, layerdata, attributes=None):
+        if attributes is None:
+            data = layerdata.data
+            scale = layerdata.scale[0]
+            layer_metadata = layerdata.metadata
+        else:
+            data = layerdata
+            scale = attributes['scale'][0]
+            layer_metadata = attributes['metadata']
+
+        layer_metadata = deepcopy(layer_metadata)
+        metadata = layer_metadata['ct metadata']
+        metadata.pop('axis')
+        metadata.pop('type')
+
+        return cls(cls._transpose_from_view(data), scale, metadata)
+
     
 Volume._readers = {
     'rec': Volume._read_rec,

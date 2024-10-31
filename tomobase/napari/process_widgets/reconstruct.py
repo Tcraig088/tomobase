@@ -1,9 +1,12 @@
+
 import numpy as np
 import napari
 import inspect
 from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QLineEdit, QVBoxLayout, QCheckBox, QPushButton, QGridLayout, QDoubleSpinBox
 from qtpy.QtCore import Qt
+from queue import Queue
 
+from collections.abc import Iterable
 from tomobase.log import logger
 from tomobase.data import Volume, Sinogram
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
@@ -13,13 +16,26 @@ from tomobase.napari.utils import get_value, get_widget
 from tomobase.napari.process_widgets.process import ProcessWidget
 
 from threading import Thread
-from napari.qt.threading import thread_worker
+from napari.qt.threading import create_worker
 
-class AlignWidget(ProcessWidget):
+class ReconstructWidget(ProcessWidget):
     def __init__(self, process:dict, viewer: 'napari.viewer.Viewer', parent=None):
         super().__init__(process=process, viewer=viewer, parent=None)
         self.name = process['name']
 
+    def _getResults(var):
+        if not isinstance(var, Iterable):
+            var = [var]
+         
+         for item in var:
+             try:
+                 layerdata = item.to_data_tuple(attributes={'name': layer.name + ' ' + self.name})
+                 self.viewer.dims.ndisplay = 3
+                 self.viewer._add_layer_from_data(*layerdata)
+             except:
+                 pass
+        
+    
     def _onConfirmFunction(self):
         layer = self.layer_select.getLayer()
         if layer is None:
@@ -30,25 +46,15 @@ class AlignWidget(ProcessWidget):
         values = {}
         for i, key in enumerate(self.custom_widgets['Name']):
             values[key] = get_value(self.custom_widgets['Widget'][i])
-        
+         
+         
+        worker = create_worker(self.process, sino, **values)
+        worker.start()
+        worker.returned.connect(self._getResults)  
 
-        threaded_process = Thread(target=self.process, args=(sino,), kwargs=values)
-        outs = threaded_process.start()
-        if 'extend_returns' in values:
-            if values['extend_returns'] == True:
-                sino = outs.pop(0)
-            else:
-                sino = outs
-        else:
-            sino = outs
-        
-        logger.info(f'Process {self.name} completed')  
-        if 'inplace' in values:
-            if values['inplace'] == True:
-                layer.refresh()
-                return
-        
-        layerdata = sino.to_data_tuple(attributes={'name': layer.name + ' ' + self.name})
+
+
+        layerdata = vol.to_data_tuple(attributes={'name': layer.name + ' ' + self.name})
         self.viewer.dims.ndisplay = 2
         self.viewer._add_layer_from_data(*layerdata)
          
@@ -82,7 +88,7 @@ class AlignWidget(ProcessWidget):
                 return
         
         layerdata = sino.to_data_tuple(attributes={'name': layer.name + ' ' + self.name})
-        self.viewer.dims.ndisplay = 2
+        self.viewer.dims.ndisplay = 3
         self.viewer._add_layer_from_data(*layerdata)
              
     def onConfirm(self):

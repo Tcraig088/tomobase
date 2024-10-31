@@ -5,8 +5,13 @@ from scipy import ndimage
 
 from tomobase.utils import _create_projector, _get_default_iterations, _circle_mask
 from tomobase.data import Volume, Sinogram
+from tomobase.hooks import tomobase_hook_process
+from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
+from tomobase.log import logger
 
-def reconstruct(sinogram, method, iterations=None, use_gpu=True, verbose=True, mask=None):
+
+@tomobase_hook_process(name='Reconstruct', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value())
+def reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gpu:bool=True):
     """Reconstruct a volume from a given sinogram.
 
     Arguments:
@@ -31,7 +36,7 @@ def reconstruct(sinogram, method, iterations=None, use_gpu=True, verbose=True, m
         Volume
             The reconstructed volume
     """
-    data = np.transpose(sinogram.data, (0, 2, 1))  # ASTRA expects (z, n, d)
+    data = np.transpose(sino.data, (0, 2, 1))  # ASTRA expects (z, n, d)
     use_gpu = use_gpu and astra.use_cuda()
 
     method = method.upper()
@@ -46,7 +51,7 @@ def reconstruct(sinogram, method, iterations=None, use_gpu=True, verbose=True, m
         iterations = _get_default_iterations(method)
 
     z, n, d = data.shape
-    proj_id = _create_projector(d, d, sinogram.angles, use_gpu)
+    proj_id = _create_projector(d, d, sino.angles, use_gpu)
 
     message = f"Reconstruction using the {method} algorithm on the {'GPU' if use_gpu else 'CPU'}..."
     iterator = range(z)
@@ -54,6 +59,7 @@ def reconstruct(sinogram, method, iterations=None, use_gpu=True, verbose=True, m
     vol = np.empty((z, d, d))
     default_mask = _circle_mask(d)
 
+    mask = None
     if mask is None:
         mask = np.ones((z, d, d), dtype=bool)
     else:
@@ -68,6 +74,7 @@ def reconstruct(sinogram, method, iterations=None, use_gpu=True, verbose=True, m
         )
         astra.astra.delete(vol_id)
 
-    volume = Volume(np.transpose(vol, (2, 1, 0)), sinogram.pixelsize)  # ASTRA gives (z, y, x)
+    volume = Volume(np.transpose(vol, (2, 1, 0)), sino.pixelsize)  # ASTRA gives (z, y, x)
     astra.astra.delete(proj_id)
+    logger.info('type of volume: ' + str(type(volume)))
     return volume
