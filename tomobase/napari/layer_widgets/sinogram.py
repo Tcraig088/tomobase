@@ -60,7 +60,7 @@ class SinogramDataWidget(CollapsableWidget):
             label_dict =  {}
             for i in range(dims - self.viewer.dims.ndisplay):
                 dim_index = self.viewer.dims.order[i]
-                label = layer.metadata['ct metadata']['axis_labels'][dim_index]
+                label = layer.metadata['ct metadata']['axis'][dim_index]
                 index = self.viewer.dims.current_step[dim_index]
                 if label == 'Projections':
                     angle = layer.metadata['ct metadata']['angles'][index]

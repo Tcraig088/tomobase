@@ -53,7 +53,7 @@ class ProcessWidget(QWidget):
             self.setupFromFunc()
         
         self.layout = QGridLayout()
-        self.layout.addWidget(self.layer_select, 0, 0 , 1, 2)
+        self.layout.addWidget(self.selected_widget, 0, 0 , 1, 2)
         self.layout.addWidget(self.button_initialize, 1, 0)
                
         i=2
@@ -77,7 +77,7 @@ class ProcessWidget(QWidget):
         
         first_param = next(param for name, param in signature.parameters.items() if name != 'self')
         logger.debug(f'First param: {first_param}')
-        self.layer_select = LayerSelctWidget([first_param.annotation.get_type_id()], True, self.viewer)
+        self.selected_widget = LayerSelctWidget([first_param.annotation.get_type_id()], True, self.viewer)
 
         for name, param in signature.parameters.items():
             if name not in banned:
@@ -90,7 +90,7 @@ class ProcessWidget(QWidget):
     def setupFromClass(self):
         signature = inspect.signature(self.process.__init__)
         first_param = next(param for name, param in signature.parameters.items() if name != 'self')
-        self.layer_select = LayerSelctWidget([first_param.annotation.get_type_id()], True, self.viewer)
+        self.selected_widget = LayerSelctWidget([first_param.annotation.get_type_id()], True, self.viewer)
         
         self.button_initialize.setVisible(True)
         banned = ['self', 'sino', 'vol','kwargs']
@@ -107,7 +107,7 @@ class ProcessWidget(QWidget):
             return
         
         self.isinitialized = True
-        self.selected_layer = self.layer_select.getLayer()
+        self.selected_layer = self.selected_widget.getLayer()
         
         if self.selected_layer is not None:
             if self.selected_layer.metadata['ct metadata']['type'] == TOMOBASE_DATATYPES.VOLUME.value():
@@ -124,7 +124,7 @@ class ProcessWidget(QWidget):
         presets = self.process.generate()
         
         for widget in self.custom_widgets['Widget']:
-            connect(widget, self.update)
+            connect(widget, self.runUpdate)
         
         self.layers = []
         if not isinstance(presets, Iterable):
@@ -140,32 +140,90 @@ class ProcessWidget(QWidget):
                 layer = self.viewer._add_layer_from_data(*layerdata)
                 self.layers.append(*layer)
        
-    @abstractmethod
+        self.worker = create_worker(self.runUpdateThread)
+        self.worker.returned.connect(self.onUpdateComplete)
+        
     def validate(self):
-        pass
+        return True
      
     def onConfirm(self):
-        if self.validate():
-            
-    def update(self):
-        if self.threaded_update_worker is None:
-            for i, key in enumerate(self.custom_widgets['Name']):
-                setattr(self.process, self.custom_widgets['Name'][i], get_value(self.custom_widgets['Widget'][i]))  
-            
-            self.threaded_update_worker = create_worker(self.process.update)
-            self.threaded_update_worker.start()
-            self.threaded_update_worker.returned.connect(self.updateTempLayers)
-            
-            
-    def updateTempLayers(self, outputs):
-        if self.threaded_update_worker is not None:
-            self.threaded_update_worker.returned.disconnect(self.updateTempLayers)
-            self.threaded_update_worker = None
+        if not self.validate():
+            return
         
-        self.threaded_update_worker = None
-        if not isinstance(outputs, Iterable):
-            outputs = [outputs]
-        for i, layer in enumerate(self.layers):
-            layer.data = outputs[i]._transpose_to_view(use_copy=True)
-            layer.refresh()
+        worker = create_worker(self.runProcess)
+        worker.start()
+        worker.returned.connect(self.onProcessComplete)
+    
+    def onProcessComplete(self, obj):
+        if obj is None:
+            pass
+        else:
+            layerdata = obj.to_data_tuple(attributes={'name': self.selected_layer.name + ' ' + self.name})
+            if isinstance(obj, Sinogram):
+                self.viewer.dims.ndisplay = 2
+            elif isinstance(obj, Volume):
+                self.viewer.dims.ndisplay = 3
+            self.viewer._add_layer_from_data(*layerdata)
+        
+    
+    def runProcess(self):
+        
+        if inspect.isclass(self.process):
+            pass
+        else: 
+            self.selected_layer = self.selected_widget.getLayer()
             
+        layertype_id = self.selected_layer.metadata['ct metadata']['type']
+        layertype = TOMOBASE_DATATYPES.key(layertype_id).capitalize()
+        class_ = globals().get(layertype)
+        obj = class_.from_data_tuple(self.selected_layer)
+
+
+        values = {}
+        for i, key in enumerate(self.custom_widgets['Name']):
+            values[key] = get_value(self.custom_widgets['Widget'][i])  
+            
+        if inspect.isclass(self.process):
+            process = self.process.apply
+        else:
+            process = self.process
+
+ 
+        outs = process(obj, **values)
+        if 'extend_returns' in values:
+            if values['extend_returns'] == True:
+                obj = outs.pop(0)
+            else:
+                obj = outs
+        else:
+            obj = outs
+        
+        logger.info(f'Process {self.name} completed')  
+        if 'inplace' in values:
+            if values['inplace'] == True:
+                self.selected_layer.refresh()
+                return
+        
+        return obj
+        
+    def runUpdate(self):
+        if self.isrunning:
+            return
+
+        for i, key in enumerate(self.custom_widgets['Name']):
+            setattr(self.process, self.custom_widgets['Name'][i], get_value(self.custom_widgets['Widget'][i]))  
+            
+        self.worker.start()
+
+
+    def runUpdateThread(self):
+        outputs = self.process.update()
+        if not isinstance(outputs, Iterable):
+            outputs = [outputs]  
+        return outputs
+            
+    def onUpdateComplete(self, values):
+        self.isrunning = False
+        for i, layer in enumerate(self.layers):
+            layer.data = values[i]._transpose_to_view(use_copy=True)
+            layer.refresh()
