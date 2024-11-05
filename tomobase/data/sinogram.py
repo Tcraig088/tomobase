@@ -4,7 +4,8 @@ import h5py
 import numpy as np
 import imageio as iio
 import stackview
-
+import ipywidgets as widgets
+from IPython.display import display, clear_output
 from copy import deepcopy
 from tomobase.log import logger
 
@@ -25,6 +26,37 @@ if TOMOBASE_ENVIRONMENT.hyperspy:
 from tomobase.data.base import Data
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.data.image import Image
+
+
+def _bin(data, factor, inplace=True):
+    """
+    Bin a 3D or 4D array along the first two axes.
+
+    Parameters:
+    data (numpy.ndarray): Input array to be binned.
+    factor (int): Binning factor.
+    inplace (bool): Whether to modify the array in place or return a new array.
+
+    Returns:
+    numpy.ndarray: Binned array.
+    """
+    if not inplace:
+        data = deepcopy(data)
+    
+    if data.ndim == 3:
+        # Bin the data for the first two axes
+        data = data.reshape(data.shape[0]//factor, factor, data.shape[1]//factor, factor, data.shape[2])
+        data = data.mean(axis=1)
+        data = data.mean(axis=2)
+    elif data.ndim == 4:
+        # Bin the data for the first two axes
+        data = data.reshape(data.shape[0]//factor, factor, data.shape[1]//factor, factor, data.shape[2], data.shape[3])
+        data = data.mean(axis=1)
+        data = data.mean(axis=2)
+    else:
+        raise ValueError("Input data must be a 3D or 4D array.")
+    
+    return data
 
 class Sinogram(Data):
     """A stack of projection images
@@ -157,7 +189,7 @@ class Sinogram(Data):
         'ali': _write_mrc,
     }
     
-    def _transpose_to_view(self, use_copy=False):
+    def _transpose_to_view(self, use_copy=False, data=None):
         """ Transpose the data from the standard orientation for data processessing to the view orientation.
         """
         if use_copy:
@@ -167,7 +199,14 @@ class Sinogram(Data):
             elif len(data.shape) == 4:
                 data = data.transpose(2,3,1,0)
             return data
-        
+
+        if data is not None:
+            if len(data.shape) == 3:
+                data = data.transpose(2,1,0)
+            elif len(data.shape) == 4:
+                data = data.transpose(2,3,1,0)
+            return data
+            
         if len(self.data.shape) == 3:
             self.data = self.data.transpose(2,1,0)
         elif len(self.data.shape) == 4:
@@ -233,6 +272,30 @@ class Sinogram(Data):
         metadata.pop('type')
 
         return cls(cls._transpose_from_view(data), angles, scale, metadata)
+
+    def show(self, binning=4):
+        """shows the sinogram in a stackview window
+
+        Returns:
+            _type_: _description_
+        """
+        angle_widget = widgets.FloatText(value=self.angles[0],
+                                    description='Angle:',
+                                    disabled=True)
+        
+        def on_slider_change(change):
+            angle_widget.value = self.angles[change['new']]
+        
+        data = _bin(self.data, binning, inplace=False)
+        data = self._transpose_to_view(data=data)
+        
+        image_widget = stackview.slice(data)
+        for item in image_widget.children:
+            if isinstance(item, (widgets.IntSlider, widgets.FloatSlider)):
+                item.observe(on_slider_change, names='value')
+        display(widgets.VBox([image_widget, angle_widget]))
+        
+
 
 # Register the readers
 Sinogram._readers = {

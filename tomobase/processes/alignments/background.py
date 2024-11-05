@@ -8,6 +8,10 @@ from tomobase.hooks import tomobase_hook_process
 from tomobase.data import Sinogram
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 
+import ipywidgets as widgets
+from IPython.display import display, clear_output
+import stackview
+
 from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QDoubleSpinBox
 from qtpy.QtCore import Qt
 
@@ -77,6 +81,18 @@ class MaskBackground():
         if self.dilation > 0:
             self.mask.data = binary_dilation(self.mask.data, iterations=self.dilation)
     
+    
+    def 
+    
+    def view(self, bin=4):
+        stackview.slice_by_slice(self.sino.data._bin(4)._transpose_to_view(), self.mask.data._bin(4)._transpose_to_view())
+        
+        
+    def refresh(self):
+        self.widgets
+        stackview.slice_by_slice(self.sino.data._bin(4)._transpose_to_view(), self.mask.data._bin(4)._transpose_to_view())
+        
+        
     def generate(self) -> Sinogram:
         self.mask = deepcopy(self.sino)
         self.process()
