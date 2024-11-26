@@ -3,7 +3,7 @@ from copy import deepcopy
 import napari
 from scipy.ndimage import rotate
 from skimage.util import random_noise
-
+from scipy.ndimage import gaussian_filter
 from scipy.ndimage import center_of_mass, rotate
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
@@ -17,7 +17,6 @@ _subcategories = {}
 _subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value()] = 'Misalignment'
 @tomobase_hook_process(name='Add Noise', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
 def add_noise(sino: Sinogram, 
-              gaussian_mean:float=0, 
               gaussian_sigma:float=1,
               poisson_noise:float= 0.5, 
               inplace:bool=True):
@@ -44,12 +43,12 @@ def add_noise(sino: Sinogram,
         sino = deepcopy(sino)
 
     # Add Gaussian noise
-    gaussian_noise = np.random.normal(gaussian_mean, gaussian_sigma, sino.data.shape)
-    sino.data += gaussian_noise
+    sino.data = gaussian_filter(sino.data, sigma=gaussian_sigma)
 
     # Add Poisson noise
-    sino.data = random_noise(sino.data, mode="poisson")
-
+    array = np.ones_like(sino.data)
+    array = random_noise(array, mode="poisson")
+    sino.data += (poisson_noise*array)
     return sino
 
 @tomobase_hook_process(name='Translational Misalignment', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)

@@ -15,6 +15,39 @@ from tomobase.data.base import Data
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.data.image import Image
 from copy import deepcopy
+import stackview
+import ipywidgets as widgets
+from IPython.display import display, clear_output
+
+
+def _bin(data, factor, inplace=True):
+    """
+    Bin a 3D or 4D array along the first two axes.
+
+    Parameters:
+    data (numpy.ndarray): Input array to be binned.
+    factor (int): Binning factor.
+    inplace (bool): Whether to modify the array in place or return a new array.
+
+    Returns:
+    numpy.ndarray: Binned array.
+    """
+    if not inplace:
+        data = deepcopy(data)
+    
+    if data.ndim == 3:
+        # Bin the data for the first two axes
+        data = data.reshape(data.shape[0]//factor, factor, data.shape[1]//factor, factor, data.shape[2])
+        data = data.mean(axis=(1, 3))
+    elif data.ndim == 4:
+        # Bin the data for the first two axes
+        data = data.reshape(data.shape[0]//factor, factor, data.shape[1]//factor, factor, data.shape[2], data.shape[3])
+        data = data.mean(axis=(1, 3))
+    else:
+        raise ValueError("Input data must be a 3D or 4D array.")
+    
+    return data 
+
 
 def _rescale(data, lower=0, upper=1, inplace=True):
     """Rescale data by scaling it to a given range. Private version for internal use only.
@@ -154,11 +187,18 @@ class Volume(Data):
         'tiff': _write_tiff,
     }
 
-    def _transpose_to_view(self, use_copy=False):
+    def _transpose_to_view(self, use_copy=False, data=None):
         """ Transpose the data from the standard orientation for data processessing to the view orientation.
         """
         if use_copy:
             data = deepcopy(self.data)
+            if len(data.shape) == 3:
+                data = data.transpose(2,1,0)
+            elif len(data.shape) == 4:
+                data = data.transpose(2,3,1,0)
+            return data
+        
+        if data is not None:
             if len(data.shape) == 3:
                 data = data.transpose(2,1,0)
             elif len(data.shape) == 4:
@@ -229,6 +269,15 @@ class Volume(Data):
 
         return cls(cls._transpose_from_view(data), scale, metadata)
 
+    def show(self, binning=4):
+        """shows the sinogram in a stackview window
+
+        Returns:
+            _type_: _description_
+        """
+        data = _bin(self.data, binning, inplace=False)
+        data = self._transpose_to_view(data=data)
+        display(stackview.orthogonal(data))
     
 Volume._readers = {
     'rec': Volume._read_rec,

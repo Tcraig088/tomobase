@@ -81,9 +81,7 @@ class MaskBackground():
         if self.dilation > 0:
             self.mask.data = binary_dilation(self.mask.data, iterations=self.dilation)
     
-    
-    def 
-    
+
     def view(self, bin=4):
         stackview.slice_by_slice(self.sino.data._bin(4)._transpose_to_view(), self.mask.data._bin(4)._transpose_to_view())
         

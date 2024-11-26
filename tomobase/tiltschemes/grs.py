@@ -40,7 +40,7 @@ class GRSWidget(CollapsableWidget):
     
 @tomobase_hook_tiltscheme('GRS')  
 class GRS(Tiltscheme):
-    def __init__(self, angle_max, angle_min, index=1):
+    def __init__(self, angle_min, angle_max, index=1):
         super().__init__()
         self.angle_max = angle_max
         self.angle_min = angle_min
