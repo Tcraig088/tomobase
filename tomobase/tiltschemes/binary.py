@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from qtpy.QtWidgets import QDoubleSpinBox, QSpinBox, QGridLayout, QLabel
@@ -71,10 +70,10 @@ class Binary(Tiltscheme):
         if self.i == 0:
             self.angle = self.angle_min
         elif self.isforward:
-            if (self.angle+self.step) > self.angle_max:
+            if np.isclose(self.angle + self.step, self.angle_max) or (self.angle+self.step) > self.angle_max:
                 self._get_offsets()
                 self.isforward = False
-                if (self.max_cutoff + (self.step*self.offset)) >=  self.angle_max:
+                if np.isclose(self.max_cutoff + (self.step*self.offset), self.angle_max) or (self.max_cutoff + (self.step*self.offset)) >=  self.angle_max:
                     self.angle = self.max_cutoff + (self.step*self.offset) - self.step
                 else:
                     self.angle = self.max_cutoff + (self.step*self.offset)
@@ -82,7 +81,7 @@ class Binary(Tiltscheme):
             else:
                 self.angle = self.angle + self.step
         else:
-            if (self.angle+self.step) <= self.angle_min:
+            if np.isclose(self.angle+self.step, self.angle_max) or (self.angle+self.step) < self.angle_min:
                 self._get_offsets()
                 self.isforward = True
                 self.angle = self.angle_min + (np.abs(self.step)*self.offset)
@@ -96,13 +95,13 @@ class Binary(Tiltscheme):
     def _get_angle_unidirectional(self):
         if self.i == 0:
             self.angle = self.angle_min
-        elif (self.angle+self.step) >= self.angle_max:
+        elif np.isclose(self.angle + self.step, self.angle_max) or (self.angle + self.step) > self.angle_max:
             self._get_offsets()
-            self.angle = self.angle_min + (self.step*self.offset)
+            self.angle = self.angle_min + (self.step * self.offset)
         else:
             self.angle += self.step
         self.i += 1
-        return np.round(self.angle,2)
+        return np.round(self.angle, 2)
     
     def _get_offsets(self):
         if (self.offset + 0.5) >= 1:
@@ -114,7 +113,7 @@ class Binary(Tiltscheme):
                 self.offset_run += 2/self.offset_set
                 self.offset = self.offset_run
         else:
-            self.offset += 0.5
+            self.offset += 0.5  
             
     def get_angle_array(self, indices):
         return super().get_angle_array(indices)
