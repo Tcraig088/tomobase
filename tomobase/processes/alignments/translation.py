@@ -136,3 +136,57 @@ def align_sinogram_center_of_mass(sino:Sinogram, inplace:bool=True, extend_retur
         return sino, offset
     else:
         return sino
+    
+@tomobase_hook_process(name='Weight by Angle', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories = _subcategories)
+def weight_by_angle(sino:Sinogram, inplace:bool=True, extend_return:bool=False):
+    """Align the projection images to their collective center of mass
+
+    This function uses 3rd order spline interpolation to achieve sub-pixel
+    precision.
+
+    Arguments:
+        sino (Sinogram)
+            The projection data
+        inplace (bool)
+            Whether to do the alignment in-place in the input data object
+            (default: True)
+        offset (numpy.ndarray)
+            A pre-calculated offset for aligning multiple sinograms
+            simultaneously (e.g. useful for EDX tomography) (default: None)
+        return_offset (bool)
+            If True, the return value will be a tuple with the offset in the
+            second item (default: False)
+
+    Returns:
+        Sinogram
+            The result
+    """
+    
+    
+    if not inplace:
+        sino = copy(sino)
+
+    indices = np.argsort(sino.angles)
+    sino.angles = sino.angles[indices]
+    sino.data = sino.data[:,:,indices]
+    weights= np.ones_like(sino.angles)
+
+    sorted_angles = copy(sino.angles) +  90
+    n_angles = len(sorted_angles)
+    print(n_angles)
+    for i in range(len(sorted_angles)):
+        if i == 0:
+            weights[i] = 0.5*(180 - sorted_angles[n_angles-1] + sorted_angles[i+1])
+        elif i == len(sorted_angles)-1:
+            weights[i] = 0.5*(180 - sorted_angles[n_angles-2] + sorted_angles[0])
+        else:
+            weights[i] = 0.5*((sorted_angles[i+1] - sorted_angles[i]) + (sorted_angles[i] - sorted_angles[i-1]))
+    ratio = 180/(n_angles-1)
+    weights = weights/ratio
+
+    sino.data = sino.data * weights
+
+    if extend_return:
+        return sino, weights
+    else:
+        return sino
