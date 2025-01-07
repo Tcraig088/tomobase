@@ -48,12 +48,20 @@ def background_subtract_median(sino: Sinogram,
 
 @tomobase_hook_process(name='Manual Masking', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
 class MaskBackground():
+    '''
+    MaskBackground class to create a mask for the sinogram data.
+    '''
     def __init__(self, 
                  sino: Sinogram, 
                  threshold: float = 0.0,
                  dilation: int = 0,
                  masking_radius: int = 0,
                  inplace: bool = True):
+        '''
+        Parameters
+        ----------
+        sino : Sinogram
+            Sinogram data to be processed.'''
         
         self.sino = sino
         self.threshold = threshold

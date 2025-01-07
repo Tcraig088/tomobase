@@ -194,7 +194,14 @@ class ProcessItemDict():
 
     
     def items(self):
-        return self._dict.items()      
+        return self._dict.items() 
+    
+    def help(self):
+        for key, value in self._dict.items():
+            print(key)
+            for k, v in value.items():
+                logger.info(v.controller.__name__)
+                logger.info(v.controller.__doc__)
           
 TOMOBASE_PROCESSES = ProcessItemDict()
 TOMOBASE_PROCESSES.update()
