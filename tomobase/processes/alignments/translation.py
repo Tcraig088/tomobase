@@ -173,7 +173,7 @@ def weight_by_angle(sino:Sinogram, inplace:bool=True, extend_return:bool=False):
 
     sorted_angles = copy(sino.angles) +  90
     n_angles = len(sorted_angles)
-    print(n_angles)
+
     for i in range(len(sorted_angles)):
         if i == 0:
             weights[i] = 0.5*(180 - sorted_angles[n_angles-1] + sorted_angles[i+1])
