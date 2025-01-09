@@ -1,5 +1,5 @@
 import numpy as np
-from copy import deepcopy
+from copy import deepcopy, copy
 import napari
 from scipy.ndimage import  binary_dilation
 from skimage.filters import threshold_otsu
@@ -79,8 +79,58 @@ def background_subtract_median(sino: Sinogram,
 
     return sino
 
+
+
+class ProcessingSinogramGui():
+    def __init__(self, sino: Sinogram, size:int=256):
+        self.sino = sino
+        self.index = 0 
+        self.size = 256
+
+
+    def _on_slider_change(self, change):
+        self.index = change.new
+        #self.sinogram_widget.children = [self._group_widget, self._sinogram_item_view()]
+        for widget in self.sinogram_widget.children[1].children:
+            widget.children[1].slice_number = self.index
+
+    def _sinogram_viewer(self):
+        slider_widget = widgets.IntSlider(min=0, max=self.sino.data.shape[2]-1, value=self.index, description='Slice')
+        angle_widget = widgets.Label(value='Angle: {}'.format(self.sino.angles[self.index]))
+        self._group_widget = widgets.HBox([slider_widget, angle_widget])
+        img_widget = self._sinogram_item_view()
+        self.sinogram_widget = widgets.VBox([self._group_widget, img_widget])
+        slider_widget.observe(self._on_slider_change, names='value')
+
+        return self.sinogram_widget 
+    
+    def _sinogram_item_view(self):
+        img_list = []
+        for attr_name, attr_value in vars(self).items():
+            if isinstance(attr_value, Sinogram):
+                #img_data = deepcopy(attr_value.data).astype(np.float32)
+                # img_data = ((img_data - img_data.min()) / (img_data.max() - img_data.min()))*255
+                # img_data = img_data.astype(np.uint8)
+                    
+                # img = Image.fromarray(attr_value.data[:,:,self.index])
+                # img = img.resize((self.size, self.size))
+                # if img.mode == 'F':
+                #     img = img.convert('L')
+                # with io.BytesIO() as output:
+                #     img.save(output, format="PNG")
+                #     data = output.getvalue()
+                img_data = attr_value._transpose_to_view(use_copy=True)
+                img_widget = stackview.slice(img_data, slice_number=self.index)
+                #img_widget = widgets.Image(value=data, format='png')
+                label_widget = widgets.Label(value=attr_name)
+                group_widget = widgets.VBox([label_widget, img_widget])
+                
+                img_list.append(group_widget)
+        return widgets.HBox(img_list)
+
+
 @tomobase_hook_process(name='Manual Masking', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
-class MaskBackground():
+class MaskBackground(ProcessingSinogramGui):
     '''
     MaskBackground class to create a mask for the sinogram data.
     '''
@@ -89,23 +139,25 @@ class MaskBackground():
                  threshold: float = 0.0,
                  dilation: int = 0,
                  masking_radius: int = 0,
-                 inplace: bool = True):
+                 inplace: bool = True, 
+                 size:int=256):
         '''
         Parameters
         ----------
         sino : Sinogram
             Sinogram data to be processed.'''
         
-        self.sino = sino
-        self.bin =bin
+        super().__init__(sino, size)
         self.threshold = threshold
         self.dilation = dilation
         self.masking_radius = masking_radius
         self.inplace = inplace
+
+        self.mask = deepcopy(self.sino)
+        self._update_mask()
+        self.show()
         
-    def process(self, use_bin=True):
-        print(self.threshold, self.dilation, self.masking_radius)
-        self.sino_view.data += np.random.rand(*self.sino_view.data.shape)
+    def _update_mask(self):
         if self.threshold <= 0:
             threshold = threshold_otsu(self.sino.data)
         else:
@@ -124,19 +176,28 @@ class MaskBackground():
         
         if self.dilation > 0:
             self.mask.data = binary_dilation(self.mask.data, iterations=self.dilation)
-        
-        if use_bin:
-            self.mask.data = _bin(self.mask.data, self.bin, inplace=False)
+
+        self.preview = deepcopy(self.sino)
+        self.preview.data[~self.mask.data] = 0
+    
+    def _on_change(self, change):
+        self.dilation = self.dilation_widget.value
+        self.threshold = self.threshold_widget.value
+        self.masking_radius = self.radius_widget.value
+        self._update_mask()
+        img_widget = self._sinogram_viewer()
+        self.layout.children= [self.group_widget, img_widget, self.confirm_button]
 
 
-    def view(self):
-        self.sino_view = deepcopy(self.sino)
-        self.sino_view.data = _bin(self.sino.data, self.bin, inplace=False)
+    def _on_confirm(self, b):
+        if not self.inplace:
+            self.sino = deepcopy(self.sino)
 
-
-
-
-        self.generate()
+        self._update_mask()
+        self.sino.data[~self.mask.data] = 0
+        return self.sino
+    
+    def show(self):
         radius_max_x = (self.sino.data.shape[0]-1) // 2
         radius_max_y = (self.sino.data.shape[1]-1) // 2
         if radius_max_x < radius_max_y:
@@ -144,71 +205,19 @@ class MaskBackground():
         else:
             radius_max = radius_max_y
 
-        threshold_widget = widgets.FloatSlider(value=self.threshold, min=0, max=self.sino.data.max(), step=0.01, description='Threshold')
-        dilation_widget = widgets.IntSlider(value=self.dilation, min=0, max=10, description='Dilation')
-        radius_widget = widgets.IntSlider(value=self.masking_radius, min=0, max=radius_max, description='Masking Radius')
-        blank_widget = widgets.Label(value="")
+        self.threshold_widget = widgets.FloatSlider(value=self.threshold, min=0, max=self.sino.data.max(), step=0.01, description='Threshold')
+        self.dilation_widget = widgets.IntSlider(value=self.dilation, min=0, max=10, description='Dilation')
+        self.radius_widget = widgets.IntSlider(value=self.masking_radius, min=0, max=radius_max, description='Masking Radius')
+        self.group_widget = widgets.HBox([self.threshold_widget, self.dilation_widget, self.radius_widget])
+        img_widget = self._sinogram_viewer()
+        self.confirm_button = widgets.Button(description='Confirm')
 
-        refresh_button = widgets.Button(description='Refresh')
-        confirm_button = widgets.Button(description='Confirm')
+        self.layout = widgets.VBox([self.group_widget, img_widget, self.confirm_button])
 
-        # Convert PIL images to ipywidgets.Image
-        def pil_to_ipyimage(pil_image):
-            # Convert the image to a supported mode
-            if pil_image.mode == 'F':
-                pil_image = pil_image.convert('L')
-            with io.BytesIO() as output:
-                pil_image.save(output, format="PNG")
-                data = output.getvalue()
-            return widgets.Image(value=data, format='png')
+        self.threshold_widget.observe(self._on_change, names='value')
+        self.dilation_widget.observe(self._on_change, names='value')
+        self.radius_widget.observe(self._on_change, names='value')
+        self.confirm_button.on_click(self._on_confirm)
+        display(self.layout)
 
-        image_widget = pil_to_ipyimage(Image.fromarray(self.sino_view.data[:,:,30]))
-        mask_widget = pil_to_ipyimage(Image.fromarray(self.mask.data[:,:,30]))
 
-        grid = widgets.GridBox(children=[image_widget, mask_widget, threshold_widget, dilation_widget, radius_widget, blank_widget, refresh_button, confirm_button], layout=widgets.Layout(grid_template_columns="repeat(2, 50%)"))
-
-        # Display the grid
-        display(grid)
-
-        # if refresh button is clicked
-        def on_refresh_button_clicked(b):
-            self.threshold = threshold_widget.value
-            self.dilation = dilation_widget.value
-            self.masking_radius = radius_widget.value
-            self.update()
-            
-            # Update the data in the widgets
-            image_widget.value = pil_to_ipyimage(Image.fromarray(self.sino_view.data[:,:,30])).value
-            mask_widget.value = pil_to_ipyimage(Image.fromarray(self.mask.data[:,:,30])).value
-            
-            # Reassign the widgets to the grid to force update
-            grid.children = [image_widget, mask_widget, threshold_widget, dilation_widget, radius_widget, blank_widget, refresh_button, confirm_button]
-
-        # if confirm button is clicked
-        def on_confirm_button_clicked(b):
-            self.threshold = threshold_widget.value
-            self.dilation = dilation_widget.value
-            self.masking_radius = radius_widget.value
-            self.apply()
-
-        # Connect the buttons to their handlers
-        refresh_button.on_click(on_refresh_button_clicked)
-        confirm_button.on_click(on_confirm_button_clicked)
-
-    def generate(self) -> Sinogram:
-        self.mask = deepcopy(self.sino)
-        self.process()
-        return self.mask
-    
-    def update(self):
-        self.process()
-        print('updated')
-        return self.mask
-    
-    def apply(self):
-        if not self.inplace:
-            self.sino = deepcopy(self.sino)
-
-        self.process(use_bin=False)
-        self.sino.data[~self.mask.data] = 0
-        return self.sino
