@@ -115,7 +115,7 @@ class Sinogram(Data):
             times[i] = np.array(f[key]['acquisition timee (s)']).item()
             angles[i] = np.array(f[key]['alpha tilt (deg)']).item()
 
-        return Sinogram(data, angles)
+        return Sinogram(data, angles, metadata={'times': times})
 
 
     @staticmethod

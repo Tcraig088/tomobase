@@ -18,7 +18,10 @@ import stackview
 from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QDoubleSpinBox
 from qtpy.QtCore import Qt
 
-def _bin(data, factor, inplace=True):
+_subcategories = {}
+_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value()] = 'Background Corrections'
+@tomobase_hook_process(name='Bin Data', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+def bin(sino:Sinogram, factor:int=2, inplace=True):
     """
     Bin a 3D or 4D array along the first two axes.
 
@@ -31,25 +34,24 @@ def _bin(data, factor, inplace=True):
     numpy.ndarray: Binned array.
     """
     if not inplace:
-        data = deepcopy(data)
+        sino = deepcopy(sino)
     
-    if data.ndim == 3:
+    if sino.data.ndim == 3:
         # Bin the data for the first two axes
-        data = data.reshape(data.shape[0]//factor, factor, data.shape[1]//factor, factor, data.shape[2])
-        data = data.mean(axis=1)
-        data = data.mean(axis=2)
-    elif data.ndim == 4:
+        sino.data = sino.data.reshape(sino.data.shape[0]//factor, factor, sino.data.shape[1]//factor, factor, sino.data.shape[2])
+        sino.data = sino.data.mean(axis=1)
+        sino.data = sino.data.mean(axis=2)
+    elif sino.data.ndim == 4:
         # Bin the data for the first two axes
-        data = data.reshape(data.shape[0]//factor, factor, data.shape[1]//factor, factor, data.shape[2], data.shape[3])
-        data = data.mean(axis=1)
-        data = data.mean(axis=2)
+        sino.data = sino.data.reshape(sino.data.shape[0]//factor, factor, sino.data.shape[1]//factor, factor, sino.data.shape[2], sino.data.shape[3])
+        sino.data = sino.data.mean(axis=1)
+        sino.data = sino.data.mean(axis=2)
     else:
         raise ValueError("Input data must be a 3D or 4D array.")
     
-    return data
+    return sino
 
-_subcategories = {}
-_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value()] = 'Background Corrections'
+
 @tomobase_hook_process(name='Subtract Median', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
 def background_subtract_median(sino: Sinogram,  
               inplace:bool=True):
