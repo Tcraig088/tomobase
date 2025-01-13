@@ -1,19 +1,13 @@
 import numpy as np
 import imageio as iio
-import napari
-
-from qtpy.QtWidgets import QApplication, QFileDialog
 import collections
 collections.Iterable = collections.abc.Iterable
 
-from abc import ABC, abstractmethod
-import sys
-
+from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.registrations.environment import TOMOBASE_ENVIRONMENT
 if TOMOBASE_ENVIRONMENT.hyperspy:
     import hyperspy.api as hs
 
-from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.data.base import Data
 
 class Image(Data):
