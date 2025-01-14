@@ -1,5 +1,8 @@
 import numpy as np
 import imageio as iio
+import stackview
+
+from IPython.display import display
 import collections
 collections.Iterable = collections.abc.Iterable
 
@@ -85,6 +88,10 @@ class Image(Data):
             import napari
             return napari.layers.Layer.create(*layer)
     
+    def show(self, display_width = 800, display_hieght=800):
+        obj = stackview.insight(self.data)
+        display(obj)
+
     @classmethod
     def _from_napari_layer(cls, layer):
         if layer.metadata['ct metadata']['type'] != TOMOBASE_DATATYPES.IMAGE:

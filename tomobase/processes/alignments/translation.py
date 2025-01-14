@@ -1,49 +1,19 @@
 
 import numpy as np
 from copy import copy
-import napari
-
 from scipy.ndimage import center_of_mass, shift, rotate
 
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from tomobase.data import Sinogram
 
-from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QDoubleSpinBox
-from qtpy.QtCore import Qt
+import ipywidgets as widgets
+from IPython.display import display, clear_output
+import stackview
+
 
 _subcategories = {}
 _subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value()] = 'Translation'
-@tomobase_hook_process(name='Pad Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories = _subcategories)
-def pad_sinogram(sino:Sinogram, x:int=0, y:int=0, inplace: bool =True):
-    """_summary_
-
-    Args:
-        sino (_type_): _description_
-        x (int, optional): _description_. Defaults to 0.
-        y (int, optional): _description_. Defaults to 0.
-        inplace (bool, optional): _description_. Defaults to True.
-
-    Raises:
-        ValueError: _description_
-
-    Returns:
-        _type_: _description_
-    """
-    if not inplace:
-        sino = copy(sino)
-
-    pad_x = x - sino.data.shape[0]
-    pad_y = y - sino.data.shape[1]
-    if pad_x < 0 or pad_y < 0:
-        raise ValueError("Cannot pad to a smaller size")
-    sino.data = np.pad(sino.data, ((pad_x//2, pad_x//2), (pad_y//2, pad_y//2), (0, 0)), mode='constant')
-
-    return sino
-
-
-
-
 @tomobase_hook_process(name='Align Sinogram XCorrelation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories = _subcategories)
 def align_sinogram_xcorr(sino:Sinogram, inplace: bool =True, shifts= None, extend_return:bool=False):
     """Align all projection images to each other using cross-correlation
@@ -190,3 +160,66 @@ def weight_by_angle(sino:Sinogram, inplace:bool=True, extend_return:bool=False):
         return sino, weights
     else:
         return sino
+
+
+@tomobase_hook_process(name='Manual Translation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories = _subcategories)
+class TranslateSinogramManual:
+    def __init__(self, sino:Sinogram, inplace: bool =True):
+        self.sino = sino
+        self.shape = sino.data.shape
+        self.inplace = inplace
+        self.index = 0
+        self.x = 0
+        self.y = 0
+        self._view()
+
+    def _view( self):
+        self.data = self.sino._transpose_to_view()
+        self.tick_box = widgets.Checkbox(value=False, description='Move Green')
+        self.shift_box = widgets.Checkbox(value=False, description='Shift All')
+        self.x_slider = widgets.IntSlider(min=-self.shape[0]//2, max=self.shape[0]//2, value=0, description='x')
+        self.y_slider = widgets.IntSlider(min=-self.shape[1]//2, max=self.shape[1]//2, value=0, description='y')
+        self.confirm = widgets.Button(description='Confirm')
+        self.view = stackview.side_by_side(self.data[0:-2], self.data[1:-1])
+
+        self.img_slider = self.view.children[0].children[0].children[1].children[0].children[1]
+        self.index = self.img_slider.value
+
+        self.img_slider.observe(self._on_image_change, names='value')
+        self.confirm.on_click(self._on_confirm)
+        self.x_slider.observe(self._on_x_change, names='value')
+        self.y_slider.observe(self._on_y_change, names='value')
+
+        self.group = widgets.VBox([self.x_slider, self.y_slider, self.view, self.tick_box, self.shift_box, self.confirm])
+        display(self.group)
+
+    def _on_confirm(self, change):
+        self.sino.data = Sinogram._transpose_from_view(self.data)   
+        return self.sino
+
+    def _on_image_change(self, change):
+        self.index = change.new
+        self.x_slider.value = 0
+        self.y_slider.value = 0
+
+    def _on_x_change(self, change):
+        value = 0 
+        if self.tick_box.value:
+            value = 1
+        x = change.new -self.x
+        self.data[self.index + value, :, :]  = np.roll(self.data[self.index + value, :, :], (x, 0), axis=(0, 1))
+        self.view.update()
+        self.x = change.new
+
+
+    def _on_y_change(self, change):
+        value = 0 
+        if self.tick_box.value:
+            value = 1
+        y = change.new -self.y
+        self.data[self.index + value, :, :]  = np.roll(self.data[self.index + value, :, :], (0, y), axis=(0, 1))
+        self.view.update()
+        self.y = change.new
+
+
+

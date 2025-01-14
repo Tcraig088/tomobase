@@ -1,85 +1,18 @@
 import numpy as np
 import copy
+from copy import deepcopy
 
 import collections
 collections.Iterable = collections.abc.Iterable
 
-from abc import ABC, abstractmethod
-
-from tomobase.registrations.environment import TOMOBASE_ENVIRONMENT
-if TOMOBASE_ENVIRONMENT.hyperspy:
-    import hyperspy.api as hs
-    
 from tomobase.log import logger  
 from tomobase.data.base import Data 
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.data.image import Image
-from copy import deepcopy
+
 import stackview
 import ipywidgets as widgets
-from IPython.display import display, clear_output
-
-
-def _bin(data, factor, inplace=True):
-    """
-    Bin a 3D or 4D array along the first two axes.
-
-    Parameters:
-    data (numpy.ndarray): Input array to be binned.
-    factor (int): Binning factor.
-    inplace (bool): Whether to modify the array in place or return a new array.
-
-    Returns:
-    numpy.ndarray: Binned array.
-    """
-    if not inplace:
-        data = deepcopy(data)
-    
-    if data.ndim == 3:
-        # Bin the data for the first two axes
-        data = data.reshape(data.shape[0]//factor, factor, data.shape[1]//factor, factor, data.shape[2])
-        data = data.mean(axis=(1, 3))
-    elif data.ndim == 4:
-        # Bin the data for the first two axes
-        data = data.reshape(data.shape[0]//factor, factor, data.shape[1]//factor, factor, data.shape[2], data.shape[3])
-        data = data.mean(axis=(1, 3))
-    else:
-        raise ValueError("Input data must be a 3D or 4D array.")
-    
-    return data 
-
-
-def _rescale(data, lower=0, upper=1, inplace=True):
-    """Rescale data by scaling it to a given range. Private version for internal use only.
-
-    Arguments:
-        data (Image, Volume or Sinogram)
-            The data to rescale
-        lower (float)
-            The lower bound of the rescaled data
-        upper (float)
-            The upper bound of the rescaled data
-        inplace (bool)
-            Whether to do the rescaling in-place in the input data object
-
-    Returns:
-        Image, Volume or Sinogram
-            The result
-    """
-    if not inplace:
-        data = copy(data)
-
-    minValue = data.data.min()
-    maxValue = data.data.max()
-
-    if minValue == maxValue:
-        raise ValueError('Cannot normalize a uniform array.')
-
-    data.data -= minValue
-    data.data *= (upper - lower) / (maxValue - minValue)
-    data.data += lower
-
-    return data
+from IPython.display import display
 
 class Volume(Data):
     """A 3D volume that is the result of a tomographic reconstruction
@@ -239,7 +172,7 @@ class Volume(Data):
         attributes['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
         
         metadata = metadata
-        metadata['type'] = TOMOBASE_DATATYPES.SINOGRAM.value()
+        metadata['type'] = TOMOBASE_DATATYPES.Volume.value()
         metadata['axis'] = ['Projection', 'y', 'x'] if len(self.data.shape) == 3 else ['Projection', 'Signal', 'y', 'x']
         
         for key, value in self.metadata.items():
@@ -269,15 +202,14 @@ class Volume(Data):
 
         return cls(cls._transpose_from_view(data), scale, metadata)
 
-    def show(self, binning=4):
+    def show(self, display_width=800, display_height=800):
         """shows the sinogram in a stackview window
 
         Returns:
             _type_: _description_
         """
-        data = _bin(self.data, binning, inplace=False)
-        data = self._transpose_to_view(data=data)
-        display(stackview.orthogonal(data))
+        data = self._transpose_to_view(use_copy=True)
+        display(stackview.orthogonal(data, display_width=display_width, display_height=display_height))
     
 Volume._readers = {
     'rec': Volume._read_rec,

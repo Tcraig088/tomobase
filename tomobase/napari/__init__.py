@@ -1,2 +1,0 @@
-from tomobase.napari.base import TomographyMenuWidget
-from tomobase.napari.components import CheckableComboBox

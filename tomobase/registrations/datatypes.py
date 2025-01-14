@@ -1,7 +1,4 @@
 from tomobase.log import logger
-from tomobase.napari.layer_widgets.sinogram import SinogramDataWidget
-from tomobase.napari.layer_widgets.image import ImageDataWidget
-from tomobase.napari.layer_widgets.volume import VolumeDataWidget
 
 class DataTypeItem():
     """
@@ -133,4 +130,4 @@ class DataItemDict():
             
         raise Exception(f"Index {index} not found in TOMOBASE_DATATYPES")
     
-TOMOBASE_DATATYPES = DataItemDict( IMAGE=ImageDataWidget, SINOGRAM=SinogramDataWidget, VOLUME=VolumeDataWidget)
+TOMOBASE_DATATYPES = DataItemDict( IMAGE=None, SINOGRAM=None, VOLUME=None)

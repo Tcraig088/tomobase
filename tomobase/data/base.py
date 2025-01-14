@@ -112,7 +112,9 @@ class Data(ABC):
         except KeyError:
             raise ValueError(f"The given file type {ext.upper()} is not supported.")
 
-
+    @abstractmethod
+    def show(self):
+        pass
 
     @property
     @abstractmethod

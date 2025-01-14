@@ -30,36 +30,6 @@ from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.data.image import Image
 
 
-def _bin(data, factor, inplace=True):
-    """
-    Bin a 3D or 4D array along the first two axes.
-
-    Parameters:
-    data (numpy.ndarray): Input array to be binned.
-    factor (int): Binning factor.
-    inplace (bool): Whether to modify the array in place or return a new array.
-
-    Returns:
-    numpy.ndarray: Binned array.
-    """
-    if not inplace:
-        data = deepcopy(data)
-    
-    if data.ndim == 3:
-        # Bin the data for the first two axes
-        data = data.reshape(data.shape[0]//factor, factor, data.shape[1]//factor, factor, data.shape[2])
-        data = data.mean(axis=1)
-        data = data.mean(axis=2)
-    elif data.ndim == 4:
-        # Bin the data for the first two axes
-        data = data.reshape(data.shape[0]//factor, factor, data.shape[1]//factor, factor, data.shape[2], data.shape[3])
-        data = data.mean(axis=1)
-        data = data.mean(axis=2)
-    else:
-        raise ValueError("Input data must be a 3D or 4D array.")
-    
-    return data
-
 class Sinogram(Data):
     """A stack of projection images
 
@@ -275,7 +245,7 @@ class Sinogram(Data):
 
         return cls(cls._transpose_from_view(data), angles, scale, metadata)
 
-    def show(self, binning=4):
+    def show(self, display_width=800, display_height=800):
         """shows the sinogram in a stackview window
 
         Returns:
@@ -288,10 +258,9 @@ class Sinogram(Data):
         def on_slider_change(change):
             angle_widget.value = self.angles[change['new']]
         
-        data = _bin(self.data, binning, inplace=False)
-        data = self._transpose_to_view(data=data)
+        data = self._transpose_to_view(use_copy=True)
         
-        image_widget = stackview.slice(data)
+        image_widget = stackview.slice(data, display_width=display_width, display_height=display_height)
         for item in image_widget.children:
             if isinstance(item, (widgets.IntSlider, widgets.FloatSlider)):
                 item.observe(on_slider_change, names='value')

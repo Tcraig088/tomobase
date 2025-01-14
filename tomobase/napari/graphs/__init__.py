@@ -1,2 +1,0 @@
-from tomobase.napari.graphs.acquisition_xy import acquisition_xy_plot
-from tomobase.napari.graphs.acquisition_radial import acquisition_radial_plot

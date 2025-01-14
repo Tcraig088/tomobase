@@ -1,9 +1,5 @@
 from tomobase.log import logger
 
-from tomobase.napari.process_widgets.project import ProjectWidget
-from tomobase.napari.process_widgets.align import AlignWidget
-from tomobase.napari.process_widgets.reconstruct import ReconstructWidget
-
 class TransformItem():
     """
     Represents an  available datatype in the library.
@@ -169,6 +165,6 @@ class TransformItemDict():
             
         raise Exception(f"Index {index} not found in TOMOBASE_DATATYPES")
     
-TOMOBASE_TRANSFORM_CATEGORIES = TransformItemDict( ALIGN=AlignWidget, 
-                                         PROJECT=ProjectWidget,
-                                         RECONSTRUCT=ReconstructWidget)
+TOMOBASE_TRANSFORM_CATEGORIES = TransformItemDict( ALIGN=None, 
+                                         PROJECT=None,
+                                         RECONSTRUCT=None)

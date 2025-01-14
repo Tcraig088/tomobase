@@ -2,7 +2,6 @@ import logging
 
 # Create a logger
 logger = logging.getLogger('tomobase_logger')
-logger.setLevel(logging.DEBUG)  # Set the logging level
 
 handler = logging.StreamHandler()
 handler.setLevel(logging.DEBUG)
