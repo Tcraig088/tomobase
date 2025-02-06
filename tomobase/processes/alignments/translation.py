@@ -99,7 +99,7 @@ def align_sinogram_center_of_mass(sino:Sinogram, inplace:bool=True, extend_retur
 
 
     offset = np.asarray(sino.data.shape[:2]) / 2 - center_of_mass(np.sum(sino.data, axis=2))
-
+    #sino.data = np.roll(sino.data[:, :, i], shifts[i, :], axis=(0, 1))
     sino.data = shift(sino.data, (offset[0], offset[1], 0))
 
     if extend_return:
@@ -174,7 +174,7 @@ class TranslateSinogramManual:
         self._view()
 
     def _view( self):
-        self.data = self.sino._transpose_to_view()
+        self.data = self.sino._transpose_to_view(use_copy=True)
         self.tick_box = widgets.Checkbox(value=False, description='Move Green')
         self.shift_box = widgets.Checkbox(value=False, description='Shift All')
         self.x_slider = widgets.IntSlider(min=-self.shape[0]//2, max=self.shape[0]//2, value=0, description='x')
@@ -204,22 +204,34 @@ class TranslateSinogramManual:
 
     def _on_x_change(self, change):
         value = 0 
-        if self.tick_box.value:
-            value = 1
-        x = change.new -self.x
-        self.data[self.index + value, :, :]  = np.roll(self.data[self.index + value, :, :], (x, 0), axis=(0, 1))
-        self.view.update()
-        self.x = change.new
+        if not self.shift_box.value:
+            if self.tick_box.value:
+                value = 1
+            x = change.new -self.x
+            self.data[self.index + value, :, :]  = np.roll(self.data[self.index + value, :, :], (0, x), axis=(0, 1))
+            self.view.update()
+            self.x = change.new
+        else:
+            x = change.new -self.x
+            self.data[:, :, :]  = np.roll(self.data[:, :, :], (0, 0, x), axis=(0, 0, 1))
+            self.view.update()
+            self.x = change.new
 
 
     def _on_y_change(self, change):
         value = 0 
-        if self.tick_box.value:
-            value = 1
-        y = change.new -self.y
-        self.data[self.index + value, :, :]  = np.roll(self.data[self.index + value, :, :], (0, y), axis=(0, 1))
-        self.view.update()
-        self.y = change.new
+        if not self.shift_box.value:
+            if self.tick_box.value:
+                value = 1
+            y = change.new -self.y
+            self.data[self.index + value, :, :]  = np.roll(self.data[self.index + value, :, :], (y, 0), axis=(0, 1))
+            self.view.update()
+            self.y = change.new
+        else:
+            y = change.new -self.y
+            self.data[:, :, :]  = np.roll(self.data[:, :, :], (0, y, 0), axis=(0, 0, 1))
+            self.view.update()
+            self.y = change.new
 
 
 

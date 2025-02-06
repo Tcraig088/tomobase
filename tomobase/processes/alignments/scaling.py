@@ -58,6 +58,9 @@ def bin(sino:Sinogram, factor:int=2, inplace=True):
     else:
         raise ValueError("Input data must be a 3D or 4D array.")
     
+    if not sino.pixelsize==1.0:
+        sino.pixelsize = sino.pixelsize*factor
+    
     return sino
 
 @tomobase_hook_process(name='Pad Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories = _subcategories)

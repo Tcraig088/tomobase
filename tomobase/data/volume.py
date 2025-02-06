@@ -94,15 +94,16 @@ class Volume(Data):
         header[7:10] = data.shape
         # Physical dimensions in nm. Preserve float32 data type
         dimensions = self.pixelsize * np.array(data.shape, dtype='float32')
-        header[10:13] = dimensions.view(dtype='int32')
+        header[10:13] = dimensions.view('int32')
 
         data = data.flatten(order='F')
         if normalize:
+            data = data.astype(np.float32)
             data -= data.min()
             data *= 255 / data.max()
             data = data.astype('uint8')
 
-        with open(filename, 'w') as f:
+        with open(filename, 'wb') as f:
             header.tofile(f)
             data.tofile(f)
 

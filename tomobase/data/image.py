@@ -1,7 +1,7 @@
 import numpy as np
 import imageio as iio
 import stackview
-
+from copy import deepcopy
 from IPython.display import display
 import collections
 collections.Iterable = collections.abc.Iterable
@@ -61,46 +61,41 @@ class Image(Data):
     def _write_image(self, filename, **kwargs):
         iio.imwrite(filename, self.data)
 
-    
-    def _to_napari_layer(self, astuple = True ,**kwargs):
-        layer_info = {}
-        
-        layer_info['name'] = kwargs.get('name', 'Image')
-        layer_info['scale'] = kwargs.get('pixelsize' ,(self.pixelsize, self.pixelsize))
-        metadata = {'type': TOMOBASE_DATATYPES.IMAGE.value(),
-                    'metadata': self.metadata}
-        
-        for key, value in kwargs['viewsettings'].items():
-            layer_info[key] = value
-            
-        for key, value in kwargs.items():
-            if key != 'name' and key != 'pixelsize' and key != 'viewsettings':
-                metadata[key] = value
-        layer_info['metadata'] = {'ct metadata': metadata}
-        
-        if len(self.data.shape) == 3:
-            self.data.transpose(2,1,0)
-        layer = (self.data, layer_info ,'image')
-        
-        if astuple:
-            return layer
-        else:
-            import napari
-            return napari.layers.Layer.create(*layer)
-    
-    def show(self, display_width = 800, display_hieght=800):
-        obj = stackview.insight(self.data)
-        display(obj)
 
+    def _transpose_to_view(self, use_copy=False, data=None):
+        """ Transpose the data from the standard orientation for data processessing to the view orientation.
+        """
+        if use_copy:
+            data = deepcopy(self.data)
+            if len(data.shape) == 3:
+                data = data.transpose(2,1,0)
+            return data
+
+        if data is not None:
+            if len(data.shape) == 3:
+                data = data.transpose(2,1,0)
+            return data
+            
+        if len(self.data.shape) == 3:
+            self.data = self.data.transpose(2,1,0)
+
+        return self.data
+            
     @classmethod
-    def _from_napari_layer(cls, layer):
-        if layer.metadata['ct metadata']['type'] != TOMOBASE_DATATYPES.IMAGE:
-            raise ValueError(f'Layer of type {layer.metadata["ct metadata"]["type"]} not recognized')
-        if len(layer.data.shape) == 3:
-            layer.data.transpose(2,1,0)
-        image = Image(layer.data, layer.scale[0])
-        image.metadata = layer.metadata['ct metadata']['metadata']
-        return image
+    def _transpose_from_view(cls, data):
+        """ Transpose the data from the view orientation to the standard orientation for data processessing.
+        """
+        if len(data.shape) == 3:
+            data = data.transpose(2,1,0)
+        return data
+    
+    def show(self, width = 800, height=800):
+        data = self._transpose_to_view()
+        self.view = stackview.slice(self.data, display_width=width, display_height=height)
+        display(self.view)
+
+
+
 
     _readers = {}
     _writers = {

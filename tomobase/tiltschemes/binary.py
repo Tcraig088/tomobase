@@ -3,7 +3,8 @@ import numpy as np
 
 from tomobase.tiltschemes.tiltscheme import Tiltscheme
 from tomobase.hooks import tomobase_hook_tiltscheme
-
+from ipywidgets import widgets
+from IPython.display import display
 from tomobase.log import logger
 
 
@@ -99,3 +100,22 @@ class Binary(Tiltscheme):
             
     def get_angle_array(self, indices):
         return super().get_angle_array(indices)
+    
+    @staticmethod
+    def TiltSchemeWidget():
+        widget_max = widgets.FloatText(value=70, description='angle_max')
+        widget_min = widgets.FloatText(value=70, description='angle_min')
+        widget_k = widgets.IntText(value=8, description='k')
+        widget_bidirectional = widgets.Checkbox(value=True, description='bidirectional')
+        widget = widgets.HBox([widget_max, widget_min, widget_k, widget_bidirectional])
+        return widget
+    
+    @classmethod
+    def parsewidget(cls, widget):
+        _dict = {
+            'angle_max': widget.children[0].value,
+            'angle_min': widget.children[1].value,
+            'k': widget.children[2].value,
+            'isbidirectional': widget.children[3].value
+        }
+        return cls(**_dict)

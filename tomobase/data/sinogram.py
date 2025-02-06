@@ -51,7 +51,7 @@ class Sinogram(Data):
             Read a sinogram from an HDF5 file(.h5) 
     """
 
-    def __init__(self, data, angles, pixelsize=1.0, metadata={}):
+    def __init__(self, data, angles, pixelsize=1.0, times=None, metadata={}):
         """Create a sinogram
 
         Arguments:
@@ -70,7 +70,54 @@ class Sinogram(Data):
                               "images as tilt angles."))
         super().__init__(data, pixelsize, metadata)
         self.angles = np.asarray(angles)
+        if times is None:
+            self.times = np.linspace(1, len(angles), len(angles)+1)
+        else:
+            self.times = np.array(times)           
 
+
+    def sort(self, bytime = False):
+        """
+        Sort the sinogram by angles or by time
+        
+        Args:
+            bytime (bool): Sort by time instead of angles
+        """
+        if bytime:
+            indices = np.argsort(self.times)
+            self.times = self.times[indices]
+            self.data = self.data[:,:,indices]
+            self.angles = self.angles[indices]   
+        else:
+            indices = np.argsort(self.angles)
+            self.angles = self.angles[indices]
+            self.data = self.data[:,:,indices]
+            
+    def insert(self, img, angle, time=None):
+        """
+        Insert a new image into the sinogram
+        
+        Args:
+            img (numpy.ndarray): The image to insert
+            angle (float): The angle of the image
+            time (float): The time of acquisition
+        """
+        if time is None:
+            time = self.times[-1] + 1
+        self.data = np.dstack((self.data, img))
+        self.angles = np.append(self.angles, angle)
+        self.times = np.append(self.times, time)
+        
+    def remove(self, index):
+        """
+        Remove an image from the sinogram
+        
+        Args:
+            index (int): The index of the image to remove
+        """
+        self.data = np.delete(self.data, index, axis=2)
+        self.angles = np.delete(self.angles, index)
+        self.times = np.delete(self.times, index)
 
     @staticmethod
     def _read_h5(filename):
@@ -86,8 +133,7 @@ class Sinogram(Data):
             data[:,:,i] = f[key]['HAADF']
             times[i] = np.array(f[key]['acquisition timee (s)']).item()
             angles[i] = np.array(f[key]['alpha tilt (deg)']).item()
-
-        return Sinogram(data, angles, metadata={'times': times})
+        return Sinogram(data, angles, times=times)
 
 
     @staticmethod
@@ -96,7 +142,11 @@ class Sinogram(Data):
         print(metadata)
         pixelsize = metadata['pixelsize'][0]
         angles = metadata['angles']
-        return Sinogram(data, angles, pixelsize)
+        if 'times' in metadata:
+            times = metadata['times']
+        else:
+            times = np.linspace(1, len(angles), len(angles)+1)
+        return Sinogram(data, angles, pixelsize, times)
 
 
     @staticmethod
@@ -109,25 +159,25 @@ class Sinogram(Data):
         elif 'stack' in obj:
             key = 'stack'
         else:
-            key = None
+            key = 'obj'
             
-        if key is not None:
-            d = obj[key]['data'][0][0]
-            a = obj[key]['angles'][0][0]
-            p = obj[key]['pixelsize'][0][0]
-        else:
-            d = obj['obj']['data'][0][0]
-            a = obj['obj']['angles'][0][0]
-            p = obj['obj']['pixelsize'][0][0]
 
-        ts = Sinogram(d.squeeze(), a.squeeze(), p.squeeze())
+        d = obj[key]['data'][0][0]
+        a = obj[key]['angles'][0][0]
+        p = obj[key]['pixelsize'][0][0]
+        if 'times' in obj[key]:
+            t = obj[key]['times'][0][0]
+        else:
+            t = np.linspace(1, len(a), len(a)+1)
+
+        ts = Sinogram(d.squeeze(), a.squeeze(), p.squeeze(), t.squeeze())
         return ts
     
     def _write_mrc(self, filename, **kwargs):
-        mrcz.writeMRC(self.data, filename, meta={'angles': self.angles},pixelsize=[self.pixelsize, self.pixelsize, self.pixelsize])
+        mrcz.writeMRC(self.data, filename, meta={'angles': self.angles, 'times': self.times},pixelsize=[self.pixelsize, self.pixelsize, self.pixelsize])
 
     def _write_mat(self, filename, **kwargs):
-        myrec = {'data':self.data, 'angles':self.angles, 'pixelsize':self.pixelsize} 
+        myrec = {'data':self.data, 'angles':self.angles, 'pixelsize':self.pixelsize, 'times':self.times} 
         savemat(filename, {'obj': myrec})
     
     @staticmethod
@@ -245,28 +295,32 @@ class Sinogram(Data):
 
         return cls(cls._transpose_from_view(data), angles, scale, metadata)
 
-    def show(self, display_width=800, display_height=800):
+    def show(self, display_width=800, display_height=800, showdisplay=True):
         """shows the sinogram in a stackview window
 
         Returns:
             _type_: _description_
         """
-        angle_widget = widgets.FloatText(value=self.angles[0],
-                                    description='Angle:',
-                                    disabled=True)
+        self._angle_widget = widgets.FloatText(value=self.angles[0],description='Angle:',disabled=True)
+        self._time_widget = widgets.FloatText(value=self.times[0],description='Time:',disabled=True)
         
-        def on_slider_change(change):
-            angle_widget.value = self.angles[change['new']]
+        
         
         data = self._transpose_to_view(use_copy=True)
         
         image_widget = stackview.slice(data, display_width=display_width, display_height=display_height)
-        for item in image_widget.children:
-            if isinstance(item, (widgets.IntSlider, widgets.FloatSlider)):
-                item.observe(on_slider_change, names='value')
-        display(widgets.VBox([image_widget, angle_widget]))
+        slider = image_widget.children[0].children[0].children[1].children[0].children[0].children[1]
+        slider.observe(self._on_slider_change, names='value')
+        slider.value = 0
+        obj = widgets.VBox([image_widget, self._angle_widget, self._time_widget]) 
+        if showdisplay:
+            display(obj)
+        else: 
+            return obj
         
-
+    def _on_slider_change(self, change):
+            self._angle_widget.value = self.angles[change['new']]
+            self._time_widget.value = self.times[change['new']]
 
 # Register the readers
 Sinogram._readers = {

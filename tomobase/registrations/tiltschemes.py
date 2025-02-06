@@ -148,6 +148,15 @@ class TiltSchemeItemDict():
             iterator: an iterator over the (key, value) pairs in the dictionary
         """
         return self._dict.items()
+    
+    def keys(self):
+        """
+        Returns an iterator over the keys in the dictionary.
+        
+        Returns:
+            iterator: an iterator over the keys in the dictionary
+        """
+        return self._dict.keys()
   
 TOMOBASE_TILTSCHEMES = TiltSchemeItemDict()  
 TOMOBASE_TILTSCHEMES.update()   
