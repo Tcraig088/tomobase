@@ -32,7 +32,7 @@ def acquisition_radial_plot(**kwargs):
         time = sino.time
         time_title = 'Projections'
     
-    cm = matplotlib.cm.get_cmap('viridis')
+    cm = matplotlib.cm.get_cmap('jet')
     norm_time = (time - np.min(time)) / (np.max(time) - np.min(time))
     colors = [cm(t) for t in norm_time]
     colors = ['rgb({}, {}, {})'.format(int(c[0]*255), int(c[1]*255), int(c[2]*255)) for c in colors]
@@ -43,7 +43,7 @@ def acquisition_radial_plot(**kwargs):
         x=[None], y=[None],  # Dummy data
         mode='markers',
         marker=dict(
-            colorscale='Viridis',
+            colorscale='jet',
             cmin=np.min(time),
             cmax=np.max(time),
             colorbar=dict(

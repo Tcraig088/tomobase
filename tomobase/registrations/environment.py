@@ -1,5 +1,12 @@
+
+import enum
 import logging
-logger = logging.getLogger('tomobase_logger')
+from tomobase.log import logger
+
+class GPUContext(enum.Enum):
+    CUPY = 1
+    NUMPY = 2
+
 
 class EnvironmentRegistration():
     """
@@ -20,7 +27,10 @@ class EnvironmentRegistration():
     def __init__(self):
         self._hyperspy_checked = False
         self._hyperspy_available = False
-    
+
+        self._cupy_checked = False
+        self._cupy_available = False
+
     @property
     def hyperspy(self):
         if not self._hyperspy_checked:
@@ -29,11 +39,36 @@ class EnvironmentRegistration():
                 self._hyperspy_available = True
             except ModuleNotFoundError:
                 self._hyperspy_available = False
-                logging.error("hyperspy module not found.")
+                logger.error("hyperspy module not found.")
             except Exception as e:
                 self._hyperspy_available = False
-                logging.error(e)
+                logger.error(e)
         self._hyperspy_checked = True
         return self._hyperspy_available
     
+    @property
+    def cupy(self):
+        if not self._cupy_checked:
+            try:
+                import cupy as cp
+                self._cupy_available = True
+            except ModuleNotFoundError:
+                self._cupy_available = False
+                logging.error("cupy module not found.")
+            except Exception as e:
+                self._cupy_available = False
+                logging.error(e)
+        self._cupy_checked = True
+        return self._cupy_available
+    
+    def set_gpucontext(self, context:GPUContext):
+        match context:
+            case GPUContext.CUPY:
+                import cupy as xp
+            case GPUContext.NUMPY:
+                import numpy as xp
+            case _:
+                raise ValueError("Invalid GPU Context")
+
+import numpy as xp
 TOMOBASE_ENVIRONMENT = EnvironmentRegistration()
