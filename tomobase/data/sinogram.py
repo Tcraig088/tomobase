@@ -66,16 +66,17 @@ class Sinogram(Data):
                 The width of the pixels in nanometer (default 1.0)
         """
         if len(angles) != data.shape[2]:
-            raise ValueError(("There should be the same number of projection "
-                              "images as tilt angles."))
-        super().__init__(data, pixelsize, metadata)
-        self.angles = np.asarray(angles)
+            raise ValueError(("There should be the same number of projection images as tilt angles."))
         if times is None:
-            self.times = np.linspace(1, len(angles), len(angles)+1)
-        else:
-            self.times = np.array(times)           
-
-
+            times = np.linspace(1, len(angles), len(angles)+1)
+        elif len(times) != len(angles):
+            raise ValueError(("There should be the same number of projection images as times."))
+        
+        self.times = times
+        self.data = data
+        super().__init__(pixelsize, metadata)
+        self.angles = np.asarray(angles)
+        
     def sort(self, bytime = False):
         """
         Sort the sinogram by angles or by time
@@ -86,12 +87,13 @@ class Sinogram(Data):
         if bytime:
             indices = np.argsort(self.times)
             self.times = self.times[indices]
-            self.data = self.data[:,:,indices]
-            self.angles = self.angles[indices]   
+            self.angles = self.angles[indices] 
+            self.data = self.data[indices,:,:]
         else:
             indices = np.argsort(self.angles)
             self.angles = self.angles[indices]
-            self.data = self.data[:,:,indices]
+            self.times = self.times[indices]
+            self.data = self.data[indices,:,:]
             
     def insert(self, img, angle, time=None):
         """
@@ -115,7 +117,7 @@ class Sinogram(Data):
         Args:
             index (int): The index of the image to remove
         """
-        self.data = np.delete(self.data, index, axis=2)
+        self.data = np.delete(self.data, index, axis=0)
         self.angles = np.delete(self.angles, index)
         self.times = np.delete(self.times, index)
 
@@ -187,16 +189,16 @@ class Sinogram(Data):
         filenames = glob.glob(dirname + "*.emi")
         # Read the first file for image size and metadata
         im = Image.from_file(filenames[0])
-        data = np.zeros((im.data.shape[0], im.data.shape[1], len(filenames)))
+        data = np.zeros((len(filenames), im.data.shape[0], im.data.shape[1] ))
         angles = np.zeros(len(filenames))
         # Set the contents of the first file
-        data[:, :, 0] = im.data
+        data[0, :, :] = im.data
         angles[0] = im.metadata['alpha_tilt']
         pixelsize = im.pixelsize
         # Loop over the other files to get all the projection images
         for i, filename in enumerate(filenames[1:], start=1):
             im = Image.from_file(filenames[0])
-            data[:, :, i] = im.data
+            data[i, :, :] = im.data
             angles[i] = im.metadata['alpha_tilt']
         # Sort the images by tilt angle and return the sinogram
         sorted_indices = np.argsort(angles)
@@ -211,40 +213,7 @@ class Sinogram(Data):
         'ali': _write_mrc,
     }
     
-    def _transpose_to_view(self, use_copy=False, data=None):
-        """ Transpose the data from the standard orientation for data processessing to the view orientation.
-        """
-        if use_copy:
-            data = deepcopy(self.data)
-            if len(data.shape) == 3:
-                data = data.transpose(2,1,0)
-            elif len(data.shape) == 4:
-                data = data.transpose(2,3,1,0)
-            return data
 
-        if data is not None:
-            if len(data.shape) == 3:
-                data = data.transpose(2,1,0)
-            elif len(data.shape) == 4:
-                data = data.transpose(2,3,1,0)
-            return data
-            
-        if len(self.data.shape) == 3:
-            self.data = self.data.transpose(2,1,0)
-        elif len(self.data.shape) == 4:
-            self.data = self.data.transpose(2,3,1,0)
-        return self.data
-            
-    @classmethod
-    def _transpose_from_view(cls, data):
-        """ Transpose the data from the view orientation to the standard orientation for data processessing.
-        """
-        if len(data.shape) == 3:
-            data = data.transpose(2,1,0)
-        else:
-            data = data.transpose(3,2,0,1)
-        return data
-    
     def to_data_tuple(self, attributes:dict={}, metadata:dict={}):
         """_summary_
 
@@ -271,7 +240,6 @@ class Sinogram(Data):
             metadata[key] = value
 
         attributes['metadata'] = {'ct metadata': metadata}
-        self.data = self._transpose_to_view()
         layerdata = (self.data, attributes, 'image')
         
         return layerdata
@@ -293,7 +261,7 @@ class Sinogram(Data):
         metadata.pop('axis')
         metadata.pop('type')
 
-        return cls(cls._transpose_from_view(data), angles, scale, metadata)
+        return cls(data, angles, scale, metadata)
 
     def show(self, display_width=800, display_height=800, showdisplay=True):
         """shows the sinogram in a stackview window

@@ -25,8 +25,7 @@ class Data(ABC):
      - implement the methods _to_napari_layer and _from_napari_layer inorder to create napari image layers from the data and vice versa
     """
 
-    def __init__(self, data, pixelsize, metadata={}):
-        self.data = data
+    def __init__(self, pixelsize, metadata={}):
         self.pixelsize = pixelsize
         self.metadata = metadata
 
@@ -72,21 +71,7 @@ class Data(ABC):
         """
         class_name_upper = cls.__name__.upper()
         return TOMOBASE_DATATYPES[class_name_upper].value()
-    
-
-    def show(self, viewer = None):
-        """Display the data in an image viewer
-
-        Arguments:
-            viewer (napari.Viewer)
-                The viewer to which to add the image, if None a new viewer will
-                be created (default: None)
-        """
-        if viewer is None:
-            viewer = napari.Viewer()
-        viewer.add_image(**self._to_napari_layer())
-        return viewer
-
+      
     def to_file(self, filename=None, **kwargs):
         """Save the data to a file
 

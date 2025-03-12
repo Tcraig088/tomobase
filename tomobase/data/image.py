@@ -26,7 +26,7 @@ class Image(Data):
             attribute depend on from which file they were read
     """
 
-    def __init__(self, data, pixelsize=1.0):
+    def __init__(self, data, pixelsize=1.0, metadata={}):
         """Create an image
 
         Arguments:
@@ -37,8 +37,8 @@ class Image(Data):
             pixelsize (float)
                 The width of the pixels in nanometer (default 1.0)
         """
-        super().__init__(data, pixelsize)
-        self.metadata = {}
+        self.data = data
+        super().__init__(pixelsize, metadata=metadata)
 
     @staticmethod
     def _read_emi(filename, **kwargs):

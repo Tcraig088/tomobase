@@ -34,8 +34,9 @@ class Volume(Data):
             pixelsize (float)
                 The width of the voxels in nanometer (default 1.0)
         """
-        super().__init__(data, pixelsize, metadata)
-
+        self.data = data
+        super().__init__(pixelsize, metadata)
+    
     @staticmethod
     def _read_rec(filename, normalize=True, **kwargs):
         with open(filename, 'rb') as f:
@@ -121,40 +122,7 @@ class Volume(Data):
         'tiff': _write_tiff,
     }
 
-    def _transpose_to_view(self, use_copy=False, data=None):
-        """ Transpose the data from the standard orientation for data processessing to the view orientation.
-        """
-        if use_copy:
-            data = deepcopy(self.data)
-            if len(data.shape) == 3:
-                data = data.transpose(2,1,0)
-            elif len(data.shape) == 4:
-                data = data.transpose(2,3,1,0)
-            return data
-        
-        if data is not None:
-            if len(data.shape) == 3:
-                data = data.transpose(2,1,0)
-            elif len(data.shape) == 4:
-                data = data.transpose(2,3,1,0)
-            return data
-        
-        if len(self.data.shape) == 3:
-            self.data = self.data.transpose(2,1,0)
-        elif len(self.data.shape) == 4:
-            self.data = self.data.transpose(2,3,1,0)
-        return self.data
-            
-    @classmethod
-    def _transpose_from_view(cls, data):
-        """ Transpose the data from the view orientation to the standard orientation for data processessing.
-        """
-        if len(data.shape) == 3:
-            data = data.transpose(2,1,0)
-        else:
-            data = data.transpose(3,2,0,1)
-        return data
-    
+
     def to_data_tuple(self, attributes:dict={}, metadata:dict={}):
         """_summary_
 
@@ -165,7 +133,7 @@ class Volume(Data):
         Returns:
             layerdata: Napari Layer Data Tuple
         """
-        logger.debug('Converting Sinogram to Napari Layer Data Tuple: Shape: %s, Angles: %s, Pixelsize: %s', self.data.shape, self.angles, self.pixelsize)
+        logger.debug('Converting Sinogram to Napari Layer Data Tuple: Shape: %s, Angles: %s, Pixelsize: %s', self.data.shape, self.pixelsize)
         attributes = attributes
         attributes['name'] = attributes.get('name', 'Volume')
         attributes['colormap'] = 'magma'  
@@ -173,14 +141,13 @@ class Volume(Data):
         attributes['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
         
         metadata = metadata
-        metadata['type'] = TOMOBASE_DATATYPES.Volume.value()
+        metadata['type'] = TOMOBASE_DATATYPES.VOLUME.value()
         metadata['axis'] = ['Projection', 'y', 'x'] if len(self.data.shape) == 3 else ['Projection', 'Signal', 'y', 'x']
         
         for key, value in self.metadata.items():
             metadata[key] = value
 
         attributes['metadata'] = {'ct metadata': metadata}
-        self.data = self._transpose_to_view()
         layerdata = (self.data, attributes, 'image')
         
         return layerdata
