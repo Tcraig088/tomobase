@@ -3,12 +3,12 @@ import numpy as np
 
 from qtpy.QtWidgets import QDoubleSpinBox, QSpinBox, QGridLayout, QLabel
 
-from tomobase.tiltschemes.tiltscheme import Tiltscheme
+from tomobase.tiltschemes.tiltscheme import TiltScheme
 from tomobase.hooks import tomobase_hook_tiltscheme
  
 @tomobase_hook_tiltscheme('GRS')  
-class GRS(Tiltscheme):
-    def __init__(self, angle_min, angle_max, index=1):
+class GRS(TiltScheme):
+    def __init__(self, angle_min:float=-70, angle_max:float=70, index:int=1):
         super().__init__()
         self.angle_max = angle_max
         self.angle_min = angle_min
@@ -16,7 +16,6 @@ class GRS(Tiltscheme):
         self.gr = (1+np.sqrt(5))/2
         self.index = index
 
-        
     def get_angle(self):
         angle_rad = np.mod(self.index*self.gr*self.range, self.range) + np.radians(self.angle_min)
         self.index += 1

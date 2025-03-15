@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as  np
-class Tiltscheme(ABC):
+
+class TiltScheme(ABC):
     """Base Class for a Tilt Scheme Plugin.
 
     Attributes:

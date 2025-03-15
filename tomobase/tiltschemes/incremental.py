@@ -1,11 +1,11 @@
 import numpy as np
 
 from tomobase.hooks import tomobase_hook_tiltscheme
-from tomobase.tiltschemes.tiltscheme import Tiltscheme
+from tomobase.tiltschemes.tiltscheme import TiltScheme
 
 @tomobase_hook_tiltscheme('INCREMENTAL')  
-class Incremental(Tiltscheme):
-    def __init__(self, angle_start, angle_end, step):
+class Incremental(TiltScheme):
+    def __init__(self, angle_start:float=-70, angle_end:float=70, step:bool=2):
         super().__init__()
         self.angle_start = angle_start
         self.angle_end = angle_end  

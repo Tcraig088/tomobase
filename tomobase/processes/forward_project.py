@@ -3,6 +3,7 @@ import numpy as np
 from copy import deepcopy
 from scipy import ndimage
 
+from tomobase.typehints import TILTANGLETYPE
 from tomobase.utils import _create_projector
 from tomobase.data import Volume, Sinogram
 from tomobase.log import logger
@@ -11,12 +12,12 @@ from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 
 
 @tomobase_hook_process(name='Project', category=TOMOBASE_TRANSFORM_CATEGORIES.PROJECT.value())
-def project(volume, angles, use_gpu=True):
+def project(volume:Volume, angles:TILTANGLETYPE, use_gpu:bool=True):
     """Create a sinogram from a volume using forward projection.
 
     Arguments:
         volume (Volume)
-            The volume
+            The volum e
         angles (iterable)
             The projection angles in degrees
         use_gpu (bool)
@@ -29,6 +30,8 @@ def project(volume, angles, use_gpu=True):
             The projection data
     """
     data = np.transpose(volume.data, (2, 1, 0))  # ASTRA expects (z, y, x)
+    if isinstance(angles, tuple):
+        angles = np.array([angles[0].get_angle() for i in range(angles[1])]) 
     angles = np.asarray(angles)
     use_gpu = use_gpu and astra.use_cuda()
 
@@ -41,6 +44,6 @@ def project(volume, angles, use_gpu=True):
         sino_id, sino[i, :, :] = astra.creators.create_sino(data[i, :, :], proj_id)
         astra.astra.delete(sino_id)
 
-    sinogram = Sinogram(np.transpose(sino, (0, 2, 1)), angles, volume.pixelsize)  # ASTRA gives (z, n, d)
+    sinogram = Sinogram(np.transpose(sino, (1,0,2)), angles, volume.pixelsize)  # ASTRA gives (z, n, d)
     astra.astra.delete(proj_id)
     return sinogram

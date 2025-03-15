@@ -40,7 +40,7 @@ def reconstruct_weighted_sirt(sino:Sinogram, iterations:int=0, use_gpu:bool=True
     indices = np.argsort(sino.angles)
     sino.angles = sino.angles[indices]
     data = sino.data[:,:,indices]
-    data = np.transpose(data, (0, 2, 1))  # ASTRA expects (z, n, d)
+    data = np.transpose(sino.data, (1, 0, 2)) # ASTRA expects (z, n, d)
 
     weights= np.ones_like(sino.angles)
     if weighted == True:
@@ -128,7 +128,8 @@ def reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gpu:bool
         Volume
             The reconstructed volume
     """
-    data = np.transpose(sino.data, (0, 2, 1))  # ASTRA expects (z, n, d)
+    logger.info('Reconstructing...')
+    data = np.transpose(sino.data, (1, 0, 2))  # ASTRA expects (z, n, d)
     use_gpu = use_gpu and astra.use_cuda()
 
     method = method.upper()

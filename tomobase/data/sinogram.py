@@ -65,7 +65,7 @@ class Sinogram(Data):
             pixelsize (float)
                 The width of the pixels in nanometer (default 1.0)
         """
-        if len(angles) != data.shape[2]:
+        if len(angles) != data.shape[0]:
             raise ValueError(("There should be the same number of projection images as tilt angles."))
         if times is None:
             times = np.linspace(1, len(angles), len(angles)+1)
@@ -261,7 +261,7 @@ class Sinogram(Data):
         metadata.pop('axis')
         metadata.pop('type')
 
-        return cls(data, angles, scale, metadata)
+        return cls(data, angles, scale)
 
     def show(self, display_width=800, display_height=800, showdisplay=True):
         """shows the sinogram in a stackview window

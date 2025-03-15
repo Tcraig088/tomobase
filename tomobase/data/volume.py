@@ -133,7 +133,7 @@ class Volume(Data):
         Returns:
             layerdata: Napari Layer Data Tuple
         """
-        logger.debug('Converting Sinogram to Napari Layer Data Tuple: Shape: %s, Angles: %s, Pixelsize: %s', self.data.shape, self.pixelsize)
+        logger.debug('Converting Volume to Napari Layer Data Tuple: Shape: %s, Pixelsize: %s', self.data.shape, self.pixelsize)
         attributes = attributes
         attributes['name'] = attributes.get('name', 'Volume')
         attributes['colormap'] = 'magma'  
