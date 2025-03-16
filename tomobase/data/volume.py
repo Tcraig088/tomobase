@@ -168,7 +168,7 @@ class Volume(Data):
         metadata.pop('axis')
         metadata.pop('type')
 
-        return cls(cls._transpose_from_view(data), scale, metadata)
+        return cls(data, scale, metadata)
 
     def show(self, display_width=800, display_height=800):
         """shows the sinogram in a stackview window

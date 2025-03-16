@@ -30,6 +30,7 @@ def project(volume:Volume, angles:TILTANGLETYPE, use_gpu:bool=True):
             The projection data
     """
     data = np.transpose(volume.data, (2, 1, 0))  # ASTRA expects (z, y, x)
+    print(angles)
     if isinstance(angles, tuple):
         angles = np.array([angles[0].get_angle() for i in range(angles[1])]) 
     angles = np.asarray(angles)

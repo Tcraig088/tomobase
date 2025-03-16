@@ -20,8 +20,8 @@ from qtpy.QtCore import Qt
 _subcategories = {}
 _subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value()] = 'Tilt Axis'
 @tomobase_hook_process(name='Align Tilt Shift', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
-def align_tilt_axis_shift(sino: Sinogram, method='sirt', offsets=None, offset=None,
-                          inplace=True, verbose=True, return_offset=False, **kwargs):
+def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=None,
+                          inplace=True, extend_return:bool=False, **kwargs):
     """Align the horizontal shift of the tilt axis of a sinogram other using
     reprojection
 
@@ -73,14 +73,14 @@ def align_tilt_axis_shift(sino: Sinogram, method='sirt', offsets=None, offset=No
 
     sino.data = shift(sino.data, (0, offset, 0))
 
-    if return_offset:
+    if extend_return:
         return sino, offset
     else:
         return sino
 
 @tomobase_hook_process(name='Align Tilt Rotation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
-def align_tilt_axis_rotation(sino:Sinogram, method='sirt', angles=None, angle=None,
-                             inplace=True, verbose=True, extend_return=False, **kwargs):
+def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=None,
+                             inplace:bool=True, extend_return:bool=False, **kwargs):
     """Align the rotation of the tilt axis of a sinogram other using
     reprojection
 
@@ -114,6 +114,7 @@ def align_tilt_axis_rotation(sino:Sinogram, method='sirt', angles=None, angle=No
         Sinogram
             The result
     """
+    angles=None
     if not inplace:
         sino = copy(sino)
 
@@ -138,7 +139,7 @@ def align_tilt_axis_rotation(sino:Sinogram, method='sirt', angles=None, angle=No
         return sino
        
 @tomobase_hook_process(name='Align Tilt Rotation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
-def backlash_correct(sino: Sinogram, tolerance= 10, method='bounded', extend_return=False, inplace = True):
+def backlash_correct(sino: Sinogram, tolerance:float= 10.0, method:str='bounded', extend_return:bool=False, inplace:bool = True):
     """Correct Backlash Artefacts by Curve Fitting """
     
     if not inplace:

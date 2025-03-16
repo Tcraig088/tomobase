@@ -80,9 +80,9 @@ def translational_misalignment(sino: Sinogram,
         if i == 0:
             shifts[i, :] = 0
             continue
-        image_offset_x = int(np.round(sino.data.shape[0] * np.random.uniform(-offset, offset)))
-        image_offset_y = int(np.round(sino.data.shape[1] * np.random.uniform(-offset, offset)))
-        sino.data[:, :, i] = np.roll(sino.data[:, :, i], (image_offset_x, image_offset_y), axis=(0, 1))
+        image_offset_x = int(np.round(sino.data.shape[1] * np.random.uniform(-offset, offset)))
+        image_offset_y = int(np.round(sino.data.shape[2] * np.random.uniform(-offset, offset)))
+        sino.data[i, :, :] = np.roll(sino.data[i, :, :], (image_offset_x, image_offset_y), axis=(1, 2))
         shifts[i, :] = (image_offset_x, image_offset_y)
     if extend_return:
         return sino, shifts
@@ -108,13 +108,13 @@ def rotational_misalignment(sino: Sinogram,
     if extend_return:
         angles_original =  deepcopy(sino.angles)
         
-    rotations = np.zeros(sino.data.shape[2])
-    for i in range(sino.data.shape[2]):
+    rotations = np.zeros(sino.data.shape[0])
+    for i in range(sino.data.shape[0]):
         rotations[i] = tilt_theta * np.random.uniform(-1, 1)
-        sino.data[:, :, i] = rotate(sino.data[:, :, i], rotations[i], reshape=False)
+        sino.data[i, :, : ] = rotate(sino.data[i, :, :], rotations[i], reshape=False)
     
 
-    for i in range(sino.data.shape[2]):
+    for i in range(sino.data.shape[0]):
         offset = tilt_alpha * np.random.uniform(-1, 1)
         if i > 0:
             if backlash_backwards and sino.angles[i] < sino.angles[i-1]:
