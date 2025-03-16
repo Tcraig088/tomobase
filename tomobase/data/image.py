@@ -5,7 +5,7 @@ from copy import deepcopy
 from IPython.display import display
 import collections
 collections.Iterable = collections.abc.Iterable
-
+from tomobase.log import logger
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.registrations.environment import TOMOBASE_ENVIRONMENT
 if TOMOBASE_ENVIRONMENT.hyperspy:
@@ -62,40 +62,40 @@ class Image(Data):
         iio.imwrite(filename, self.data)
 
 
-    def _transpose_to_view(self, use_copy=False, data=None):
-        """ Transpose the data from the standard orientation for data processessing to the view orientation.
-        """
-        if use_copy:
-            data = deepcopy(self.data)
-            if len(data.shape) == 3:
-                data = data.transpose(2,1,0)
-            return data
-
-        if data is not None:
-            if len(data.shape) == 3:
-                data = data.transpose(2,1,0)
-            return data
-            
-        if len(self.data.shape) == 3:
-            self.data = self.data.transpose(2,1,0)
-
-        return self.data
-            
-    @classmethod
-    def _transpose_from_view(cls, data):
-        """ Transpose the data from the view orientation to the standard orientation for data processessing.
-        """
-        if len(data.shape) == 3:
-            data = data.transpose(2,1,0)
-        return data
-    
     def show(self, width = 800, height=800):
         data = self._transpose_to_view()
         self.view = stackview.slice(self.data, display_width=width, display_height=height)
         display(self.view)
 
 
+    def to_data_tuple(self, attributes:dict={}, metadata:dict={}):
+        """_summary_
 
+        Args:
+            attributes (dict, optional): _description_. Defaults to {}.
+            metadata (dict, optional): _description_. Defaults to {}.
+
+        Returns:
+            layerdata: Napari Layer Data Tuple
+        """
+        logger.debug('Converting Image to Napari Layer Data Tuple: Shape: %s, Pixelsize: %s', self.data.shape, self.pixelsize)
+        attributes = attributes
+        attributes['name'] = attributes.get('name', 'Image')
+        attributes['scale'] = attributes.get('pixelsize' ,(self.pixelsize, self.pixelsize, self.pixelsize))
+        attributes['colormap'] = attributes.get('colormap', 'gray')
+        attributes['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
+        
+        metadata = metadata
+        metadata['type'] = TOMOBASE_DATATYPES.IMAGE.value()
+        metadata['axis'] = ['Signal', 'y', 'x'] if len(self.data.shape) == 3 else ['y', 'x']
+        
+        for key, value in self.metadata.items():
+            metadata[key] = value
+
+        attributes['metadata'] = {'ct metadata': metadata}
+        layerdata = (self.data, attributes, 'image')
+        
+        return layerdata
 
     _readers = {}
     _writers = {
