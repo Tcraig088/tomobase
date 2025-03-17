@@ -5,7 +5,7 @@ from tomobase.tiltschemes.tiltscheme import TiltScheme
 
 @tomobase_hook_tiltscheme('INCREMENTAL')  
 class Incremental(TiltScheme):
-    def __init__(self, angle_start:float=-70, angle_end:float=70, step:bool=2):
+    def __init__(self, angle_start:float=-70, angle_end:float=70, step:float=2):
         super().__init__()
         self.angle_start = angle_start
         self.angle_end = angle_end  

@@ -9,11 +9,31 @@ from tomobase.data import Sinogram
   
 _subcategories = {}
 _subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value()] = 'Misalignment'
-@tomobase_hook_process(name='Add Noise', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
-def add_noise(sino: Sinogram, 
+@tomobase_hook_process(name='Gaussian Filter', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+def gaussian_filter(sino: Sinogram, 
               gaussian_sigma:float=1,
-              poisson_noise:float= 0.5, 
               inplace:bool=True):
+    """_summary_
+
+    Args:
+        sino (Sinogram): _description_
+        gaussian_sigma (float, optional): _description_. Defaults to 1.
+        inplace (bool, optional): _description_. Defaults to True.
+
+    Returns:
+        _type_: _description_
+    """
+    if not inplace:
+        sino = deepcopy(sino)
+
+    # Add Gaussian noise
+    sino.data = gaussian_filter(sino.data, gaussian_sigma)
+    return sino
+
+@tomobase_hook_process(name='Poisson', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+def poisson_noise(sino: Sinogram, 
+                  rescale:float=True,
+                  inplace:bool=True):
     """Add Gaussian and Poisson noise to the sinogram.
 
     Arguments:
@@ -36,14 +56,11 @@ def add_noise(sino: Sinogram,
     if not inplace:
         sino = deepcopy(sino)
 
-    # Add Gaussian noise
-    sino.data = gaussian_filter(sino.data, sigma=gaussian_sigma)
-
-    # Add Poisson noise
-    array = np.ones_like(sino.data)
-    array = random_noise(array, mode="poisson")
-    sino.data += (poisson_noise*array)
+    sino.data = sino.data*rescale
+    sino.data = np.random.poisson(sino.data)
     return sino
+
+
 
 @tomobase_hook_process(name='Translational Misalignment', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
 def translational_misalignment(sino: Sinogram, 

@@ -176,7 +176,7 @@ class Sinogram(Data):
         return ts
     
     def _write_mrc(self, filename, **kwargs):
-        mrcz.writeMRC(self.data, filename, meta={'angles': self.angles, 'times': self.times},pixelsize=[self.pixelsize, self.pixelsize, self.pixelsize])
+        mrcz.writeMRC(self.data, filename, meta={'angles': self.angles, 'times': self.times}, pixelsize=[self.pixelsize, self.pixelsize, self.pixelsize])
 
     def _write_mat(self, filename, **kwargs):
         myrec = {'data':self.data, 'angles':self.angles, 'pixelsize':self.pixelsize, 'times':self.times} 

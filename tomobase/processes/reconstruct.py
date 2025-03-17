@@ -12,7 +12,7 @@ from tomobase.log import logger
 
 
 @tomobase_hook_process(name='Reconstruct Weighted SIRT', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value())
-def reconstruct_weighted_sirt(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weighted=False):
+def reconstruct_weighted_sirt(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weighted:bool=False):
     """Reconstruct a volume from a given sinogram.
 
     Arguments:
