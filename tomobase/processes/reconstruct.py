@@ -37,16 +37,17 @@ def reconstruct_weighted_sirt(sino:Sinogram, iterations:int=0, use_gpu:bool=True
         Volume
             The reconstructed volume
     """
+    print('new call')
     indices = np.argsort(sino.angles)
     sino.angles = sino.angles[indices]
-    data = sino.data[:,:,indices]
-    data = np.transpose(sino.data, (1, 0, 2)) # ASTRA expects (z, n, d)
+    data = sino.data[indices, : ,:]
+    data = np.transpose(sino.data, (2,0,1)) # ASTRA expects (z, n, d)
 
     weights= np.ones_like(sino.angles)
     if weighted == True:
+        print('unnecessary')
         sorted_angles = deepcopy(sino.angles) +  90
         n_angles = len(sorted_angles)
-        print(n_angles)
         for i in range(len(sorted_angles)):
             if i == 0:
                 weights[i] = 0.5*(180 - sorted_angles[n_angles-1] + sorted_angles[i+1])
@@ -84,9 +85,11 @@ def reconstruct_weighted_sirt(sino:Sinogram, iterations:int=0, use_gpu:bool=True
     C = np.reshape(1/(W.T*range_shape), (d, d))
     R = np.minimum(R, 1 / 10**-6)
     C = np.minimum(C, 1 / 10**-6)
-
+    print('entry', np.sum(sino.data))
     for i in iterator:
         for j in range(iterations):
+            if np.sum(data[i, :, :]) != 0:
+                print('loop', i, j, np.sum(vol[i, :, :]), np.sum(data[i, :, :]))
             A = np.transpose(np.transpose(np.reshape(W*vol[i, :, :], (n, d)), (1,0))*weights,(1,0)) 
             B = np.transpose(np.reshape(np.transpose(data[i, :, :],(1,0))*weights,(d,n)), (1,0))
             D = R*(B - A)
@@ -94,9 +97,10 @@ def reconstruct_weighted_sirt(sino:Sinogram, iterations:int=0, use_gpu:bool=True
             vol[i, :, :] = np.reshape(np.minimum(vol[i, :, :], data.max()), (d, d))
             vol[i, :, :] = np.reshape(np.maximum(vol[i, :, :], 0), (d, d))
             vol[i, :, :] = vol[i, :, :] * (default_mask & mask[i, :, :])
+            #print('loop', i, j, np.sum(vol[i, :, :]), np.sum(data[i, :, :]))
 
 
-    volume = Volume(np.transpose(vol, (2, 1, 0)), sino.pixelsize)  # ASTRA gives (z, y, x)
+    volume = Volume(np.transpose(vol, (2, 1,0)), sino.pixelsize)  # ASTRA gives (z, y, x)
     astra.astra.delete(proj_id)
     logger.info('type of volume: ' + str(type(volume)))
     return volume
@@ -129,7 +133,7 @@ def reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gpu:bool
             The reconstructed volume
     """
     logger.info('Reconstructing...')
-    data = np.transpose(sino.data, (1, 0, 2))  # ASTRA expects (z, n, d)
+    data = np.transpose(sino.data, (2,0,1))  # ASTRA expects (z, n, d)
     use_gpu = use_gpu and astra.use_cuda()
 
     method = method.upper()
