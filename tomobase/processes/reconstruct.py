@@ -7,12 +7,11 @@ from tomobase.utils import _create_projector, _get_default_iterations, _circle_m
 from tomobase.data import Volume, Sinogram
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from tomobase.log import logger
 
+from tomobase.log import  tomobase_logger, logger
 
-
-@tomobase_hook_process(name='Reconstruct Weighted SIRT', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value())
-def reconstruct_weighted_sirt(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weighted:bool=False):
+@tomobase_hook_process(name='OpTomo', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value())
+def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weighted:bool=False):
     """Reconstruct a volume from a given sinogram.
 
     Arguments:
@@ -37,15 +36,13 @@ def reconstruct_weighted_sirt(sino:Sinogram, iterations:int=0, use_gpu:bool=True
         Volume
             The reconstructed volume
     """
-    print('new call')
     indices = np.argsort(sino.angles)
     sino.angles = sino.angles[indices]
     data = sino.data[indices, : ,:]
-    data = np.transpose(sino.data, (2,0,1)) # ASTRA expects (z, n, d)
+    data = np.transpose(data, (1,0,2)) # ASTRA expects (z, n, d)
 
     weights= np.ones_like(sino.angles)
     if weighted == True:
-        print('unnecessary')
         sorted_angles = deepcopy(sino.angles) +  90
         n_angles = len(sorted_angles)
         for i in range(len(sorted_angles)):
@@ -85,11 +82,12 @@ def reconstruct_weighted_sirt(sino:Sinogram, iterations:int=0, use_gpu:bool=True
     C = np.reshape(1/(W.T*range_shape), (d, d))
     R = np.minimum(R, 1 / 10**-6)
     C = np.minimum(C, 1 / 10**-6)
-    print('entry', np.sum(sino.data))
+
+    tomobase_logger.progress_bar.start((z*iterations)+1, 'Reconstructing.')
+    progress = 0
+
     for i in iterator:
         for j in range(iterations):
-            if np.sum(data[i, :, :]) != 0:
-                print('loop', i, j, np.sum(vol[i, :, :]), np.sum(data[i, :, :]))
             A = np.transpose(np.transpose(np.reshape(W*vol[i, :, :], (n, d)), (1,0))*weights,(1,0)) 
             B = np.transpose(np.reshape(np.transpose(data[i, :, :],(1,0))*weights,(d,n)), (1,0))
             D = R*(B - A)
@@ -99,6 +97,10 @@ def reconstruct_weighted_sirt(sino:Sinogram, iterations:int=0, use_gpu:bool=True
             vol[i, :, :] = vol[i, :, :] * (default_mask & mask[i, :, :])
             #print('loop', i, j, np.sum(vol[i, :, :]), np.sum(data[i, :, :]))
 
+            tomobase_logger.progress_bar.update(progress)
+            progress += 1
+            
+    tomobase_logger.progress_bar.finish()
 
     volume = Volume(np.transpose(vol, (2, 1,0)), sino.pixelsize)  # ASTRA gives (z, y, x)
     astra.astra.delete(proj_id)
@@ -106,8 +108,8 @@ def reconstruct_weighted_sirt(sino:Sinogram, iterations:int=0, use_gpu:bool=True
     return volume
 
 
-@tomobase_hook_process(name='Reconstruct', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value())
-def reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gpu:bool=True):
+@tomobase_hook_process(name='Astra', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value())
+def astra_reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gpu:bool=True):
     """Reconstruct a volume from a given sinogram.
 
     Arguments:
@@ -151,6 +153,7 @@ def reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gpu:bool
     proj_id = _create_projector(d, d, sino.angles, use_gpu)
 
     message = f"Reconstruction using the {method} algorithm on the {'GPU' if use_gpu else 'CPU'}..."
+    logger.info(message)
     iterator = range(z)
 
     vol = np.empty((z, d, d))
@@ -162,6 +165,8 @@ def reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gpu:bool
     else:
         mask = np.transpose(mask, (2, 1, 0))  # ASTRA expects (z, y, x)
 
+    tomobase_logger.progress_bar.start(z, 'Reconstructing.')
+    progress = 0
     for i in iterator:
         vol_id, vol[i, :, :] = astra.creators.create_reconstruction(
             method, proj_id, data[i, :, :], iterations,
@@ -169,9 +174,13 @@ def reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gpu:bool
             use_maxc='yes', maxc=data.max(),    # max voxel can't be larger than max from sino
             use_mask='yes', mask=default_mask & mask[i, :, :],
         )
+        tomobase_logger.progress_bar.update(progress)
+        progress += 1
         astra.astra.delete(vol_id)
+    tomobase_logger.progress_bar.finish()
 
     volume = Volume(np.transpose(vol, (2, 1, 0)), sino.pixelsize)  # ASTRA gives (z, y, x)
     astra.astra.delete(proj_id)
     logger.info('type of volume: ' + str(type(volume)))
     return volume
+

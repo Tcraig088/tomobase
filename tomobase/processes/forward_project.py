@@ -29,6 +29,7 @@ def project(volume:Volume, angles:TILTANGLETYPE, use_gpu:bool=True):
         Sinogram
             The projection data
     """
+    logger.info('Projecting volume bubblegum2')
     data = np.transpose(volume.data, (2, 1, 0))  # ASTRA expects (z, y, x)
     if isinstance(angles, tuple):
         angles = np.array([angles[0].get_angle() for i in range(angles[1])]) 
@@ -44,6 +45,6 @@ def project(volume:Volume, angles:TILTANGLETYPE, use_gpu:bool=True):
         sino_id, sino[i, :, :] = astra.creators.create_sino(data[i, :, :], proj_id)
         astra.astra.delete(sino_id)
 
-    sinogram = Sinogram(np.transpose(sino, (1,2,0)), angles, volume.pixelsize)  # ASTRA gives (z, n, d)
+    sinogram = Sinogram(np.transpose(sino, (1,0,2)), angles, volume.pixelsize)  # ASTRA gives (z, n, d)
     astra.astra.delete(proj_id)
     return sinogram
