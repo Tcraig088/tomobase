@@ -27,15 +27,10 @@ def tomobase_hook_process(**kwargs):
         subcategories (dict(enum.TransformCategory,[list[str]])): a list of strings that define the subcategories of the process. Used when adding the process to the napari menu.
     """
     def decorator(obj):
-        if isinstance(obj, types.FunctionType):
-            return _process_function_decorator(obj, **kwargs)
-        elif inspect.isclass(obj):
-            return _process_class_decorator(obj, **kwargs)
-        else:
-            raise TypeError("Unsupported category")
+        return _process_decorator(obj, **kwargs)
     return decorator
 
-def _process_function_decorator(func, **kwargs):
+def _process_decorator(obj, **kwargs):
     name = kwargs.get("name", None)
     if name is None:
         raise ValueError("Name is required")
@@ -59,47 +54,23 @@ def _process_function_decorator(func, **kwargs):
     if not subcategory_added:
         subcategories = add_name_to_dict(subcategories, name)
 
-    func.tomobase_name = name
-    func.tomobase_category = category
-    func.is_tomobase_process = True
-    func.tomobase_includes = includes
-    func.tomobase_excludes = excludes
-    func.tomobase_subcategories = subcategories
-    return func
+    obj.tomobase_name = name
+    obj.tomobase_category = category
+    obj.is_tomobase_process = True
+    obj.tomobase_includes = includes
+    obj.tomobase_excludes = excludes
+    obj.tomobase_subcategories = subcategories
+    return obj
 
 
+def tomobase_class_method(**kwargs):
+    def decorator(func):
+        for name, obj in inspect.getmembers(func):
+            func.process_step = kwargs.get("step", "pre") # can be pre or final
+            func.process_order = kwargs.get("order", 0)
+        return func
+    return decorator
 
-def _process_class_decorator(cls, **kwargs):
-    name = kwargs.get("name", None)
-    if name is None:
-        raise ValueError("Name is required")
-    category = kwargs.get("category", None)
-    if category is None:
-        raise ValueError("Category is required")
-    includes = kwargs.get("includes", None)
-    excludes = kwargs.get("excludes", None)
-    subcategories = kwargs.get("subcategories", {})
-    
-    if isinstance(category, list):
-        for item in category:
-            if item not in subcategories:
-                subcategories[item] = name
-    else:
-        if category not in subcategories:
-            subcategories[category] = name
-            
-    subcategories = add_name_to_dict(subcategories, name)
-        
-    
-    
-    cls.tomobase_name = name
-    cls.tomobase_category = category
-    cls.is_tomobase_process = True
-    cls.tomobase_includes = includes
-    cls.tomobase_excludes = excludes
-    cls.tomobase_subcategories = subcategories
-
-    return cls
 
 def add_name_to_dict(d, name):
     """
