@@ -18,8 +18,8 @@ from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QL
 from qtpy.QtCore import Qt
 
 _subcategories = {}
-_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value()] = 'Tilt Axis'
-@tomobase_hook_process(name='Align Tilt Shift', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value] = 'Tilt Axis'
+@tomobase_hook_process(name='Align Tilt Shift', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=None,
                           inplace=True, extend_return:bool=False, **kwargs):
     """Align the horizontal shift of the tilt axis of a sinogram other using
@@ -78,7 +78,7 @@ def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=None,
     else:
         return sino
 
-@tomobase_hook_process(name='Align Tilt Rotation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+@tomobase_hook_process(name='Align Tilt Rotation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=None,
                              inplace:bool=True, extend_return:bool=False, **kwargs):
     """Align the rotation of the tilt axis of a sinogram other using
@@ -138,7 +138,7 @@ def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=None,
     else:
         return sino
        
-@tomobase_hook_process(name='Align Tilt Rotation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+@tomobase_hook_process(name='Align Tilt Rotation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def backlash_correct(sino: Sinogram, tolerance:float= 10.0, method:str='bounded', extend_return:bool=False, inplace:bool = True):
     """Correct Backlash Artefacts by Curve Fitting """
     

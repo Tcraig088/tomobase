@@ -30,7 +30,7 @@ class EnvironmentRegistration():
 
         self._cupy_checked = False
         self._cupy_available = False
-
+ 
     @property
     def hyperspy(self):
         if not self._hyperspy_checked:

@@ -19,8 +19,8 @@ from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QL
 from qtpy.QtCore import Qt
 
 _subcategories = {}
-_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value()] = 'Background Corrections'
-@tomobase_hook_process(name='Subtract Median', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value] = 'Background Corrections'
+@tomobase_hook_process(name='Subtract Median', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def background_subtract_median(sino: Sinogram,  
               inplace:bool=True):
     """

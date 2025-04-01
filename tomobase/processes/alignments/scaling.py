@@ -8,9 +8,9 @@ from IPython.display import display, clear_output
 import stackview
 
 _subcategories = {}
-_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value()] = 'Image Scaling'
+_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value] = 'Image Scaling'
 
-@tomobase_hook_process(name='Normalize', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+@tomobase_hook_process(name='Normalize', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def normalize(sino: Sinogram, inplace: bool = True):
     """
     Normalize the input array to the range [0, 1].
@@ -28,7 +28,7 @@ def normalize(sino: Sinogram, inplace: bool = True):
     sino.data = (sino.data - np.min(sino.data)) / (np.max(sino.data) - np.min(sino.data))
     return sino
 
-@tomobase_hook_process(name='Bin Data', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+@tomobase_hook_process(name='Bin Data', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def bin(sino: Sinogram, factor: int = 2, inplace: bool = True):
     """
     Bin a 3D or 4D array along the last two axes.
@@ -62,7 +62,7 @@ def bin(sino: Sinogram, factor: int = 2, inplace: bool = True):
     
     return sino
 
-@tomobase_hook_process(name='Pad Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+@tomobase_hook_process(name='Pad Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0, inplace: bool = True):
     """
     Pad the sinogram to the specified size.
@@ -87,7 +87,7 @@ def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0, inplace: bool = True):
 
     return sino
 
-@tomobase_hook_process(name='Crop Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+@tomobase_hook_process(name='Crop Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def crop_sinogram(sino: Sinogram, x: int = 0, y: int = 0, inplace: bool = True):
     """
     Crop the sinogram to the specified size.
@@ -112,7 +112,7 @@ def crop_sinogram(sino: Sinogram, x: int = 0, y: int = 0, inplace: bool = True):
 
     return sino
 
-@tomobase_hook_process(name='Crop', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories = _subcategories)
+#@tomobase_hook_process(name='Crop', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories = _subcategories)
 class CropSinogram:
     def __init__(self, sino:Sinogram):
         self.sino = sino

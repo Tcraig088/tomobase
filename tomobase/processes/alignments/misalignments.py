@@ -8,8 +8,8 @@ from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from tomobase.data import Sinogram
   
 _subcategories = {}
-_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value()] = 'Misalignment'
-@tomobase_hook_process(name='Gaussian Filter', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value] = 'Misalignment'
+@tomobase_hook_process(name='Gaussian Filter', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def gaussian_filter(sino: Sinogram, 
               gaussian_sigma:float=1,
               inplace:bool=True):
@@ -30,7 +30,7 @@ def gaussian_filter(sino: Sinogram,
     sino.data = gaussian_filter(sino.data, gaussian_sigma)
     return sino
 
-@tomobase_hook_process(name='Poisson', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+@tomobase_hook_process(name='Poisson', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def poisson_noise(sino: Sinogram, 
                   rescale:float=True,
                   inplace:bool=True):
@@ -62,7 +62,7 @@ def poisson_noise(sino: Sinogram,
 
 
 
-@tomobase_hook_process(name='Translational Misalignment', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+@tomobase_hook_process(name='Translational Misalignment', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def translational_misalignment(sino: Sinogram, 
                                offset:float=0.25, 
                                inplace:bool=True, 
@@ -107,7 +107,7 @@ def translational_misalignment(sino: Sinogram,
         return sino
     
     
-@tomobase_hook_process(name='Rotational Misalignment', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+@tomobase_hook_process(name='Rotational Misalignment', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def rotational_misalignment(sino: Sinogram, 
                             tilt_theta:float = 3,
                             tilt_alpha:float=2, 

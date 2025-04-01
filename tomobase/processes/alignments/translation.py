@@ -11,9 +11,9 @@ from IPython.display import display, clear_output
 import stackview
 
 _subcategories = {}
-_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value()] = 'Translation'
+_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value] = 'Translation'
 
-@tomobase_hook_process(name='Align Sinogram XCorrelation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+@tomobase_hook_process(name='Align Sinogram XCorrelation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def align_sinogram_xcorr(sino: Sinogram, inplace: bool = True, shifts=None, extend_return: bool = False):
     """Align all projection images to each other using cross-correlation
 
@@ -64,7 +64,7 @@ def align_sinogram_xcorr(sino: Sinogram, inplace: bool = True, shifts=None, exte
     else:
         return sino
 
-@tomobase_hook_process(name='Centre of Mass', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+@tomobase_hook_process(name='Centre of Mass', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def align_sinogram_center_of_mass(sino: Sinogram, inplace: bool = True, extend_return: bool = False):
     """Align the projection images to their collective center of mass
 
@@ -96,7 +96,7 @@ def align_sinogram_center_of_mass(sino: Sinogram, inplace: bool = True, extend_r
     else:
         return sino
 
-@tomobase_hook_process(name='Weight by Angle', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+@tomobase_hook_process(name='Weight by Angle', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def weight_by_angle(sino: Sinogram, inplace: bool = True, extend_return: bool = False):
     """Weight the projection images by their angles
 
@@ -142,7 +142,7 @@ def weight_by_angle(sino: Sinogram, inplace: bool = True, extend_return: bool = 
     else:
         return sino
 
-@tomobase_hook_process(name='Manual Translation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+#@tomobase_hook_process(name='Manual Translation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 class TranslateSinogramManual:
     def __init__(self, sino: Sinogram, inplace: bool = True):
         self.sino = sino

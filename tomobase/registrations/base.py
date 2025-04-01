@@ -13,9 +13,14 @@ class Item(object):
         if callable(self._value):
             return self._value(*args, **kwargs)
         else:
-            logger.warning(f"Item {self._name} is not callable")
+            logger.warning(f"Item {self._name} is not callable!")
 
-    
+    def __setitem__(self, name, value):
+        if isinstance(self._value, dict) or isinstance(self._value, Item):
+            self._value[name] = value
+        else:
+            super().__setattr__(name, value)
+            
     @property
     def value(self):
         return self._value
@@ -30,25 +35,25 @@ class Item(object):
         
     @value.setter
     def value(self, value):
-        self._index = value
+        self._value = value
 
+    def items(self):
+        if isinstance(self._value, dict):
+            return self._value.items()
+        else:
+            _dict = {}
+            logger.warning(f"Item {self._name} is not a dictionary!")
+            return _dict.items()
 
-class ItemDict():
-    """ A Dictionary like class used to store the available items in the library. Has convenience functions for registering items as part of a plugin system.
-    """
-    _instances = {}
-
-    def __new__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(ItemDict, cls).__new__(cls)
-        return cls._instances[cls]
-            
+class ItemDictNonSingleton():      
     def __init__(self, **kwargs):
+        
+        # Note For Developers check setattr otherwise youll include your variables as dict keys and this will mess the whole dict up
         self._index = 0
         self._dict = {}
         self._item_class = Item
         
-        #Default Values for using the plugins system
+        #Default Values for using the plugins system 
         self._module = 'tomobase'
         self._folder = 'plugins'    
         self._hook = 'default'
@@ -56,13 +61,17 @@ class ItemDict():
         for key, value in kwargs.items():
             newkey = key.upper()
             newkey = newkey.replace(' ', '_')
-            self._dict[newkey] = Item(value, key)
+            if value is None:
+                value = self._index
+            self._dict[newkey] = self._item_class(value, key)
             self._index += 1
             
     def __setattr__(self, key, value):
-        if key in ['_index', '_dict']:
+        if key in ['_index', '_dict', '_module', '_folder', '_hook', '_item_class']:
+            # Allow these keys to be set as attributes
             super().__setattr__(key, value)
         else:
+            # Add other keys to the internal dictionary
             self._dict[key] = value
 
     def __getattr__(self, key):
@@ -78,6 +87,7 @@ class ItemDict():
         if key in self._dict:
             logger.warning(f"Key {key} already exists in the dictionary")
         else:
+            logger.info(f"Adding {key} to the dictionary")
             if value is None:
                 value = self._index
             newkey = key.upper()
@@ -109,12 +119,12 @@ class ItemDict():
                 
     def help(self):
         for key, item in self._dict.items():
-            logger.info(f"{item.name}: {item.value}")
-            logger.info(item.value.__doc__)
+            logger.info(f"{key}: {item.name}, {item.value}")
+
             
     def update(self):
-        logger.info(f"Updating {self}")
-        logger.info(f"Updating {self._module} {self._folder}")
+        logger.warning(f"Updating modlules {self }")
+        logger.info(f"Module {self}: {self._module} {self._folder}")
         
         spec = importlib.util.find_spec(self._module)
         if spec is None or spec.origin is None:
@@ -122,23 +132,33 @@ class ItemDict():
 
         path = os.path.dirname(spec.origin)
         tiltscheme_path = os.path.join(path, self._folder)
-
         for root, _, files in os.walk(tiltscheme_path):
             for filename in files:
                 if filename.endswith('.py'):
                     module_path = os.path.relpath(os.path.join(root, filename), start=path)
                     module_name = self._module+'.'+ module_path.replace(os.sep, '.')[:-3]
                     module = importlib.import_module(module_name)
-                    for name, obj in inspect.getmembers(module, inspect.isclass):
-                        logger.info(f"Checking {name}, {obj}")
-                        if hasattr(obj, self._hook):
-                            self._update_item(obj)
+                    for name, obj in inspect.getmembers(module):
+                        if inspect.isclass(obj) or inspect.isfunction(obj):
+                            if hasattr(obj, self._hook):
+                                logger.info(f"Found {self._hook} in {name}")
+                                self._update_item(obj)
                             
     def _update_item(self, obj):
-        self._dict[obj.tomobase_name] = obj
+        self[obj.tomobase_name] = obj
+
+
+class ItemDict(ItemDictNonSingleton):
+    _instances = {}
+
+    def __new__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(ItemDict, cls).__new__(cls)
+        return cls._instances[cls]
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
 
 
-
- 
