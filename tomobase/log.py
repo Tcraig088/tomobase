@@ -31,6 +31,7 @@ class ProgressBar(QObject):
         self.progress_bar.max_value = max_value
         self.progress_bar.start()
         self.started.emit(max_value, label)
+        
     def update_max(self, max_value):
         self.progress_bar.max_value = max_value
         self.max_value = max_value
@@ -70,7 +71,7 @@ class TomobaseLogger:
     def _setup_stream_handler(self):
         if not any(isinstance(handler, logging.StreamHandler) for handler in self.logger.handlers):
             handler = logging.StreamHandler()
-            handler.setLevel(logging.DEBUG)
+            handler.setLevel(logging.INFO)
             formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)

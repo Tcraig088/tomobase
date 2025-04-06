@@ -5,4 +5,4 @@ class DataItemDict(ItemDict):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-TOMOBASE_DATATYPES = DataItemDict( IMAGE=None, SINOGRAM=None, VOLUME=None)
+TOMOBASE_DATATYPES = DataItemDict( Image=None, Sinogram=None, Volume=None)

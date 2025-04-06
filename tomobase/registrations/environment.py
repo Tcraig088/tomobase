@@ -1,4 +1,3 @@
-
 import enum
 import logging
 from tomobase.log import logger
@@ -7,8 +6,7 @@ class GPUContext(enum.Enum):
     CUPY = 1
     NUMPY = 2
 
-
-class EnvironmentRegistration():
+class EnvironmentContext():
     """
     Singleton class to check if submodules are available or not.
 
@@ -21,54 +19,50 @@ class EnvironmentRegistration():
     
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(EnvironmentRegistration, cls).__new__(cls)
+            cls._instance = super(EnvironmentContext, cls).__new__(cls)
         return cls._instance
     
     def __init__(self):
-        self._hyperspy_checked = False
-        self._hyperspy_available = False
-
         self._cupy_checked = False
         self._cupy_available = False
- 
-    @property
-    def hyperspy(self):
-        if not self._hyperspy_checked:
-            try:
-                import hyperspy.api as hs
-                self._hyperspy_available = True
-            except ModuleNotFoundError:
-                self._hyperspy_available = False
-                logger.error("hyperspy module not found.")
-            except Exception as e:
-                self._hyperspy_available = False
-                logger.error(e)
-        self._hyperspy_checked = True
-        return self._hyperspy_available
+        
+        self.context = GPUContext.NUMPY
+        self.device = 0
+        
+    def set_context(self, context:GPUContext=GPUContext.NUMPY, device:int=0):
+        if context == GPUContext.CUPY:
+            if not self._cupy_checked:
+                self._cupy_checked = True
+                try:
+                    import cupy as cp
+                    self._cupy_available = True
+                except ModuleNotFoundError:
+                    self._cupy_available = False
+                    logging.warning("CUPY module not found. Please Install from Conda or pip. Context unchanged.")
+                except Exception as e:
+                    self._cupy_available = False
+                    logging.error(e)
+                    
+            if self._cupy_available:
+                #check their is a GPU available with the device id
+                if cp.cuda.runtime.getDeviceCount() <= device:
+                    logging.warning("No GPU available with device id {}".format(device))
+                else:
+                    self.context = GPUContext.CUPY
+                    self.device = device
+                    
+        elif context == GPUContext.NUMPY:
+            self.context = GPUContext.NUMPY
+            self.device = device
+            
+        else:
+            logging.warning("Unknown context. Context unchanged.")
+            return
     
-    @property
-    def cupy(self):
-        if not self._cupy_checked:
-            try:
-                import cupy as cp
-                self._cupy_available = True
-            except ModuleNotFoundError:
-                self._cupy_available = False
-                logging.error("cupy module not found.")
-            except Exception as e:
-                self._cupy_available = False
-                logging.error(e)
-        self._cupy_checked = True
-        return self._cupy_available
-    
-    def set_gpucontext(self, context:GPUContext):
-        match context:
-            case GPUContext.CUPY:
-                import cupy as xp
-            case GPUContext.NUMPY:
-                import numpy as xp
-            case _:
-                raise ValueError("Invalid GPU Context")
+xp = EnvironmentContext()
+xp.set_gpucontext(GPUContext.NUMPY)
 
-import numpy as xp
-TOMOBASE_ENVIRONMENT = EnvironmentRegistration()
+import numpy as np
+if xp._cupy_available:
+    import cupy as cp
+

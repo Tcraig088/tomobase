@@ -16,7 +16,7 @@ class Item(object):
             logger.warning(f"Item {self._name} is not callable!")
 
     def __setitem__(self, name, value):
-        if isinstance(self._value, dict) or isinstance(self._value, Item):
+        if isinstance(self._value, dict) or isinstance(self._value, ItemDictNonSingleton):
             self._value[name] = value
         else:
             super().__setattr__(name, value)
@@ -38,11 +38,13 @@ class Item(object):
         self._value = value
 
     def items(self):
-        if isinstance(self._value, dict):
+        if isinstance(self._value, dict) or isinstance(self._value, ItemDictNonSingleton) or isinstance(self._value, ItemDict):
             return self._value.items()
         else:
             _dict = {}
-            logger.warning(f"Item {self._name} is not a dictionary!")
+            msg = f"Item {self._name} is not a dictionary. Cannot return items.\n"
+            msg += f"Item {self._name} is of type {type(self._value)}"
+            logger.warning(msg)
             return _dict.items()
 
 class ItemDictNonSingleton():      
@@ -85,9 +87,9 @@ class ItemDictNonSingleton():
     
     def __setitem__(self, key, value):
         if key in self._dict:
-            logger.warning(f"Key {key} already exists in the dictionary")
+            pass
         else:
-            logger.info(f"Adding {key} to the dictionary")
+            logger.debug(f"Adding {key} to the dictionary")
             if value is None:
                 value = self._index
             newkey = key.upper()
@@ -123,8 +125,8 @@ class ItemDictNonSingleton():
 
             
     def update(self):
-        logger.warning(f"Updating modlules {self }")
-        logger.info(f"Module {self}: {self._module} {self._folder}")
+        #logger.warning(f"Updating modlules {self }")
+        #logger.info(f"Module {self}: {self._module} {self._folder}")
         
         spec = importlib.util.find_spec(self._module)
         if spec is None or spec.origin is None:
@@ -141,7 +143,7 @@ class ItemDictNonSingleton():
                     for name, obj in inspect.getmembers(module):
                         if inspect.isclass(obj) or inspect.isfunction(obj):
                             if hasattr(obj, self._hook):
-                                logger.info(f"Found {self._hook} in {name}")
+                                #logger.info(f"Found {self._hook} in {name}")
                                 self._update_item(obj)
                             
     def _update_item(self, obj):

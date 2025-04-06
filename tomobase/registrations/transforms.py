@@ -30,4 +30,4 @@ class TransformItemDict(ItemDict):
         super().__init__(**kwargs)
         self._item_class = TransformItem
         
-TOMOBASE_TRANSFORM_CATEGORIES = TransformItemDict( DEFORM=None, ALIGN=None, PROJECT=None, RECONSTRUCT=None)
+TOMOBASE_TRANSFORM_CATEGORIES = TransformItemDict( Deform=None, Align=None, Project=None, Reconstruct=None)
