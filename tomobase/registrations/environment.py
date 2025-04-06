@@ -59,6 +59,21 @@ class EnvironmentContext():
             logging.warning("Unknown context. Context unchanged.")
             return
     
+
+        def __getattr__(self, name):
+            if self.context == GPUContext.CUPY and self._cupy_available:
+                module = cp
+            else:
+                module = np
+                
+            attr = getattr(module, name)
+            if callable(attr):
+                def wrapper(*args, **kwargs):
+                    return attr(*args, **kwargs)
+                return wrapper
+            else:
+                return attr
+
 xp = EnvironmentContext()
 xp.set_gpucontext(GPUContext.NUMPY)
 

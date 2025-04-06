@@ -8,10 +8,7 @@ collections.Iterable = collections.abc.Iterable
 from abc import ABC, abstractmethod
 
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
-from tomobase.registrations.environment import TOMOBASE_ENVIRONMENT
-if TOMOBASE_ENVIRONMENT.hyperspy:
-    import hyperspy.api as hs
-
+from tomobase.registrations.environment import GPUContext, xp
 class Data(ABC):
     """Abstract base class for microscopy and tomography datasets
 
@@ -28,6 +25,8 @@ class Data(ABC):
     def __init__(self, pixelsize, metadata={}):
         self.pixelsize = pixelsize
         self.metadata = metadata
+        self._context = GPUContext.NUMPY
+        self._device = 0
 
     @classmethod
     def from_file(cls, filename=None, **kwargs):
@@ -110,3 +109,15 @@ class Data(ABC):
     @abstractmethod
     def _readers(self):
         pass
+
+    def set_context(self):
+        if xp.context != self._context:
+            # convert the data to the correct context
+            if self._context == GPUContext.CUPY:
+                self.data = xp.asarray(self.data)
+            else: 
+                self.data = self.data.get()
+        # set the context
+        self._context = xp.context
+        self._device = xp.device
+        self.data 
