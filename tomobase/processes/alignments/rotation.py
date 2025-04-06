@@ -10,9 +10,9 @@ from scipy.optimize import minimize_scalar
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from tomobase.data import Sinogram
-from tomobase.processes.reconstruct import reconstruct
+from tomobase.processes.reconstruct import astra_reconstruct
 from tomobase.processes.forward_project import project
-from tomobase.log import logger
+from tomobase.log import logger, tomobase_logger
 
 from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QDoubleSpinBox
 from qtpy.QtCore import Qt
@@ -63,13 +63,16 @@ def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=None,
             offsets = np.arange(-10, 11)
         mse = np.zeros(len(offsets))
         sino_shifted = copy(sino)
+
+        tomobase_logger.progress_bar.start(len(offsets), 'Aligning tilt axis shift')
         for i in range(len(offsets)):
             sino_shifted.data = shift(sino.data, (0, offsets[i], 0))
-            reproj = project(reconstruct(sino_shifted, method, **kwargs),
+            reproj = project(astra_reconstruct(sino_shifted, method, **kwargs),
                              sino.angles)
             mse[i] = np.mean((sino_shifted.data - reproj.data) ** 2)
-
+            tomobase_logger.progress_bar.update(i)
         offset = offsets[np.argmin(mse)]
+        tomobase_logger.progress_bar.finish()
 
     sino.data = shift(sino.data, (0, offset, 0))
 
@@ -123,13 +126,15 @@ def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=None,
             angles = np.arange(-4, 5)
         mse = np.zeros(len(angles))
         sino_rot = copy(sino)
+        tomobase_logger.progress_bar.start(len(angles), 'Aligning tilt axis rotation')
         for i in range(len(angles)):
             sino_rot.data = rotate(sino.data, angles[i], reshape=False)
-            reproj = project(reconstruct(sino_rot, method, **kwargs),
+            reproj = project(astra_reconstruct(sino_rot, method, **kwargs),
                             sino.angles)
             mse[i] = np.mean((sino_rot.data - reproj.data) ** 2)
-
+            tomobase_logger.progress_bar.update(i)
         angle = angles[np.argmin(mse)]
+        tomobase_logger.progress_bar.finish()
 
     sino.data = rotate(sino.data, angle, reshape=False)
 
@@ -138,20 +143,28 @@ def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=None,
     else:
         return sino
        
-@tomobase_hook_process(name='Align Tilt Rotation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
+@tomobase_hook_process(name='Backlash Correction', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
 def backlash_correct(sino: Sinogram, tolerance:float= 10.0, method:str='bounded', extend_return:bool=False, inplace:bool = True):
     """Correct Backlash Artefacts by Curve Fitting """
-    
+    tomobase_logger.progress_bar.start(10, 'Correcting Backlash: Time May be imprecise')
+    progress = 0
+
     if not inplace:
         sino = copy(sino)
         
     def objective_function(value, sino, indices):
         angles = copy(sino.angles)
         sino.angles[indices] += value
-        reproj = project(reconstruct(sino, 'fbp'), sino.angles[indices])        
-        error = np.sqrt(np.mean((sino.data[:,:, indices] - reproj.data) ** 2))
+        reproj = project(astra_reconstruct(sino, 'fbp'), sino.angles[indices])        
+        error = np.sqrt(np.mean((sino.data[indices,:,: ] - reproj.data) ** 2))
         sino.angles = angles
         logger.debug(f'Error: {error}')
+        tomobase_logger.progress_bar.update(progress)
+        progress += 1
+
+        if tomobase_logger.progress_bar.max_value < progress:
+            tomobase_logger.progress_bar.update_max(progress+10)
+
         return  error
     
     indices = np.where(np.diff(sino.angles) < 0)[0] + 1
@@ -163,7 +176,7 @@ def backlash_correct(sino: Sinogram, tolerance:float= 10.0, method:str='bounded'
         result = minimize_scalar(objective_function, value, args=(sino, indices), method=method)
         
     sino.angles[indices] += result.x
-    # Summarize Fit
+    tomobase_logger.progress_bar.finish()
     logger.debug(f'Final Error: {result.fun}, Angle Shift: {result.x}')
     if extend_return:
         return sino, result.x

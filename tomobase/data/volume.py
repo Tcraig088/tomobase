@@ -14,6 +14,38 @@ import stackview
 import ipywidgets as widgets
 from IPython.display import display
 
+def _rescale(data, lower=0, upper=1, inplace=True):
+    """Rescale data by scaling it to a given range.
+
+    Arguments:
+        data (Image, Volume or Sinogram)
+            The data to rescale
+        lower (float)
+            The lower bound of the rescaled data
+        upper (float)
+            The upper bound of the rescaled data
+        inplace (bool)
+            Whether to do the rescaling in-place in the input data object
+
+    Returns:
+        Image, Volume or Sinogram
+            The result
+    """
+    if not inplace:
+        data = copy(data)
+
+    minValue = data.data.min()
+    maxValue = data.data.max()
+
+    if minValue == maxValue:
+        raise ValueError('Cannot normalize a uniform array.')
+
+    data.data -= minValue
+    data.data *= (upper - lower) / (maxValue - minValue)
+    data.data += lower
+
+    return data
+
 class Volume(Data):
     """A 3D volume that is the result of a tomographic reconstruction
 
@@ -70,7 +102,7 @@ class Volume(Data):
             data = np.transpose(data, (1, 0, 2))
 
             if normalize:
-                return _rescale(Volume(data.astype(float), pixelsize))
+                return _rescale(Volume(data.astype(float), pixelsize=1.0))
             else:
                 return Volume(data, pixelsize)
 
