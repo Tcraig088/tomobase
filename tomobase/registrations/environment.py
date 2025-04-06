@@ -61,14 +61,7 @@ class EnvironmentRegistration():
         self._cupy_checked = True
         return self._cupy_available
     
-    def set_gpucontext(self, context:GPUContext):
-        match context:
-            case GPUContext.CUPY:
-                import cupy as xp
-            case GPUContext.NUMPY:
-                import numpy as xp
-            case _:
-                raise ValueError("Invalid GPU Context")
+
 
 import numpy as xp
 TOMOBASE_ENVIRONMENT = EnvironmentRegistration()

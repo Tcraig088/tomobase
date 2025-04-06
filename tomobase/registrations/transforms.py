@@ -165,6 +165,7 @@ class TransformItemDict():
             
         raise Exception(f"Index {index} not found in TOMOBASE_DATATYPES")
     
-TOMOBASE_TRANSFORM_CATEGORIES = TransformItemDict( ALIGN=None, 
-                                         PROJECT=None,
-                                         RECONSTRUCT=None)
+TOMOBASE_TRANSFORM_CATEGORIES = TransformItemDict( DEFORM=None, 
+                                                    ALIGN=None, 
+                                                    PROJECT=None,
+                                                    RECONSTRUCT=None)

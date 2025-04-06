@@ -106,7 +106,14 @@ class Sinogram(Data):
         """
         if time is None:
             time = self.times[-1] + 1
-        self.data = np.dstack((self.data, img))
+
+        if self.data.ndim == 2:
+            # If `self.data` is 2D, add a new first axis and stack `img`
+            self.data = np.stack((self.data, img), axis=0)
+        else:
+            # If `self.data` is already 3D, concatenate along the first axis
+            self.data = np.concatenate(    (self.data, img), axis=0)
+        #self.data = np.dstack((self.data, img))
         self.angles = np.append(self.angles, angle)
         self.times = np.append(self.times, time)
         
