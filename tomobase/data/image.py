@@ -1,4 +1,3 @@
-import numpy as np
 import imageio as iio
 import stackview
 from copy import deepcopy
@@ -7,9 +6,8 @@ import collections
 collections.Iterable = collections.abc.Iterable
 from tomobase.log import logger
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
-from tomobase.registrations.environment import TOMOBASE_ENVIRONMENT
-if TOMOBASE_ENVIRONMENT.hyperspy:
-    import hyperspy.api as hs
+from tomobase.registrations.environment import xp
+
 
 from tomobase.data.base import Data
 
@@ -43,6 +41,7 @@ class Image(Data):
     @staticmethod
     def _read_emi(filename, **kwargs):
         # TODO make this method independent of Hyperspy
+        """
         content = hs.load(filename, lazy=False, reader='emi')
         data = np.transpose(np.asarray(content.data, dtype=float), (1, 0))   # With transpose we make sure that
                                                                 # the orientation is correct in the
@@ -53,10 +52,11 @@ class Image(Data):
         im = Image(data, pixelsize)
         im.metadata['alpha_tilt'] = content.metadata.Acquisition_instrument.TEM.Stage.tilt_alpha
         return im
+        """
 
     @staticmethod
     def _read_image(filename, **kwargs):
-        return Image(np.asarray(iio.imread(filename), dtype=float))
+        return Image(xp.asarray(iio.imread(filename), dtype=float))
 
     def _write_image(self, filename, **kwargs):
         iio.imwrite(filename, self.data)

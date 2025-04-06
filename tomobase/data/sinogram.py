@@ -21,12 +21,12 @@ collections.Iterable = collections.abc.Iterable
 from abc import ABC, abstractmethod
 
 
-from tomobase.registrations.environment import TOMOBASE_ENVIRONMENT
-if TOMOBASE_ENVIRONMENT.hyperspy:
-    import hyperspy.api as hs
+from tomobase.registrations.environment import xp
+
     
 from tomobase.data.base import Data
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
+from tomobase.registrations.environment import GPUContext, xp
 from tomobase.data.image import Image
 
 
@@ -138,7 +138,7 @@ class Sinogram(Data):
             key = 'image '+str(i)
             if i == 0:
                 nx, ny = f[key]['HAADF'].shape
-                data = np.zeros([nx,ny,nt])
+                data = xp.zeros([nx,ny,nt])
             data[:,:,i] = f[key]['HAADF']
             times[i] = np.array(f[key]['acquisition timee (s)']).item()
             angles[i] = np.array(f[key]['alpha tilt (deg)']).item()
@@ -148,7 +148,7 @@ class Sinogram(Data):
     @staticmethod
     def _read_mrc(filename, **kwargs):
         data, metadata = mrcz.readMRC(filename)
-        print(metadata)
+        data = xp.asarray(data)
         pixelsize = metadata['pixelsize'][0]
         angles = metadata['angles']
         if 'times' in metadata:
@@ -179,7 +179,7 @@ class Sinogram(Data):
         else:
             t = np.linspace(1, len(a), len(a)+1)
 
-        ts = Sinogram(d.squeeze(), a.squeeze(), p.squeeze(), t.squeeze())
+        ts = Sinogram(xp.asarray(d.squeeze()), a.squeeze(), p.squeeze(), t.squeeze())
         return ts
     
     def _write_mrc(self, filename, **kwargs):

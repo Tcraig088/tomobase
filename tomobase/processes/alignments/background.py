@@ -7,6 +7,7 @@ from skimage.filters import threshold_otsu
 from tomobase.hooks import tomobase_hook_process
 from tomobase.data import Sinogram
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
+from tomobase.registrations.environment import xp, GPUContext
 import PIL
 from PIL import Image
 import io
@@ -21,26 +22,14 @@ from qtpy.QtCore import Qt
 _subcategories = {}
 _subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value] = 'Background Corrections'
 @tomobase_hook_process(name='Subtract Median', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
-def background_subtract_median(sino: Sinogram,  
-              inplace:bool=True):
+def background_subtract_median(sino: Sinogram,  inplace:bool=True):
+    """Subtract the median of the sinogram from the sinogram."
+    Args:
+        sino (Sinogram): The sinogram to process
+        inplace (bool): Whether to do the processing in-place in the input data object
+    Returns:
+        Sinogram (Sinogram): The resulting Sinogram
     """
-    Subtract the median value of the sinogram from the sinogram data.
-    
-    Parameters
-    ----------
-    sino : Sinogram
-        Sinogram data to be processed.
-        inplace : bool, optional
-        If True, the sinogram data will be updated in place.
-        If False, a new sinogram will be returned.
-        Default is True.
-            
-            Returns
-            -------
-            Sinogram
-            Processed sinogram data.
-            
-            """
     if not inplace:
         sino = deepcopy(sino)
 
