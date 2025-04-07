@@ -4,6 +4,7 @@ from scipy.ndimage import center_of_mass, shift, rotate
 
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
+from tomobase.registrations.environment import xp
 from tomobase.data import Sinogram
 
 import ipywidgets as widgets
@@ -15,49 +16,35 @@ _subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value] = 'Translation'
 
 @tomobase_hook_process(name='Align Sinogram XCorrelation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def align_sinogram_xcorr(sino: Sinogram, inplace: bool = True, shifts=None, extend_return: bool = False):
-    """Align all projection images to each other using cross-correlation
-
-    This method can only align projection images to each other with an accuracy
-    of 1 pixel. Use another method if subpixel accuracy is required.
-
+    """Align the projection images using cross-correlation
     Arguments:
-        sino (Sinogram)
-            The projection data
-        inplace (bool)
-            Whether to do the alignment in-place in the input data object
-            (default: True)
-        shifts (numpy.ndarray)
-            Nx2 array containing the shifts to align the images to each other.
-            If this argument is set, no cross-correlation will be calculated but
-            the shifts will directly be applied. This is useful for aligning a
-            sinogram containing data from a different modality (e.g. for EDX
-            tomography). (default: None)
-        extend_return (bool)
-            If True, the return value will be a tuple with the shifts for each
-            projection image in the second item (default: False)
-
+        sino (Sinogram): The projection data
+        inplace (bool): Whether to do the alignment in-place in the input data object (default: True)
+        shifts (np.ndarray): A list of shifts to apply in pixels, if None is given it will be calculated (default: None)
+        extend_return (bool): If True, the return value will be a tuple with the shifts in the second item (default: False)
     Returns:
-        Sinogram
-            The result
+        Sinogram: The result
+        shifts (xp.ndarray): The shifts in pixels
     """
     if not inplace:
         sino = copy(sino)
+    sino.set_context()
 
     if shifts is None:
-        shifts = np.zeros((sino.data.shape[0], 2))
-        fft_fixed = np.fft.fft2(sino.data[0, :, :])
+        shifts = xp.zeros((sino.data.shape[0], 2))
+        fft_fixed = xp.fft.fft2(sino.data[0, :, :])
         for i in range(sino.data.shape[0] - 1):
-            fft_moving = np.fft.fft2(sino.data[i + 1, :, :])
-            xcorr = np.fft.ifft2(np.multiply(fft_fixed, np.conj(fft_moving)))
+            fft_moving = xp.fft.fft2(sino.data[i + 1, :, :])
+            xcorr = xp.fft.ifft2(np.multiply(fft_fixed, np.conj(fft_moving)))
             fft_fixed = fft_moving
-            rel_shift = np.asarray(np.unravel_index(np.argmax(xcorr), xcorr.shape))
+            rel_shift = xp.asarray(np.unravel_index(np.argmax(xcorr), xcorr.shape))
             shifts[i + 1, :] = shifts[i, :] + rel_shift
 
-        shifts %= np.asarray(sino.data.shape[1:])[None, :]
-        shifts = np.rint(shifts).astype(int)
+        shifts %= xp.asarray(sino.data.shape[1:])[None, :]
+        shifts = xp.rint(shifts).astype(int)
 
     for i in range(sino.data.shape[0]):
-        sino.data[i, :, :] = np.roll(sino.data[i, :, :], shifts[i, :], axis=(0, 1))
+        sino.data[i, :, :] = xp.roll(sino.data[i, :, :], shifts[i, :], axis=(0, 1))
 
     if extend_return:
         return sino, shifts
@@ -66,25 +53,16 @@ def align_sinogram_xcorr(sino: Sinogram, inplace: bool = True, shifts=None, exte
 
 @tomobase_hook_process(name='Centre of Mass', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def align_sinogram_center_of_mass(sino: Sinogram, inplace: bool = True, extend_return: bool = False):
-    """Align the projection images to their collective center of mass
-
-    This function uses 3rd order spline interpolation to achieve sub-pixel
-    precision.
-
+    """Align the projection images using the center of mass
     Arguments:
-        sino (Sinogram)
-            The projection data
-        inplace (bool)
-            Whether to do the alignment in-place in the input data object
-            (default: True)
-        extend_return (bool)
-            If True, the return value will be a tuple with the offset in the
-            second item (default: False)
-
+        sino (Sinogram): The projection data
+        inplace (bool): Whether to do the alignment in-place in the input data object (default: True)
+        extend_return (bool): If True, the return value will be a tuple with the offset in the second item (default: False)
     Returns:
-        Sinogram
-            The result
+        Sinogram: The result
+        offset (xp.ndarray): The offset in pixels
     """
+    #TODO: Add context shifting
     if not inplace:
         sino = copy(sino)
 
@@ -98,22 +76,17 @@ def align_sinogram_center_of_mass(sino: Sinogram, inplace: bool = True, extend_r
 
 @tomobase_hook_process(name='Weight by Angle', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def weight_by_angle(sino: Sinogram, inplace: bool = True, extend_return: bool = False):
-    """Weight the projection images by their angles
-
+    """Weight the sinogram by the angle
     Arguments:
-        sino (Sinogram)
-            The projection data
-        inplace (bool)
-            Whether to do the weighting in-place in the input data object
-            (default: True)
-        extend_return (bool)
-            If True, the return value will be a tuple with the weights in the
-            second item (default: False)
-
+        sino (Sinogram): The projection data
+        inplace (bool): Whether to do the alignment in-place in the input data object (default: True)
+        extend_return (bool): If True, the return value will be a tuple with the weights in the second item (default: False)
     Returns:
-        Sinogram
-            The result
+        Sinogram: The result
+        weights (xp.ndarray): The weights in pixels
     """
+    #TODO: Add context shifting
+    #TODO: Add reference for method
     if not inplace:
         sino = copy(sino)
 

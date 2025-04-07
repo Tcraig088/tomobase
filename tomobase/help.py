@@ -1,5 +1,4 @@
 from tomobase.log import logger
-from tomobase.registrations.environment import TOMOBASE_ENVIRONMENT
 from tomobase.registrations.tiltschemes import TOMOBASE_TILTSCHEMES
 from tomobase.registrations.processes import TOMOBASE_PROCESSES
 
@@ -35,7 +34,6 @@ def help(*args):
                 msg += f"Pip Environment: {os.environ.get('VIRTUAL_ENV', 'Not using Pip virtual environment')}\n"
 
                 msg += f"Astra Cuda Available: {astra.use_cuda()}\n"
-                msg += f"Hyperspy Available: {TOMOBASE_ENVIRONMENT._hyperspy_available}\n"
                 logger.info(msg)
 
             case 'tiltschemes':

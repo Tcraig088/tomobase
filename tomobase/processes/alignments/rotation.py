@@ -9,6 +9,7 @@ from scipy.optimize import minimize_scalar
 
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
+from tomobase.registrations.environment import xp
 from tomobase.data import Sinogram
 from tomobase.processes.reconstruct import astra_reconstruct
 from tomobase.processes.forward_project import project
@@ -22,39 +23,20 @@ _subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value] = 'Tilt Axis'
 @tomobase_hook_process(name='Align Tilt Shift', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=None,
                           inplace=True, extend_return:bool=False, **kwargs):
-    """Align the horizontal shift of the tilt axis of a sinogram other using
-    reprojection
-
-    To apply this algorithm, the sinogram must already be roughly aligned, with
-    ``align_sinogram_center_of_mass`` for example. Multiple iterations of this
-    method might be required for optimal alignment.
-
+    """Align the tilt axis shift of a sinogram using reprojection
     Arguments:
-        sino (Sinogram)
-            The projection data
-        method (str)
-            The reconstruction algorithm (default: 'sirt')
-        offsets (numpy.ndarray)
-            A list of horizontal offsets to try, if None is given it will use
-            ``numpy.arange(-10, 11)`` (default: None)
-        offset (float)
-            A pre-calculated tilt axis offset, can be used if the offset is
-            known by calculating it for a reference sinogram (default: None)
-        inplace (bool)
-            Whether to do the alignment in-place in the input data object
-            (default: True)
-        verbose (bool)
-            Display a progress bar if True (default: True)
-        return_offset (bool)
-            If True, the return value will be a tuple with the offset in the
-            second item (default: False)
-        kwargs (dict)
-            Other keyword arguments are passed to ``reconstruct``
-
+        sino (Sinogram): The projection data
+        method (str): The reconstruction algorithm (default: 'fbp')
+        offsets (np.ndarray): A list of offsets to try in pixels, if None is given it will use ``numpy.arange(-10, 11)`` (default: None)
+        offset (float): A pre-calculated offset in pixels, this is useful for aligning multiple sinograms simultaneously (default: None)
+        inplace (bool): Whether to do the alignment in-place in the input data object (default: True)
+        extend_return (bool): If True, the return value will be a tuple with the offset in the second item (default: False)
+        kwargs (dict): Other keyword arguments are passed to ``reconstruct`` see astra reconstruct
     Returns:
-        Sinogram
-            The result
+        Sinogram: The result
+        offset (float): The offset in pixels
     """
+    #TODO: Add context shifting
     if not inplace:
         sino = copy(sino)
 
@@ -84,39 +66,21 @@ def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=None,
 @tomobase_hook_process(name='Align Tilt Rotation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=None,
                              inplace:bool=True, extend_return:bool=False, **kwargs):
-    """Align the rotation of the tilt axis of a sinogram other using
-    reprojection
-
-    To apply this algorithm, the sinogram must already be roughly aligned, with
-    ``align_sinogram_center_of_mass`` and ``align_tilt_axis_shift`` for example.
-    Multiple iterations of this method might be required for optimal alignment.
-
+    """Align the tilt axis rotation of a sinogram using reprojection
     Arguments:
-        sino (Sinogram)
-            The projection data
-        method (str)
-            The reconstruction algorithm (default: 'sirt')
-        angles (np.ndarray)
-            A list of angles to try in degrees, if None is given it will use
-            ``numpy.arange(-4, 5)`` (default: None)
-        angle (float)
-            A pre-calculated angle in degrees, this is useful for aligning
-            multiple sinograms simultaneously (default: None)
-        inplace (bool)
-            Whether to do the alignment in-place in the input data object
-            (default: True)
-        verbose (bool)
-            Display a progress bar if applicable (default: True)
-        return_angle (bool)
-            If True, the return value will be a tuple with the angle in the
-            second item (default: False)
-        kwargs (dict)
-            Other keyword arguments are passed to ``reconstruct``
-
+        sino (Sinogram): The projection data
+        method (str): The reconstruction algorithm (default: 'fbp')
+        angle (float): A pre-calculated angle in degrees, this is useful for aligning multiple sinograms simultaneously (default: None)
+        angles (np.ndarray): A list of angles to try in degrees, if None is given it will use ``numpy.arange(-4, 5)`` (default: None)
+        inplace (bool): Whether to do the alignment in-place in the input data object (default: True)
+        extend_return (bool): If True, the return value will be a tuple with the angle in the second item (default: False)
+        kwargs (dict): Other keyword arguments are passed to ``reconstruct`` see astra reconstruct
     Returns:
-        Sinogram
-            The result
+        Sinogram: The result
+        angle (float): The angle in degrees
     """
+    
+    #TODO: Add context shifting
     angles=None
     if not inplace:
         sino = copy(sino)
@@ -143,9 +107,20 @@ def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=None,
     else:
         return sino
        
-@tomobase_hook_process(name='Backlash Correction', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value(), subcategories=_subcategories)
+@tomobase_hook_process(name='Backlash Correction', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def backlash_correct(sino: Sinogram, tolerance:float= 10.0, method:str='bounded', extend_return:bool=False, inplace:bool = True):
-    """Correct Backlash Artefacts by Curve Fitting """
+    """Correct the backlash of a sinogram using reprojection -  Note this method is currently experimental
+    Arguments:
+        sino (Sinogram): The projection data
+        tolerance (float): The maximum tolerance in degrees (default: 10.0)
+        method (str): The optimization method to use (default: 'bounded')
+        inplace (bool): Whether to do the alignment in-place in the input data object (default: True)
+        extend_return (bool): If True, the return value will be a tuple with the angle in the second item (default: False)
+    Returns:
+        Sinogram: The result
+        angle (float): The angle in degrees
+    """
+    
     tomobase_logger.progress_bar.start(10, 'Correcting Backlash: Time May be imprecise')
     progress = 0
 

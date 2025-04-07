@@ -1,10 +1,11 @@
-import numpy as np
-from copy import deepcopy
 
+from copy import deepcopy
+import numpy as np
 from skimage.util import random_noise
 from scipy.ndimage import gaussian_filter, rotate
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
+from tomobase.registrations.environment import xp
 from tomobase.data import Sinogram
   
 _subcategories = {}
@@ -13,16 +14,15 @@ _subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value] = 'Misalignment'
 def gaussian_filter(sino: Sinogram, 
               gaussian_sigma:float=1,
               inplace:bool=True):
-    """_summary_
-
-    Args:
-        sino (Sinogram): _description_
-        gaussian_sigma (float, optional): _description_. Defaults to 1.
-        inplace (bool, optional): _description_. Defaults to True.
-
+    """Add Gaussian noise to the sinogram.
+    Arguments:
+        sino (Sinogram): The projection data
+        gaussian_sigma (float): Standard deviation of the Gaussian noise (default: 1)
+        inplace (bool): Whether to do the operation in-place in the input data object (Default: True)
     Returns:
-        _type_: _description_
+        sino (sinogram): The result
     """
+    #TODO: Add context shifting
     if not inplace:
         sino = deepcopy(sino)
 
@@ -34,30 +34,21 @@ def gaussian_filter(sino: Sinogram,
 def poisson_noise(sino: Sinogram, 
                   rescale:float=True,
                   inplace:bool=True):
-    """Add Gaussian and Poisson noise to the sinogram.
-
+    """Add Poisson noise to the sinogram.
     Arguments:
-        sino (Sinogram)
-            The projection data
-        gaussian_mean (float)
-            Mean of the Gaussian noise (default: 0)
-        gaussian_sigma (float)
-            Standard deviation of the Gaussian noise (default: 1)
-        poisson_noise (bool)
-            Whether to add Poisson noise (default: True)
-        inplace (bool)
-            Whether to do the operation in-place in the input data object
-            (default: True)
-
+        sino (Sinogram): The projection data
+        rescale (float): Rescale the data to the range of the Poisson noise (default: True)
+        inplace (bool): Whether to do the operation in-place in the input data object (Default: True)
     Returns:
-        Sinogram
-            The result
+        sino (sinogram): The result
     """
+    
     if not inplace:
         sino = deepcopy(sino)
-
+    sino.set_context()
+    
     sino.data = sino.data*rescale
-    sino.data = np.random.poisson(sino.data)
+    sino.data = xp.random.poisson(sino.data)
     return sino
 
 
@@ -67,40 +58,30 @@ def translational_misalignment(sino: Sinogram,
                                offset:float=0.25, 
                                inplace:bool=True, 
                                extend_return:bool=False):
-    """Align the projection images to their collective center of mass
-
-    This function uses 3rd order spline interpolation to achieve sub-pixel
-    precision.
-
+    """ Apply a random translational misalignment to the sinogram.
     Arguments:
-        sino (Sinogram)
-            The projection data
-        inplace (bool)
-            Whether to do the alignment in-place in the input data object
-            (default: True)
-        offset (numpy.ndarray)
-            A pre-calculated offset for aligning multiple sinograms
-            simultaneously (e.g. useful for EDX tomography) (default: None)
-        return_offset (bool)
-            If True, the return value will be a tuple with the offset in the
-            second item (default: False)
-
+        sino (Sinogram): The projection data
+        offset (float): The maximum offset in pixels (default: 0.25)
+        inplace (bool): Whether to do the operation in-place in the input data object (Default: True)
+        extend_return (bool): Whether to return the shifts as well (default: False)
     Returns:
-        Sinogram
-            The result
+        sino (Sinogram): The result
+        shifts (ndarray): The shifts applied to each projection (only if extend_return is True)
     """
     if not inplace:
         sino = deepcopy(sino)
-
-    shifts = np.zeros((sino.data.shape[2], 2))
+    sino.set_context()
+    
+    shifts = xp.zeros((sino.data.shape[2], 2))
     for i in range(sino.data.shape[2]):
         if i == 0:
             shifts[i, :] = 0
             continue
-        image_offset_x = int(np.round(sino.data.shape[1] * np.random.uniform(-offset, offset)))
-        image_offset_y = int(np.round(sino.data.shape[2] * np.random.uniform(-offset, offset)))
-        sino.data[i, :, :] = np.roll(sino.data[i, :, :], (image_offset_x, image_offset_y), axis=(1, 2))
+        image_offset_x = int(xp.round(sino.data.shape[1] * np.random.uniform(-offset, offset)))
+        image_offset_y = int(xp.round(sino.data.shape[2] * np.random.uniform(-offset, offset)))
+        sino.data[i, :, :] = xp.roll(sino.data[i, :, :], (image_offset_x, image_offset_y), axis=(1, 2))
         shifts[i, :] = (image_offset_x, image_offset_y)
+        
     if extend_return:
         return sino, shifts
     else:
@@ -115,19 +96,30 @@ def rotational_misalignment(sino: Sinogram,
                             backlash_backwards:bool =  True, 
                             inplace:bool=True, 
                             extend_return:bool=False):
-    """ Rotate the projection images to simulate drift in the tilt axis
-    if not inplace:
-        sino = copy(sino)
+    """ Apply a random rotational misalignment to the sinogram.
+    Arguments:
+        sino (Sinogram): The projection data
+        tilt_theta (float): The maximum rotation angle in degrees (default: 3)
+        tilt_alpha (float): The maximum offset in degrees (default: 2)
+        backlash (float): The maximum backlash in degrees (default: 0.5)
+        backlash_backwards (bool): Whether to apply the backlash backwards or forwards (default: True)
+        inplace (bool): Whether to do the operation in-place in the input data object (Default: True)
+        extend_return (bool): Whether to return the rotations as well (default: False)
+    Returns:
+        sino (Sinogram): The result
+        rotations (ndarray): The rotations applied to each projection (only if extend_return is True)
     """
+    #TODO: Add context shifting
     if not inplace:
         sino = deepcopy(sino)
+    sino.set_context()
         
     if extend_return:
         angles_original =  deepcopy(sino.angles)
         
-    rotations = np.zeros(sino.data.shape[0])
+    rotations = xp.zeros(sino.data.shape[0])
     for i in range(sino.data.shape[0]):
-        rotations[i] = tilt_theta * np.random.uniform(-1, 1)
+        rotations[i] = tilt_theta * xp.random.uniform(-1, 1)
         sino.data[i, :, : ] = rotate(sino.data[i, :, :], rotations[i], reshape=False)
     
 

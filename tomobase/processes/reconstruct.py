@@ -10,37 +10,26 @@ from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 
 from tomobase.log import  tomobase_logger, logger
 
-@tomobase_hook_process(name='OpTomo', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value())
+@tomobase_hook_process(name='OpTomo', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value)
 def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weighted:bool=False):
     """Reconstruct a volume from a given sinogram.
-
     Arguments:
-        sinogram (Sinogram)
-            The projection data
-        method (str)
-            The reconstruction algorithm; supported algorithms are: `'bp'`,
-            `'fbp'`, `'sirt'`, `'em'`, `'sart'` and `'cgls'`
-        iterations (int)
+        sino (Sinogram): The projection data
+        iterations (int):
             The number of iterations when using an iterative reconstructor,
             leaving this at None will select the default number of iterations
             for the given algorithm (default: None)
-        use_gpu (bool)
-            Use a GPU if it is available (default: True)
-        verbose (bool)
-            Display a progress bar if applicable (default: True)
-        mask (numpy.ndarray)
-            Boolean mask that indicates which voxels should be used in the
-            reconstruction (default: None)
-
-    Returns:
-        Volume
-            The reconstructed volume
+        use_gpu (bool): Use a GPU if it is available (default: True)
+        weighted (bool): Use a weighted backprojection (default: False)
+            
+    Returns:    
+        Volume: The reconstructed volume
     """
     indices = np.argsort(sino.angles)
     sino.angles = sino.angles[indices]
     data = sino.data[indices, : ,:]
     data = np.transpose(data, (1,0,2)) # ASTRA expects (z, n, d)
-
+ 
     weights= np.ones_like(sino.angles)
     if weighted == True:
         sorted_angles = deepcopy(sino.angles) +  90
@@ -108,7 +97,7 @@ def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weigh
     return volume
 
 
-@tomobase_hook_process(name='Astra', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value())
+@tomobase_hook_process(name='Astra', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value)
 def astra_reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gpu:bool=True):
     """Reconstruct a volume from a given sinogram.
 
@@ -135,7 +124,7 @@ def astra_reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gp
             The reconstructed volume
     """
     logger.info('Reconstructing...')
-    data = np.transpose(sino.data, (2,0,1))  # ASTRA expects (z, n, d)
+    data = np.transpose(sino.data, (1,0,2))  # ASTRA expects (z, n, d)
     use_gpu = use_gpu and astra.use_cuda()
 
     method = method.upper()

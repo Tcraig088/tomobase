@@ -33,7 +33,8 @@ def background_subtract_median(sino: Sinogram,  inplace:bool=True):
     if not inplace:
         sino = deepcopy(sino)
 
-    median = np.median(sino.data)
+    sino.set_context()
+    median = xp.median(sino.data)
     sino.data[sino.data<median] = 0
 
     return sino

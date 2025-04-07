@@ -26,54 +26,39 @@ def _knockon(volume, knockon):
     return volume
 
 
-def _deform(obj, deform):
+def _deform(obj, deform, normalize=True):
     #something isnt quite right here the size keeps getting bigger 
     sig = 10
     coord = np.indices(obj.shape, dtype=np.float32)
     seed = (np.random.rand(3, *obj.shape) * 2) - 1
     seed_list = [skimage.filters.gaussian(seed[i], sig) for i in range(3)]
     amplitude = np.sqrt(sum(seed_list[i] ** 2 for i in range(3)))
-    print('sum prior deform:', np.sum(obj))
+
     mask = (obj != 0).astype(int)
     count = np.sum(mask)
-    shape = obj.shape
-    print('mask sum:', np.sum(mask))
 
-    # Normalize the deformation field by its amplitude
     for i in range(3):
         seed[i] = (seed[i] * deform) / amplitude
-
-    # Add the deformation field to the coordinate grid
     coord = coord + seed
-
-
-    # Perform the warping
     obj = skimage.transform.warp(obj, coord)
+    if normalize:
+        obj_flat = obj.flatten()
+        nonzero_indices = np.where(obj_flat != 0)[0]
+        nonzero_values = obj_flat[nonzero_indices]
+        sorted_indices = np.argsort(nonzero_values)
+        if len(nonzero_values) <= count:
+            threshold_value = np.min(nonzero_values)
+        else:
+            threshold_value = nonzero_values[sorted_indices[-count]]
+        obj_flat[obj_flat < threshold_value] = 0
+        obj = obj_flat.reshape(obj.shape)
+        obj[obj>0] = 1
 
-    obj_flat = obj.flatten()
-    nonzero_indices = np.where(obj_flat != 0)[0]
-    nonzero_values = obj_flat[nonzero_indices]
-    
-    # Step 3: Sort the values and identify the threshold to keep the same count of nonzero voxels
-    sorted_indices = np.argsort(nonzero_values)
-    if len(nonzero_values) <= count:
-        threshold_value = np.min(nonzero_values)
-    else:
-        threshold_value = nonzero_values[sorted_indices[-count]]
-    obj_flat[obj_flat < threshold_value] = 0
-    
-    # Step 5: Reshape the object back to its original shape
-    obj = obj_flat.reshape(obj.shape)
-    obj[obj>0] = 1
-    
-    mask = (obj != 0).astype(int)
-    print('sum after deform:', np.sum(obj))
-    print('mask sum:', np.sum(mask))
     return obj
 
-#@tomobase_hook_process(name='Beam Damage', category=TOMOBASE_TRANSFORM_CATEGORIES.DEFORM.value())
-def beamdamage(volume: Volume, knockon: float = 0.01, elasticdeform=0.1):
-    volume.data = _deform(volume.data, elasticdeform)
+@tomobase_hook_process(name='Beam Damage', category=TOMOBASE_TRANSFORM_CATEGORIES.DEFORM.value)
+def beamdamage(volume: Volume, knockon: float = 0.01, elasticdeform=0.1, normalize: bool = True):
+    volume.data = _deform(volume.data, elasticdeform, normalize)
     volume.data = _knockon(volume.data, knockon)
     return volume
 

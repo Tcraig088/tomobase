@@ -60,24 +60,30 @@ class EnvironmentContext():
             return
     
 
-        def __getattr__(self, name):
-            if self.context == GPUContext.CUPY and self._cupy_available:
-                module = cp
-            else:
-                module = np
+    def __getattr__(self, name):
+        if self.context == GPUContext.CUPY and self._cupy_available:
+            module = cp
+        else:
+            module = np
                 
-            attr = getattr(module, name)
+        attr = getattr(module, name)
+        if name != 'get_context' and name != 'set_context' and name != '__getattr__':
             if callable(attr):
                 def wrapper(*args, **kwargs):
                     return attr(*args, **kwargs)
                 return wrapper
             else:
                 return attr
-
-xp = EnvironmentContext()
-xp.set_gpucontext(GPUContext.NUMPY)
+            
+    def get_context(self):
+        _dict = {}
+        _dict['context'] = self.context
+        _dict['device'] = self.device
+        return _dict
 
 import numpy as np
+xp = EnvironmentContext()
+xp.set_context(GPUContext.NUMPY)
 if xp._cupy_available:
     import cupy as cp
 

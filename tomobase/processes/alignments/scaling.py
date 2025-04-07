@@ -1,6 +1,7 @@
 from copy import deepcopy, copy
 import numpy as np
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
+from tomobase.registrations.environment import xp
 from tomobase.data import Sinogram
 from tomobase.hooks import tomobase_hook_process
 import ipywidgets as widgets
@@ -12,37 +13,36 @@ _subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value] = 'Image Scaling'
 
 @tomobase_hook_process(name='Normalize', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def normalize(sino: Sinogram, inplace: bool = True):
-    """
-    Normalize the input array to the range [0, 1].
-
-    Parameters:
-    sino (Sinogram): Input array to be normalized.
-    inplace (bool): Whether to modify the array in place or return a new array.
-
+    """Normalize the sinogram data to the range [0, 1].
+    
+    Arguments:
+        sino (Sinogram): The projection data
+        inplace (bool): Whether to do the operation in-place in the input data object (default: True)
     Returns:
-    Sinogram: Normalized array.
+        Sinogram: The result
     """
+    
     if not inplace:
         sino = deepcopy(sino)
+    sino.set_context()
     
     sino.data = (sino.data - np.min(sino.data)) / (np.max(sino.data) - np.min(sino.data))
     return sino
 
 @tomobase_hook_process(name='Bin Data', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def bin(sino: Sinogram, factor: int = 2, inplace: bool = True):
-    """
-    Bin a 3D or 4D array along the last two axes.
-
-    Parameters:
-    sino (Sinogram): Input array to be binned.
-    factor (int): Binning factor.
-    inplace (bool): Whether to modify the array in place or return a new array.
-
+    """Bin the sinogram data by a specified factor.
+    
+    Arguments:
+        sino (Sinogram): The projection data
+        factor (int): The binning factor (default: 2)
+        inplace (bool): Whether to do the operation in-place in the input data object (default: True)
     Returns:
-    Sinogram: Binned array.
+        Sinogram: The result
     """
     if not inplace:
         sino = deepcopy(sino)
+    sino.set_context()
     
     if sino.data.ndim == 3:
         # Bin the data for the last two axes
@@ -64,17 +64,14 @@ def bin(sino: Sinogram, factor: int = 2, inplace: bool = True):
 
 @tomobase_hook_process(name='Pad Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0, inplace: bool = True):
-    """
-    Pad the sinogram to the specified size.
-
-    Parameters:
-    sino (Sinogram): Input sinogram to be padded.
-    x (int): Target size for the x dimension.
-    y (int): Target size for the y dimension.
-    inplace (bool): Whether to modify the array in place or return a new array.
-
+    """ Pad the sinogram to the specified size.
+    Arguments:
+        sino (Sinogram): The projection data
+        x (int): The target size for the x dimension
+        y (int): The target size for the y dimension
+        inplace (bool): Whether to do the operation in-place in the input data object (default: True)
     Returns:
-    Sinogram: Padded sinogram.
+        Sinogram: The result
     """
     if not inplace:
         sino = deepcopy(sino)
@@ -83,11 +80,11 @@ def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0, inplace: bool = True):
     pad_y = y - sino.data.shape[-1]
     if pad_x < 0 or pad_y < 0:
         raise ValueError("Cannot pad to a smaller size")
-    sino.data = np.pad(sino.data, ( (0, 0), (pad_x // 2, pad_x // 2), (pad_y // 2, pad_y // 2)), mode='constant')
+    sino.data = xp.pad(sino.data, ( (0, 0), (pad_x // 2, pad_x // 2), (pad_y // 2, pad_y // 2)), mode='constant')
 
     return sino
 
-@tomobase_hook_process(name='Crop Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
+#@tomobase_hook_process(name='Crop Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 def crop_sinogram(sino: Sinogram, x: int = 0, y: int = 0, inplace: bool = True):
     """
     Crop the sinogram to the specified size.
