@@ -5,13 +5,14 @@ from scipy.ndimage import  binary_dilation
 from skimage.filters import threshold_otsu
 
 from tomobase.hooks import tomobase_hook_process
-from tomobase.data import Sinogram
+from tomobase.data import Sinogram, Image
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from tomobase.registrations.environment import xp, GPUContext
 import PIL
-from PIL import Image
+
 import io
 
+from typing import Union
 import ipywidgets as widgets
 from IPython.display import display, clear_output
 import stackview
@@ -19,10 +20,9 @@ import stackview
 from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QDoubleSpinBox
 from qtpy.QtCore import Qt
 
-_subcategories = {}
-_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value] = 'Background Corrections'
-@tomobase_hook_process(name='Subtract Median', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
-def background_subtract_median(sino: Sinogram,  inplace:bool=True):
+_subcategories = ['Background Corrections']
+@tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+def background_subtract_median(image: Union[Image, Sinogram]):
     """Subtract the median of the sinogram from the sinogram."
     Args:
         sino (Sinogram): The sinogram to process
@@ -30,14 +30,10 @@ def background_subtract_median(sino: Sinogram,  inplace:bool=True):
     Returns:
         Sinogram (Sinogram): The resulting Sinogram
     """
-    if not inplace:
-        sino = deepcopy(sino)
+    median = xp.xupy.median(image.data)
+    image.data[image.data<median] = 0
 
-    sino.set_context()
-    median = xp.median(sino.data)
-    sino.data[sino.data<median] = 0
-
-    return sino
+    return image
 
 
 class MaskBackgroundManual():

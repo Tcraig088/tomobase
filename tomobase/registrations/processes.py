@@ -4,6 +4,10 @@ from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from collections.abc import Iterable
 from tomobase.log import logger
 
+from colorama import Fore, Style, init
+init(autoreset=True)
+
+
 
 class ProcessItemDict(ItemDict):   
     def __init__(self, **kwargs):
@@ -17,22 +21,14 @@ class ProcessItemDict(ItemDict):
                 if key not in self._dict:
                     self[key] = ItemDictNonSingleton()
                 self[key][obj.tomobase_name] = obj
-                TOMOBASE_TRANSFORM_CATEGORIES[key] = obj.tomobase_subcategories
-                
-            if isinstance(obj.tomobase_category, Iterable):
-                for category in obj.tomobase_category:
-                    if category == value.value:
-                        if key not in self._dict:
-                            self[key] = ItemDictNonSingleton()
-                        self[key][obj.tomobase_name] = obj
-                        TOMOBASE_TRANSFORM_CATEGORIES[key] = obj.tomobase_subcategories
-    
+                TOMOBASE_TRANSFORM_CATEGORIES[key].build_heierarchy(obj.tomobase_subcategories)
+
     def help(self):
         msg = "\nAvailable processes:\n"
         for key, value in self._dict.items():
-            msg += f"\nCategory: {value.name}:\n"
+            msg += f"\n{Fore.BLUE}Category: {value.name}{Style.RESET_ALL}\n"
             for subkey, subvalue in value.items():
-                msg += f"{subvalue.name}: {subvalue.value}\n"
+                msg += f"{Fore.GREEN}{subvalue.name}: {subvalue.value.__name__}{Style.RESET_ALL}\n"
                 msg += f"{subvalue.value.__doc__}\n"
         logger.info(msg) 
         

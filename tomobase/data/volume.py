@@ -173,7 +173,7 @@ class Volume(Data):
         attributes['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
         
         metadata = metadata
-        metadata['type'] = TOMOBASE_DATATYPES.VOLUME.value()
+        metadata['type'] = TOMOBASE_DATATYPES.VOLUME.value
         metadata['axis'] = ['Projection', 'y', 'x'] if len(self.data.shape) == 3 else ['Projection', 'Signal', 'y', 'x']
         
         for key, value in self.metadata.items():

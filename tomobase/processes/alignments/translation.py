@@ -1,21 +1,19 @@
-import numpy as np
-from copy import copy
-from scipy.ndimage import center_of_mass, shift, rotate
+import copy
 
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from tomobase.registrations.environment import xp
+from tomobase.registrations.progress import progresshandler
 from tomobase.data import Sinogram
 
 import ipywidgets as widgets
 from IPython.display import display, clear_output
 import stackview
 
-_subcategories = {}
-_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value] = 'Translation'
 
+_subcategories=['Translation']
 @tomobase_hook_process(name='Align Sinogram XCorrelation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
-def align_sinogram_xcorr(sino: Sinogram, inplace: bool = True, shifts=None, extend_return: bool = False):
+def align_sinogram_xcorr(sino: Sinogram, shifts=None):
     """Align the projection images using cross-correlation
     Arguments:
         sino (Sinogram): The projection data
@@ -26,33 +24,29 @@ def align_sinogram_xcorr(sino: Sinogram, inplace: bool = True, shifts=None, exte
         Sinogram: The result
         shifts (xp.ndarray): The shifts in pixels
     """
-    if not inplace:
-        sino = copy(sino)
-    sino.set_context()
-
+    progressbar = progresshandler.add_signal('align_sinogram_xcorr')
+    progressbar.value.start(sino.data.shape[0]-1, 'Align Sinogram XCorrelation')
     if shifts is None:
-        shifts = xp.zeros((sino.data.shape[0], 2))
-        fft_fixed = xp.fft.fft2(sino.data[0, :, :])
+        shifts = xp.xupy.zeros((sino.data.shape[0], 2))
+        fft_fixed = xp.xupy.fft.fft2(sino.data[0, :, :])
         for i in range(sino.data.shape[0] - 1):
-            fft_moving = xp.fft.fft2(sino.data[i + 1, :, :])
-            xcorr = xp.fft.ifft2(np.multiply(fft_fixed, np.conj(fft_moving)))
+            fft_moving = xp.xupy.fft.fft2(sino.data[i + 1, :, :])
+            xcorr = xp.xupy.fft.ifft2(xp.xupy.multiply(fft_fixed, xp.xupy.conj(fft_moving)))
             fft_fixed = fft_moving
-            rel_shift = xp.asarray(np.unravel_index(np.argmax(xcorr), xcorr.shape))
+            rel_shift = xp.xupy.asarray(xp.xupy.unravel_index(xp.xupy.argmax(xcorr), xcorr.shape))
             shifts[i + 1, :] = shifts[i, :] + rel_shift
 
-        shifts %= xp.asarray(sino.data.shape[1:])[None, :]
-        shifts = xp.rint(shifts).astype(int)
-
+        shifts %= xp.xupy.asarray(sino.data.shape[1:])[None, :]
+        shifts = xp.xupy.rint(shifts).astype(int)
+        progressbar.value.update(i) # Note their is another loop in the function but it isnt tracked cause its too fast
     for i in range(sino.data.shape[0]):
-        sino.data[i, :, :] = xp.roll(sino.data[i, :, :], shifts[i, :], axis=(0, 1))
+        sino.data[i, :, :] = xp.xupy.roll(sino.data[i, :, :], shifts[i, :], axis=(0, 1))
 
-    if extend_return:
-        return sino, shifts
-    else:
-        return sino
+    return sino, shifts
+
 
 @tomobase_hook_process(name='Centre of Mass', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
-def align_sinogram_center_of_mass(sino: Sinogram, inplace: bool = True, extend_return: bool = False):
+def align_sinogram_center_of_mass(sino: Sinogram):
     """Align the projection images using the center of mass
     Arguments:
         sino (Sinogram): The projection data
@@ -62,20 +56,14 @@ def align_sinogram_center_of_mass(sino: Sinogram, inplace: bool = True, extend_r
         Sinogram: The result
         offset (xp.ndarray): The offset in pixels
     """
-    #TODO: Add context shifting
-    if not inplace:
-        sino = copy(sino)
 
-    offset = np.asarray(sino.data.shape[1:]) / 2 - center_of_mass(np.sum(sino.data, axis=0))
-    sino.data = shift(sino.data, (0, offset[0], offset[1]))
+    offset = xp.xupy.asarray(sino.data.shape[1:]) / 2 - xp.scipy.ndimage.center_of_mass(xp.xupy.sum(sino.data, axis=0))
+    sino.data = xp.xupy.shift(sino.data, (0, offset[0], offset[1]))
+    return sino, offset
 
-    if extend_return:
-        return sino, offset
-    else:
-        return sino
 
 @tomobase_hook_process(name='Weight by Angle', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
-def weight_by_angle(sino: Sinogram, inplace: bool = True, extend_return: bool = False):
+def weight_by_angle(sino: Sinogram):
     """Weight the sinogram by the angle
     Arguments:
         sino (Sinogram): The projection data
@@ -85,17 +73,14 @@ def weight_by_angle(sino: Sinogram, inplace: bool = True, extend_return: bool = 
         Sinogram: The result
         weights (xp.ndarray): The weights in pixels
     """
-    #TODO: Add context shifting
-    #TODO: Add reference for method
-    if not inplace:
-        sino = copy(sino)
 
-    indices = np.argsort(sino.angles)
+    #Dont bother progress tracking for short processes
+    indices = xp.xupy.argsort(sino.angles)
     sino.angles = sino.angles[indices]
     sino.data = sino.data[indices, :, :]
-    weights = np.ones_like(sino.angles)
+    weights = xp.xupy.ones_like(sino.angles)
 
-    sorted_angles = copy(sino.angles) + 90
+    sorted_angles = copy.deepcopy(sino.angles) + 90
     n_angles = len(sorted_angles)
 
     for i in range(len(sorted_angles)):
@@ -108,12 +93,11 @@ def weight_by_angle(sino: Sinogram, inplace: bool = True, extend_return: bool = 
     ratio = 180 / (n_angles - 1)
     weights = weights / ratio
 
-    sino.data = sino.data * weights[:, None, None]
+    for i in range(sino.data.shape[0]):
+        sino.data[i, :, :] = sino.data[i, :, :] * weights[i]
 
-    if extend_return:
-        return sino, weights
-    else:
-        return sino
+    return sino, weights
+
 
 #@tomobase_hook_process(name='Manual Translation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
 class TranslateSinogramManual:

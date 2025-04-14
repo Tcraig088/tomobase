@@ -7,10 +7,10 @@ from tomobase.utils import _create_projector, _get_default_iterations, _circle_m
 from tomobase.data import Volume, Sinogram
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-
+from tomobase.registrations.progress import progresshandler
 from tomobase.log import  tomobase_logger, logger
 
-@tomobase_hook_process(name='OpTomo', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value)
+@tomobase_hook_process(name='OpTomo', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value, use_numpy=True)
 def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weighted:bool=False):
     """Reconstruct a volume from a given sinogram.
     Arguments:
@@ -72,11 +72,13 @@ def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weigh
     R = np.minimum(R, 1 / 10**-6)
     C = np.minimum(C, 1 / 10**-6)
 
-    tomobase_logger.progress_bar.start((z*iterations)+1, 'Reconstructing.')
-    progress = 0
+    slice_progressbar = progresshandler.add_signal('optomo_reconstruct')
+    slice_progressbar.value.start(z, 'Reconstruction Slices with Optomo')
 
     for i in iterator:
         for j in range(iterations):
+            iteration_progressbar = progresshandler.add_subsignal('optomo_reconstruct')
+            iteration_progressbar.start(iterations, 'Reconstruction Iterations with Optomo')
             A = np.transpose(np.transpose(np.reshape(W*vol[i, :, :], (n, d)), (1,0))*weights,(1,0)) 
             B = np.transpose(np.reshape(np.transpose(data[i, :, :],(1,0))*weights,(d,n)), (1,0))
             D = R*(B - A)
@@ -84,12 +86,15 @@ def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weigh
             vol[i, :, :] = np.reshape(np.minimum(vol[i, :, :], data.max()), (d, d))
             vol[i, :, :] = np.reshape(np.maximum(vol[i, :, :], 0), (d, d))
             vol[i, :, :] = vol[i, :, :] * (default_mask & mask[i, :, :])
-            #print('loop', i, j, np.sum(vol[i, :, :]), np.sum(data[i, :, :]))
+            iteration_progressbar.value.update(j)
+        progresshandler.remove_signal(iteration_progressbar)
+        slice_progressbar.value.update(i)
+    progresshandler.remove_signal(slice_progressbar)
 
-            tomobase_logger.progress_bar.update(progress)
-            progress += 1
+
+
             
-    tomobase_logger.progress_bar.finish()
+
 
     volume = Volume(np.transpose(vol, (2, 1,0)), sino.pixelsize)  # ASTRA gives (z, y, x)
     astra.astra.delete(proj_id)
@@ -97,7 +102,7 @@ def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weigh
     return volume
 
 
-@tomobase_hook_process(name='Astra', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value)
+@tomobase_hook_process(name='Astra', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value, use_numpy=True)
 def astra_reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gpu:bool=True):
     """Reconstruct a volume from a given sinogram.
 
@@ -154,8 +159,8 @@ def astra_reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gp
     else:
         mask = np.transpose(mask, (2, 1, 0))  # ASTRA expects (z, y, x)
 
-    tomobase_logger.progress_bar.start(z, 'Reconstructing.')
-    progress = 0
+    progressbar = progresshandler.add_signal('astra_reconstruct')
+    progressbar.value.start(z, 'Reconstruction Iteratively with Astra')
     for i in iterator:
         vol_id, vol[i, :, :] = astra.creators.create_reconstruction(
             method, proj_id, data[i, :, :], iterations,
@@ -163,11 +168,10 @@ def astra_reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gp
             use_maxc='yes', maxc=data.max(),    # max voxel can't be larger than max from sino
             use_mask='yes', mask=default_mask & mask[i, :, :],
         )
-        tomobase_logger.progress_bar.update(progress)
-        progress += 1
+        progressbar.value.update(i)
         astra.astra.delete(vol_id)
-    tomobase_logger.progress_bar.finish()
-
+        
+    progresshandler.remove_signal(progressbar)
     volume = Volume(np.transpose(vol, (2, 1, 0)), sino.pixelsize)  # ASTRA gives (z, y, x)
     astra.astra.delete(proj_id)
     logger.info('type of volume: ' + str(type(volume)))

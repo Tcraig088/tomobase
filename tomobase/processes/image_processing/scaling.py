@@ -1,18 +1,16 @@
-from copy import deepcopy, copy
-import numpy as np
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from tomobase.registrations.environment import xp
 from tomobase.data import Sinogram
 from tomobase.hooks import tomobase_hook_process
+
 import ipywidgets as widgets
 from IPython.display import display, clear_output
 import stackview
 
-_subcategories = {}
-_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value] = 'Image Scaling'
 
-@tomobase_hook_process(name='Normalize', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
-def normalize(sino: Sinogram, inplace: bool = True):
+_subcategories =['Image Scaling']
+@tomobase_hook_process(name='Normalize', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+def normalize(sino: Sinogram):
     """Normalize the sinogram data to the range [0, 1].
     
     Arguments:
@@ -21,16 +19,11 @@ def normalize(sino: Sinogram, inplace: bool = True):
     Returns:
         Sinogram: The result
     """
-    
-    if not inplace:
-        sino = deepcopy(sino)
-    sino.set_context()
-    
-    sino.data = (sino.data - np.min(sino.data)) / (np.max(sino.data) - np.min(sino.data))
+    sino.data = (sino.data - xp.xupy.min(sino.data)) / (xp.xupy.max(sino.data) - xp.xupy.min(sino.data))
     return sino
 
-@tomobase_hook_process(name='Bin Data', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
-def bin(sino: Sinogram, factor: int = 2, inplace: bool = True):
+@tomobase_hook_process(name='Bin Data', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+def bin(sino: Sinogram, factor: int = 2):
     """Bin the sinogram data by a specified factor.
     
     Arguments:
@@ -40,10 +33,6 @@ def bin(sino: Sinogram, factor: int = 2, inplace: bool = True):
     Returns:
         Sinogram: The result
     """
-    if not inplace:
-        sino = deepcopy(sino)
-    sino.set_context()
-    
     if sino.data.ndim == 3:
         # Bin the data for the last two axes
         sino.data = sino.data.reshape(sino.data.shape[0], sino.data.shape[1] // factor, factor, sino.data.shape[2] // factor, factor)
@@ -62,8 +51,8 @@ def bin(sino: Sinogram, factor: int = 2, inplace: bool = True):
     
     return sino
 
-@tomobase_hook_process(name='Pad Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
-def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0, inplace: bool = True):
+@tomobase_hook_process(name='Pad Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0):
     """ Pad the sinogram to the specified size.
     Arguments:
         sino (Sinogram): The projection data
@@ -73,19 +62,16 @@ def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0, inplace: bool = True):
     Returns:
         Sinogram: The result
     """
-    if not inplace:
-        sino = deepcopy(sino)
-
     pad_x = x - sino.data.shape[-2]
     pad_y = y - sino.data.shape[-1]
     if pad_x < 0 or pad_y < 0:
         raise ValueError("Cannot pad to a smaller size")
-    sino.data = xp.pad(sino.data, ( (0, 0), (pad_x // 2, pad_x // 2), (pad_y // 2, pad_y // 2)), mode='constant')
+    sino.data = xp.xupy.pad(sino.data, ( (0, 0), (pad_x // 2, pad_x // 2), (pad_y // 2, pad_y // 2)), mode='constant')
 
     return sino
 
 #@tomobase_hook_process(name='Crop Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
-def crop_sinogram(sino: Sinogram, x: int = 0, y: int = 0, inplace: bool = True):
+def crop_sinogram(sino: Sinogram, x: int = 0, y: int = 0):
     """
     Crop the sinogram to the specified size.
 
@@ -98,9 +84,6 @@ def crop_sinogram(sino: Sinogram, x: int = 0, y: int = 0, inplace: bool = True):
     Returns:
     Sinogram: Cropped sinogram.
     """
-    if not inplace:
-        sino = deepcopy(sino)
-
     crop_x = sino.data.shape[-2] - x
     crop_y = sino.data.shape[-1] - y
     if crop_x < 0 or crop_y < 0:

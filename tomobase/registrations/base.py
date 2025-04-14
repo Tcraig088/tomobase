@@ -4,6 +4,10 @@ import importlib
 import inspect
 from collections.abc import Iterable
 
+from colorama import Fore, Style, init
+init(autoreset=True)
+
+
 class Item(object):
     def __init__(self, value, name):
         self._value = value    
@@ -20,7 +24,13 @@ class Item(object):
             self._value[name] = value
         else:
             super().__setattr__(name, value)
-            
+
+    def __getitem__(self, key):
+        if isinstance(self._value, dict) or isinstance(self._value, ItemDictNonSingleton):
+            return self._value[key]
+        else:
+            super().__getattr__(key)
+ 
     @property
     def value(self):
         return self._value
@@ -42,9 +52,6 @@ class Item(object):
             return self._value.items()
         else:
             _dict = {}
-            msg = f"Item {self._name} is not a dictionary. Cannot return items.\n"
-            msg += f"Item {self._name} is of type {type(self._value)}"
-            logger.warning(msg)
             return _dict.items()
 
 class ItemDictNonSingleton():      
@@ -53,20 +60,22 @@ class ItemDictNonSingleton():
         # Note For Developers check setattr otherwise youll include your variables as dict keys and this will mess the whole dict up
         self._index = 0
         self._dict = {}
-        self._item_class = Item
+        self._item_class = kwargs.get('item_class', Item)
         
         #Default Values for using the plugins system 
         self._module = 'tomobase'
         self._folder = 'plugins'    
         self._hook = 'default'
 
+        reserved_keys = ['_index', '_dict', '_module', '_folder', '_hook', '_item_class', 'item_class']
         for key, value in kwargs.items():
-            newkey = key.upper()
-            newkey = newkey.replace(' ', '_')
-            if value is None:
-                value = self._index
-            self._dict[newkey] = self._item_class(value, key)
-            self._index += 1
+            if key not in reserved_keys:
+                newkey = key.upper()
+                newkey = newkey.replace(' ', '_')
+                if value is None:
+                    value = self._index
+                self._dict[newkey] = self._item_class(value, key)
+                self._index += 1
             
     def __setattr__(self, key, value):
         if key in ['_index', '_dict', '_module', '_folder', '_hook', '_item_class']:
@@ -89,7 +98,6 @@ class ItemDictNonSingleton():
         if key in self._dict:
             pass
         else:
-            logger.debug(f"Adding {key} to the dictionary")
             if value is None:
                 value = self._index
             newkey = key.upper()
@@ -120,8 +128,10 @@ class ItemDictNonSingleton():
             self[key] = value
                 
     def help(self):
-        for key, item in self._dict.items():
-            logger.info(f"{key}: {item.name}, {item.value}")
+        msg = "\n"
+        for key, value in self._dict.items():
+            msg += f"{Fore.BLUE}{key}{Style.RESET_ALL}: {value.name}, {value.value}\n"
+        logger.info(msg)
 
             
     def update(self):

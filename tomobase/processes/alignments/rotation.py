@@ -1,7 +1,7 @@
 
 import numpy as np
 from copy import copy
-import napari
+
 
 from scipy.ndimage import center_of_mass, shift, rotate
 from scipy.optimize import minimize_scalar
@@ -10,19 +10,19 @@ from scipy.optimize import minimize_scalar
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from tomobase.registrations.environment import xp
+from tomobase.registrations.progress import progresshandler
+
 from tomobase.data import Sinogram
 from tomobase.processes.reconstruct import astra_reconstruct
 from tomobase.processes.forward_project import project
-from tomobase.log import logger, tomobase_logger
+from tomobase.log import logger
 
 from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QDoubleSpinBox
 from qtpy.QtCore import Qt
 
-_subcategories = {}
-_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value] = 'Tilt Axis'
-@tomobase_hook_process(name='Align Tilt Shift', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
-def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=None,
-                          inplace=True, extend_return:bool=False, **kwargs):
+_subcategories= ['Tilt Axis']
+@tomobase_hook_process(name='Tilt Shift', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories, use_numpy=True)
+def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=0.0, **kwargs):
     """Align the tilt axis shift of a sinogram using reprojection
     Arguments:
         sino (Sinogram): The projection data
@@ -36,36 +36,30 @@ def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=None,
         Sinogram: The result
         offset (float): The offset in pixels
     """
-    #TODO: Add context shifting
-    if not inplace:
-        sino = copy(sino)
+    offset = None
+    if offsets == 0.0:
+        offsets = np.arange(-10, 11)
+    mse = np.zeros(len(offsets))
+    sino_shifted = copy(sino)
 
-    if offset is None:
-        if offsets is None:
-            offsets = np.arange(-10, 11)
-        mse = np.zeros(len(offsets))
-        sino_shifted = copy(sino)
-
-        tomobase_logger.progress_bar.start(len(offsets), 'Aligning tilt axis shift')
-        for i in range(len(offsets)):
-            sino_shifted.data = shift(sino.data, (0, offsets[i], 0))
-            reproj = project(astra_reconstruct(sino_shifted, method, **kwargs),
-                             sino.angles)
-            mse[i] = np.mean((sino_shifted.data - reproj.data) ** 2)
-            tomobase_logger.progress_bar.update(i)
-        offset = offsets[np.argmin(mse)]
-        tomobase_logger.progress_bar.finish()
+    progressbar = progresshandler.add_signal('align_tilt_axis_shift')
+    progressbar.value.start(len(offsets), 'Aligning tilt axis shift')
+    for i in range(len(offsets)):
+        sino_shifted.data = shift(sino.data, (0, offsets[i], 0))
+        progresshandler.add_subsignal('align_tilt_axis_shift', 'astra_reconstuct')
+        reproj = project(astra_reconstruct(sino_shifted, method, **kwargs), sino.angles)
+        mse[i] = np.mean((sino_shifted.data - reproj.data) ** 2)
+        progressbar.value.update(i)
+    offset = offsets[np.argmin(mse)]
+    progressbar.value.finish()
 
     sino.data = shift(sino.data, (0, offset, 0))
 
-    if extend_return:
-        return sino, offset
-    else:
-        return sino
+    return sino, offset
 
-@tomobase_hook_process(name='Align Tilt Rotation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
-def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=None,
-                             inplace:bool=True, extend_return:bool=False, **kwargs):
+
+@tomobase_hook_process(name='Tilt Rotation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories, use_numpy=True)
+def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=0.0, **kwargs):
     """Align the tilt axis rotation of a sinogram using reprojection
     Arguments:
         sino (Sinogram): The projection data
@@ -82,33 +76,32 @@ def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=None,
     
     #TODO: Add context shifting
     angles=None
-    if not inplace:
-        sino = copy(sino)
 
-    if angle is None:
+
+    if angle == 0.0:
         if angles is None:
             angles = np.arange(-4, 5)
         mse = np.zeros(len(angles))
         sino_rot = copy(sino)
-        tomobase_logger.progress_bar.start(len(angles), 'Aligning tilt axis rotation')
+
+        progressbar = progresshandler.add_signal('align_tilt_axis_rotation')
+        progressbar.value.start(len(angles), 'Aligning tilt axis rotation')
         for i in range(len(angles)):
             sino_rot.data = rotate(sino.data, angles[i], reshape=False)
             reproj = project(astra_reconstruct(sino_rot, method, **kwargs),
                             sino.angles)
             mse[i] = np.mean((sino_rot.data - reproj.data) ** 2)
-            tomobase_logger.progress_bar.update(i)
+            progressbar.value.update(i)
         angle = angles[np.argmin(mse)]
-        tomobase_logger.progress_bar.finish()
+        progressbar.value.finish()
 
     sino.data = rotate(sino.data, angle, reshape=False)
 
-    if extend_return:
-        return sino, angle
-    else:
-        return sino
-       
-@tomobase_hook_process(name='Backlash Correction', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
-def backlash_correct(sino: Sinogram, tolerance:float= 10.0, method:str='bounded', extend_return:bool=False, inplace:bool = True):
+    return sino, angle
+
+#This backlash correction is experimental and not fully tested
+#@tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
+def backlash_correct(sino: Sinogram, tolerance:float= 10.0, method:str='bounded'):
     """Correct the backlash of a sinogram using reprojection -  Note this method is currently experimental
     Arguments:
         sino (Sinogram): The projection data
@@ -121,12 +114,10 @@ def backlash_correct(sino: Sinogram, tolerance:float= 10.0, method:str='bounded'
         angle (float): The angle in degrees
     """
     
-    tomobase_logger.progress_bar.start(10, 'Correcting Backlash: Time May be imprecise')
+    progressbar = progresshandler.add_signal('backlash_correct')
+    progressbar.value.start(sino.data.shape[0], 'Backlash Correction')
     progress = 0
 
-    if not inplace:
-        sino = copy(sino)
-        
     def objective_function(value, sino, indices):
         angles = copy(sino.angles)
         sino.angles[indices] += value
@@ -134,7 +125,7 @@ def backlash_correct(sino: Sinogram, tolerance:float= 10.0, method:str='bounded'
         error = np.sqrt(np.mean((sino.data[indices,:,: ] - reproj.data) ** 2))
         sino.angles = angles
         logger.debug(f'Error: {error}')
-        tomobase_logger.progress_bar.update(progress)
+        progressbar.value.update(progress)
         progress += 1
 
         if tomobase_logger.progress_bar.max_value < progress:
@@ -153,7 +144,4 @@ def backlash_correct(sino: Sinogram, tolerance:float= 10.0, method:str='bounded'
     sino.angles[indices] += result.x
     tomobase_logger.progress_bar.finish()
     logger.debug(f'Final Error: {result.fun}, Angle Shift: {result.x}')
-    if extend_return:
-        return sino, result.x
-    else:
-        return sino
+    return sino, result.x

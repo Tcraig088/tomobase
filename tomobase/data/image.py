@@ -86,7 +86,7 @@ class Image(Data):
         attributes['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
         
         metadata = metadata
-        metadata['type'] = TOMOBASE_DATATYPES.IMAGE.value()
+        metadata['type'] = TOMOBASE_DATATYPES.IMAGE.value
         metadata['axis'] = ['Signal', 'y', 'x'] if len(self.data.shape) == 3 else ['y', 'x']
         
         for key, value in self.metadata.items():

@@ -69,7 +69,7 @@ class Data(ABC):
                 The type ID of the class
         """
         class_name_upper = cls.__name__.upper()
-        return TOMOBASE_DATATYPES[class_name_upper].value()
+        return TOMOBASE_DATATYPES[class_name_upper].value
       
     def to_file(self, filename=None, **kwargs):
         """Save the data to a file
@@ -110,14 +110,13 @@ class Data(ABC):
     def _readers(self):
         pass
 
-    def set_context(self):
-        if xp.context != self._context:
-            # convert the data to the correct context
-            if self._context == GPUContext.CUPY:
-                self.data = xp.asarray(self.data)
-            else: 
-                self.data = self.data.get()
-        # set the context
-        self._context = xp.context
-        self._device = xp.device
-        self.data 
+    def set_context(self, context=None, device=None):
+        if context is None:
+            context = xp.context
+        if device is None:
+            device = xp.device
+
+        self.data = xp.asarray(self.data, context, device)
+        self._context = context
+        self._device = device
+

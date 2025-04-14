@@ -1,19 +1,15 @@
-
 from copy import deepcopy
-import numpy as np
-from skimage.util import random_noise
-from scipy.ndimage import gaussian_filter, rotate
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from tomobase.registrations.environment import xp
 from tomobase.data import Sinogram
-  
-_subcategories = {}
-_subcategories[TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value] = 'Misalignment'
-@tomobase_hook_process(name='Gaussian Filter', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
-def gaussian_filter(sino: Sinogram, 
-              gaussian_sigma:float=1,
-              inplace:bool=True):
+from typing import Union, Tuple
+from tomobase.registrations.progress import progresshandler
+
+
+_subcategories = ['Misalignment']
+@tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+def gaussian_filter(sino: Sinogram, gaussian_sigma:float=1,):
     """Add Gaussian noise to the sinogram.
     Arguments:
         sino (Sinogram): The projection data
@@ -22,18 +18,12 @@ def gaussian_filter(sino: Sinogram,
     Returns:
         sino (sinogram): The result
     """
-    #TODO: Add context shifting
-    if not inplace:
-        sino = deepcopy(sino)
-
-    # Add Gaussian noise
-    sino.data = gaussian_filter(sino.data, gaussian_sigma)
+    sino.data = xp.scipy.ndimage.gaussian_filter(sino.data, gaussian_sigma)
     return sino
 
-@tomobase_hook_process(name='Poisson', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
+@tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
 def poisson_noise(sino: Sinogram, 
-                  rescale:float=True,
-                  inplace:bool=True):
+                  rescale:float=True):
     """Add Poisson noise to the sinogram.
     Arguments:
         sino (Sinogram): The projection data
@@ -42,22 +32,14 @@ def poisson_noise(sino: Sinogram,
     Returns:
         sino (sinogram): The result
     """
-    
-    if not inplace:
-        sino = deepcopy(sino)
-    sino.set_context()
-    
     sino.data = sino.data*rescale
     sino.data = xp.random.poisson(sino.data)
     return sino
 
 
 
-@tomobase_hook_process(name='Translational Misalignment', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
-def translational_misalignment(sino: Sinogram, 
-                               offset:float=0.25, 
-                               inplace:bool=True, 
-                               extend_return:bool=False):
+@tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+def translational_misalignment(sino: Sinogram, offset:float=0.25):
     """ Apply a random translational misalignment to the sinogram.
     Arguments:
         sino (Sinogram): The projection data
@@ -68,34 +50,34 @@ def translational_misalignment(sino: Sinogram,
         sino (Sinogram): The result
         shifts (ndarray): The shifts applied to each projection (only if extend_return is True)
     """
-    if not inplace:
-        sino = deepcopy(sino)
-    sino.set_context()
+
+    progressbar = progresshandler.add_signal('translational_misalignment')
+    progressbar.start(sino.data.shape[0], 'Translational Misalignment')
+
     
-    shifts = xp.zeros((sino.data.shape[2], 2))
-    for i in range(sino.data.shape[2]):
+    shifts = xp.xupy.zeros((sino.data.shape[0], 2))
+    for i in range(sino.data.shape[0]):
         if i == 0:
             shifts[i, :] = 0
             continue
-        image_offset_x = int(xp.round(sino.data.shape[1] * np.random.uniform(-offset, offset)))
-        image_offset_y = int(xp.round(sino.data.shape[2] * np.random.uniform(-offset, offset)))
-        sino.data[i, :, :] = xp.roll(sino.data[i, :, :], (image_offset_x, image_offset_y), axis=(1, 2))
+        image_offset_x = int(xp.xupy.round(sino.data.shape[1] * xp.xupy.random.uniform(-offset, offset)))
+        image_offset_y = int(xp.xupy.round(sino.data.shape[2] * xp.xupy.random.uniform(-offset, offset)))
+        sino.data[i, :, :] = xp.xupy.roll(sino.data[i, :, :], (image_offset_x, image_offset_y), axis=(0, 1))
         shifts[i, :] = (image_offset_x, image_offset_y)
-        
-    if extend_return:
-        return sino, shifts
-    else:
-        return sino
+        progressbar.update(i)
+    
+    progresshandler.remove_signal('translational_misalignment')
+
+    return sino, shifts
+
     
     
-@tomobase_hook_process(name='Rotational Misalignment', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
+@tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
 def rotational_misalignment(sino: Sinogram, 
                             tilt_theta:float = 3,
                             tilt_alpha:float=2, 
                             backlash:float=0.5, 
-                            backlash_backwards:bool =  True, 
-                            inplace:bool=True, 
-                            extend_return:bool=False):
+                            backlash_backwards:bool =  True):
     """ Apply a random rotational misalignment to the sinogram.
     Arguments:
         sino (Sinogram): The projection data
@@ -109,33 +91,28 @@ def rotational_misalignment(sino: Sinogram,
         sino (Sinogram): The result
         rotations (ndarray): The rotations applied to each projection (only if extend_return is True)
     """
-    #TODO: Add context shifting
-    if not inplace:
-        sino = deepcopy(sino)
-    sino.set_context()
-        
-    if extend_return:
-        angles_original =  deepcopy(sino.angles)
-        
-    rotations = xp.zeros(sino.data.shape[0])
+    progressbar = progresshandler.add_signal('rotational_misalignment')
+    progressbar.value.start(sino.data.shape[0], 'Rotational Misalignment')
+
+    angles_original =  deepcopy(sino.angles)  
+    rotations = xp.xupy.zeros(sino.data.shape[0])
     for i in range(sino.data.shape[0]):
-        rotations[i] = tilt_theta * xp.random.uniform(-1, 1)
-        sino.data[i, :, : ] = rotate(sino.data[i, :, :], rotations[i], reshape=False)
-    
+        rotations[i] = tilt_theta * xp.xupy.random.uniform(-1, 1)
+        sino.data[i, :, : ] = xp.scipy.ndimage.rotate(sino.data[i, :, :], rotations[i], reshape=False)
+        progressbar.update(i)
 
     for i in range(sino.data.shape[0]):
-        offset = tilt_alpha * np.random.uniform(-1, 1)
+        offset = tilt_alpha * xp.xupy.random.uniform(-1, 1)
         if i > 0:
             if backlash_backwards and sino.angles[i] < sino.angles[i-1]:
                 offset += backlash
             elif not backlash_backwards and sino.angles[i] > sino.angles[i-1]:
                 offset += backlash
-        sino.angles = sino.angles + offset  
-             
-    if extend_return:
-        return sino, rotations, angles_original
-    else:
-        return sino
+        sino.angles = sino.angles + offset
+
+    progresshandler.remove_signal(progressbar) 
+    return sino, rotations, angles_original
+
     
 
     
