@@ -8,6 +8,8 @@ from functools import wraps
 from tomobase.registrations.environment import xp, GPUContext
 from tomobase.data.base import Data
 from inspect import signature, Parameter
+from typing import Union
+from collections.abc import Iterable
 
 
 def tomobase_hook_tiltscheme(name: str):
@@ -36,66 +38,26 @@ def tomobase_hook_process(**kwargs):
     isquantification = kwargs.get("isquantification", False)
     def decorator(obj):
         if inspect.isfunction(obj):
-            if isquantification:
-                wrapper = _quantification_wrapper(obj, use_numpy)
-                wrapper.isquantification = True
-            else:
-                wrapper = _function_wrapper(obj, use_numpy)
-            pass
+                wrapper = _function_wrapper(obj, use_numpy, isquantification)
         obj = _registration(wrapper, **kwargs)
         return obj
     return decorator
 
 
-def _quantification_wrapper(func, use_numpy):
+def _function_wrapper(func, use_numpy, isquantification):
     original_sig = signature(func)
     params = list(original_sig.parameters.values())
-    params = [param for param in params if param.name != "object"]
-    params.append(Parameter("kwargs", kind=Parameter.VAR_KEYWORD))
-    params.append(Parameter("units", kind=Parameter.KEYWORD_ONLY, default=use_numpy, annotation=str))
-    params.append(Parameter("inplace", kind=Parameter.KEYWORD_ONLY, default=True, annotation=bool))
-    params.append(Parameter("verbose_outputs", kind=Parameter.KEYWORD_ONLY, default=False, annotation=bool))
     
-    
-    params = sorted(
-        params,
-        key=lambda p: (
-            0 if p.kind == Parameter.POSITIONAL_ONLY else
-            1 if p.kind == Parameter.POSITIONAL_OR_KEYWORD else
-            2 if p.kind == Parameter.VAR_POSITIONAL else
-            3 if p.kind == Parameter.KEYWORD_ONLY else
-            4  # Parameter.VAR_KEYWORD
-        )
-    )
-    new_sig = original_sig.replace(parameters=params)
-
-    @wraps(func)
-    def wrapper(*args, units:str='a.u.', inplace:bool=True, verbose_outputs:bool=False, **kwargs):
-        if use_numpy:
-            xp.set_context(GPUContext.NUMPY, 0)
-        context = xp.get_context()
-        for arg in args:
-            if isinstance(arg, Data):
-                if not inplace:
-                    arg = deepcopy(arg)
-                arg.set_context()
-        for key, value in kwargs.items():
-            if isinstance(value, Data):
-                if not inplace:
-                    kwargs[key] = deepcopy(value)
-                kwargs[key].set_context()
-        results =  func(*args, **kwargs)
-        xp.set_context(context)
-        if isinstance(results, tuple) and verbose_outputs == False:
-            return results[0]
-        else:
-            return results
-    wrapper.__signature__ = new_sig
-    return wrapper
-
-def _function_wrapper(func, use_numpy):
-    original_sig = signature(func)
-    params = list(original_sig.parameters.values())
+    if isquantification:
+        object_name = 'Data Object'
+        for param in params:
+            if param.name != "reference":
+                    if isinstance(param.annotation, Data) or issubclass(param.annotation, Data):  
+                        param.replace(annotation=Union[dict[str, Data], Data])
+                        names = param.name   
+                        
+    params.append(Parameter("units_x", kind=Parameter.KEYWORD_ONLY, default='a.u.', annotation=str))
+    params.append(Parameter("units_y", kind=Parameter.KEYWORD_ONLY, default='a.u.', annotation=str))
     params.append(Parameter("inplace", kind=Parameter.KEYWORD_ONLY, default=True, annotation=bool))
     params.append(Parameter("verbose_outputs", kind=Parameter.KEYWORD_ONLY, default=False, annotation=bool))
     params = sorted(
@@ -111,21 +73,26 @@ def _function_wrapper(func, use_numpy):
     new_sig = original_sig.replace(parameters=params)
 
     @wraps(func)
-    def wrapper(*args, inplace:bool=True, verbose_outputs:bool=False, **kwargs):
+    def wrapper(*args, unit_x:str='a.u.', unit_y:str='a.u.', inplace:bool=True, verbose_outputs:bool=False, **kwargs):
         if use_numpy:
             xp.set_context(GPUContext.NUMPY, 0)
         context = xp.get_context()
-        for arg in args:
-            if isinstance(arg, Data):
-                if not inplace:
-                    arg = deepcopy(arg)
-                arg.set_context()
         for key, value in kwargs.items():
+            if isinstance(value, dict):
+                for key, value in value.items():
+                    if isinstance(value, Data):
+                        if not inplace:
+                            value = deepcopy(value)
+                        value.set_context()
             if isinstance(value, Data):
                 if not inplace:
                     kwargs[key] = deepcopy(value)
                 kwargs[key].set_context()
-        results =  func(*args, **kwargs)
+                
+        if isquantification:
+            results = _quantify(func, object_name, unit_x, unit_y, *args, **kwargs)     
+        else:
+            results =  func(*args, **kwargs)
         xp.set_context(context)
         if isinstance(results, tuple) and verbose_outputs == False:
             return results[0]
@@ -134,13 +101,46 @@ def _function_wrapper(func, use_numpy):
     wrapper.__signature__ = new_sig
     return wrapper
 
+def _quantify(func, object_name, unit_x:str='a.u.',unit_y:str='a.u.', *args, **kwargs):
+    object = kwargs.pop(object_name, None)
+    if not isinstance(object, dict):
+        object = {object_name: object}
 
+    results_list = []
+    names = [name.replace("_", " ") for name in object.keys()]
+    for key, value in object.items():
+        output = func(*args, object_name=value, **kwargs)
+        if not isinstance(output, tuple):
+            output = (output,)
+
+        results_list.append(output)       
+        results_list = list(zip(*results_list))
+            
+        df = xp.df.DataFrame({})
+        first_outputs = results_list.pop(0)
+        if isinstance(first_outputs[0], xp.df.DataFrame):
+            for i, output in enumerate(first_outputs):
+                first_outputs[i].columns = [names[i]+"_x", names[i]+"_y"]
+                df = xp.df.concat([df, first_outputs[i]], axis=1)
+                df.metadata = {}
+        if isinstance(first_outputs[0], xp.xupy.ndarray):
+            df = xp.df.DataFrame({'x':names, 'y':first_outputs} )
+            df.metadata ={}
+        else:
+            df = xp.df.DataFrame({'x':names, 'y':first_outputs} )
+            df.metadata = {}
+                
+        df.metadata['data type'] = type(value).__name__
+        df.metadata['unit_x'] = unit_x
+        df.metadata['unit_y'] = unit_y
+        return df, *results_list
 
 def _registration(obj, **kwargs):
     obj.tomobase_name = kwargs.get("name", obj.__name__)
     obj.is_tomobase_process = True
     obj.tomobase_category = kwargs.get("category", None)
     obj.tomobase_subcategories = deepcopy(kwargs.get("subcategories", []))
+    obj.tomobase_quantification = kwargs.get("isquantification", False)
     if obj.tomobase_category is None:
         raise ValueError("category is required")
     

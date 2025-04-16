@@ -58,4 +58,4 @@ class TransformItemDict(ItemDict):
                 
         logger.info(msg)
         
-TOMOBASE_TRANSFORM_CATEGORIES = TransformItemDict( Image_Processing=None, Align=None, Project=None, Reconstruct=None, Deform=None )
+TOMOBASE_TRANSFORM_CATEGORIES = TransformItemDict( Image_Processing=None, Align=None, Project=None, Reconstruct=None, Deform=None, Quantification=None )
