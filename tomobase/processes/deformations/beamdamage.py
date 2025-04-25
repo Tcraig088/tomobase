@@ -8,8 +8,7 @@ def _knockon(volume, knockon):
     kernel = xp.xupy.ones((3, 3, 3))
     mask = (volume != 0).astype(int)
     pmask = xp.scipy.ndimage.convolve(mask, kernel, mode='constant', cval=0.0)
-    mask_interior = xp.xupy.zeros(volume.shape, bool)
-    mask_interior[pmask >= 27] = 1
+    mask_interior = (pmask >= 27)
 
     pmask = xp.xupy.power(knockon, pmask/3)
     seed = xp.xupy.random.rand(*volume.shape)
@@ -24,7 +23,7 @@ def _knockon(volume, knockon):
 def _deform(obj, deform, normalize=True):
     #something isnt quite right here the size keeps getting bigger 
     sig = 10
-    coord = xp.xupy.indices(obj.shape, dtype=np.float32)
+    coord = xp.xupy.indices(obj.shape, dtype= xp.xupy.float32)
     seed = (xp.xupy.random.rand(3, *obj.shape) * 2) - 1
     seed_list = [xp.scipy.ndimage.gaussian_filter(seed[i], sig) for i in range(3)]
     amplitude = xp.xupy.sqrt(sum(seed_list[i] ** 2 for i in range(3)))
@@ -35,7 +34,7 @@ def _deform(obj, deform, normalize=True):
     for i in range(3):
         seed[i] = (seed[i] * deform) / amplitude
     coord = coord + seed
-    obj = xp.xupy.ndimage.map_coordinates(obj, coord, order=1, mode='constant', cval=0.0)
+    obj = xp.scipy.ndimage.map_coordinates(obj, coord, order=1, mode='constant', cval=0.0)
     if normalize:
         obj_flat = obj.flatten()
         nonzero_indices = xp.xupy.where(obj_flat != 0)[0]
