@@ -1,6 +1,6 @@
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from tomobase.registrations.environment import xp
-from tomobase.data import Sinogram
+from tomobase.data import Sinogram, Data, Volume
 from tomobase.hooks import tomobase_hook_process
 
 import ipywidgets as widgets
@@ -23,7 +23,7 @@ def normalize(sino: Sinogram):
     return sino
 
 @tomobase_hook_process(name='Bin Data', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
-def bin(sino: Sinogram, factor: int = 2):
+def bin(obj: Data, factor: int = 2):
     """Bin the sinogram data by a specified factor.
     
     Arguments:
@@ -33,23 +33,35 @@ def bin(sino: Sinogram, factor: int = 2):
     Returns:
         Sinogram: The result
     """
-    if sino.data.ndim == 3:
-        # Bin the data for the last two axes
-        sino.data = sino.data.reshape(sino.data.shape[0], sino.data.shape[1] // factor, factor, sino.data.shape[2] // factor, factor)
-        sino.data = sino.data.mean(axis=2)
-        sino.data = sino.data.mean(axis=3)
-    elif sino.data.ndim == 4:
-        # Bin the data for the last two axes
-        sino.data = sino.data.reshape(sino.data.shape[0], sino.data.shape[1], sino.data.shape[2] // factor, factor, sino.data.shape[3] // factor, factor)
-        sino.data = sino.data.mean(axis=3)
-        sino.data = sino.data.mean(axis=4)
-    else:
-        raise ValueError("Input data must be a 3D or 4D array.")
+    skipped_axis = 0
+    if isinstance(obj, Sinogram):
+        skipped_axis += 1
+    if obj.data.ndim > obj.dim_default:
+        skipped_axis += 1
+
+    axes = range(obj.data.ndim)
+    factors = [1 if (i < skipped_axis) else factor for i in axes]
+
+
+     # Check divisibility
+    for i, (dim, b) in enumerate(zip(obj.data.shape, factors)):
+        if dim % b != 0:
+            raise ValueError(f"Axis {i} size {dim} not divisible by bin factor {b}")
+
+    # Compute new shape for reshaping
+    reshaped = []
+    for dim, b in zip(obj.data.shape, factors):
+        reshaped.extend([dim // b, b])
+    obj.data = obj.data.reshape(reshaped)
+
+    # Compute mean over binning axes
+    for i in reversed(range(obj.data.ndim // 2)):
+        obj.data = obj.data.mean(axis=i * 2 + 1) 
+
+    if not obj.pixelsize == 1.0:
+        obj.pixelsize = obj.pixelsize * factor
     
-    if not sino.pixelsize == 1.0:
-        sino.pixelsize = sino.pixelsize * factor
-    
-    return sino
+    return obj
 
 @tomobase_hook_process(name='Pad Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
 def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0):

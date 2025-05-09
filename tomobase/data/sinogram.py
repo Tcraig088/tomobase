@@ -71,11 +71,12 @@ class Sinogram(Data):
             times = np.linspace(1, len(angles), len(angles)+1)
         elif len(times) != len(angles):
             raise ValueError(("There should be the same number of projection images as times."))
-        
+
         self.times = times
         self.data = data
         super().__init__(pixelsize, metadata)
         self.angles = np.asarray(angles)
+        self.dim_default = 3
         
     def sort(self, bytime = False):
         """
