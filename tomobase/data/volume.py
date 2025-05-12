@@ -68,6 +68,7 @@ class Volume(Data):
         """
         self.data = data
         super().__init__(pixelsize, metadata)
+        self.dim_default = 3
     
     @staticmethod
     def _read_rec(filename, normalize=True, **kwargs):

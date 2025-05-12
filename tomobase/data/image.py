@@ -37,6 +37,7 @@ class Image(Data):
         """
         self.data = data
         super().__init__(pixelsize, metadata=metadata)
+        self.dim_default = 2
 
     @staticmethod
     def _read_emi(filename, **kwargs):
