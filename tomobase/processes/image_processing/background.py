@@ -5,7 +5,7 @@ from scipy.ndimage import  binary_dilation
 from skimage.filters import threshold_otsu
 
 from tomobase.hooks import tomobase_hook_process
-from tomobase.data import Sinogram, Image
+from tomobase.data import Sinogram, Image, Data
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from tomobase.registrations.environment import xp, GPUContext
 import PIL
@@ -22,7 +22,7 @@ from qtpy.QtCore import Qt
 
 _subcategories = ['Background Corrections']
 @tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
-def background_subtract_median(image: Union[Image, Sinogram]):
+def background_subtract_median(image: Data):
     """Subtract the median of the sinogram from the sinogram."
     Args:
         sino (Sinogram): The sinogram to process

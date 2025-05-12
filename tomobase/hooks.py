@@ -36,28 +36,26 @@ def tomobase_hook_process(**kwargs):
     """
     use_numpy = kwargs.get("use_numpy", False)
     isquantification = kwargs.get("isquantification", False)
+    units = kwargs.get("units", None)
     def decorator(obj):
         if inspect.isfunction(obj):
-                wrapper = _function_wrapper(obj, use_numpy, isquantification)
+                wrapper = _function_wrapper(obj, use_numpy, isquantification, units)
         obj = _registration(wrapper, **kwargs)
         return obj
     return decorator
 
 
-def _function_wrapper(func, use_numpy, isquantification):
+def _function_wrapper(func, use_numpy, isquantification, units=None):
     original_sig = signature(func)
     params = list(original_sig.parameters.values())
-    
+
     if isquantification:
-        object_name = 'Data Object'
-        for param in params:
+        for i, param in enumerate(params):
             if param.name != "reference":
-                    if isinstance(param.annotation, Data) or issubclass(param.annotation, Data):  
-                        param.replace(annotation=Union[dict[str, Data], Data])
-                        names = param.name   
-                        
-    params.append(Parameter("units_x", kind=Parameter.KEYWORD_ONLY, default='a.u.', annotation=str))
-    params.append(Parameter("units_y", kind=Parameter.KEYWORD_ONLY, default='a.u.', annotation=str))
+                if isinstance(param.annotation, type) and issubclass(param.annotation, Data):
+                    params[i] = param.replace(annotation=dict[str, Data])
+                    object_name = param.name
+
     params.append(Parameter("inplace", kind=Parameter.KEYWORD_ONLY, default=True, annotation=bool))
     params.append(Parameter("verbose_outputs", kind=Parameter.KEYWORD_ONLY, default=False, annotation=bool))
     params = sorted(
@@ -67,30 +65,31 @@ def _function_wrapper(func, use_numpy, isquantification):
             1 if p.kind == Parameter.POSITIONAL_OR_KEYWORD else
             2 if p.kind == Parameter.VAR_POSITIONAL else
             3 if p.kind == Parameter.KEYWORD_ONLY else
-            4  # Parameter.VAR_KEYWORD
+            4
         )
     )
+
     new_sig = original_sig.replace(parameters=params)
 
     @wraps(func)
-    def wrapper(*args, unit_x:str='a.u.', unit_y:str='a.u.', inplace:bool=True, verbose_outputs:bool=False, **kwargs):
+    def wrapper(*args, inplace:bool=True, verbose_outputs:bool=False, **kwargs):
         if use_numpy:
             xp.set_context(GPUContext.NUMPY, 0)
         context = xp.get_context()
         for key, value in kwargs.items():
             if isinstance(value, dict):
-                for key, value in value.items():
-                    if isinstance(value, Data):
+                for subkey, subvalue in value.items():
+                    if isinstance(subvalue, Data):
                         if not inplace:
-                            value = deepcopy(value)
-                        value.set_context()
+                            subvalue = deepcopy(subvalue)
+                        subvalue.set_context()
             if isinstance(value, Data):
                 if not inplace:
                     kwargs[key] = deepcopy(value)
                 kwargs[key].set_context()
                 
         if isquantification:
-            results = _quantify(func, object_name, unit_x, unit_y, *args, **kwargs)     
+            results = _quantify(func, object_name, units, *args, **kwargs)     
         else:
             results =  func(*args, **kwargs)
         xp.set_context(context)
@@ -101,7 +100,7 @@ def _function_wrapper(func, use_numpy, isquantification):
     wrapper.__signature__ = new_sig
     return wrapper
 
-def _quantify(func, object_name, unit_x:str='a.u.',unit_y:str='a.u.', *args, **kwargs):
+def _quantify(func, object_name, units, *args, **kwargs):
     object = kwargs.pop(object_name, None)
     if not isinstance(object, dict):
         object = {object_name: object}
@@ -109,7 +108,9 @@ def _quantify(func, object_name, unit_x:str='a.u.',unit_y:str='a.u.', *args, **k
     results_list = []
     names = [name.replace("_", " ") for name in object.keys()]
     for key, value in object.items():
-        output = func(*args, object_name=value, **kwargs)
+        kwargs[object_name] = value
+        output = func(*args, **kwargs)
+        kwargs.pop(object_name, None)
         if not isinstance(output, tuple):
             output = (output,)
 
@@ -131,8 +132,15 @@ def _quantify(func, object_name, unit_x:str='a.u.',unit_y:str='a.u.', *args, **k
             df.metadata = {}
                 
         df.metadata['data type'] = type(value).__name__
-        df.metadata['unit_x'] = unit_x
-        df.metadata['unit_y'] = unit_y
+        if units is not None:
+            if isinstance(units, str):
+                df.metadata['unit_x'] = "(a.u.)"
+                df.metadata['unit_y'] = units
+            elif isinstance(units, dict):
+                df.metadata['unit_x'] = units['x']
+                df.metadata['unit_y'] = units['y']
+            else:
+                raise ValueError("units must be a string or a dict with x and y keys")
         return df, *results_list
 
 def _registration(obj, **kwargs):

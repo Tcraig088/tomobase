@@ -27,9 +27,12 @@ class EnvironmentContext:
         import numpy as np
         import pandas as pd
         import scipy
+        import skimage
+
         self._xupy = BackendProxy(lambda:np)
         self._scipy = BackendProxy(lambda:scipy)
         self._df = BackendProxy(lambda:pd)
+        self._skimage = BackendProxy(lambda:skimage)
 
         self.check_cupy()
     
@@ -54,6 +57,13 @@ class EnvironmentContext:
         """
         return self._scipy
 
+
+    @property
+    def skimage(self):
+        """
+        Return the scientific backend module (scipy or cupyx).
+        """
+        return self._skimage
     def check_cupy(self):
         if not self._cupy_checked:
             self._cupy_checked = True
@@ -81,18 +91,22 @@ class EnvironmentContext:
                     self.device = device
                     import cupyx.scipy as cupyx_scipy
                     #import cudf
+                    #import cucim.skimage as skimage
                     self._xupy = BackendProxy(lambda:cp)
                     self._scipy = BackendProxy(lambda: cupyx_scipy)
                     #self._df = BackendProxy(lambda: cudf)
+                    #self._skimage = BackendProxy(lambda: skimage)
 
         elif context == GPUContext.NUMPY:
             self.context = GPUContext.NUMPY
             self.device = device
             import numpy as np
             import scipy
+            import skimage
             self._xupy = BackendProxy(lambda: np)
             self._scipy = BackendProxy(lambda: scipy)
             self._df = BackendProxy(lambda: pd)
+            self._skimage = BackendProxy(lambda: skimage)
 
         else:
             logging.warning("Unknown context. Context unchanged.")

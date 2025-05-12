@@ -2,14 +2,14 @@ from copy import deepcopy
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from tomobase.registrations.environment import xp
-from tomobase.data import Sinogram
+from tomobase.data import Sinogram, Data
 from typing import Union, Tuple
 from tomobase.registrations.progress import progresshandler
 
 
 _subcategories = ['Misalignment']
 @tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
-def gaussian_filter(sino: Sinogram, gaussian_sigma:float=1,):
+def gaussian_filter(sino: Data, gaussian_sigma:float=1,):
     """Add Gaussian noise to the sinogram.
     Arguments:
         sino (Sinogram): The projection data
@@ -22,7 +22,7 @@ def gaussian_filter(sino: Sinogram, gaussian_sigma:float=1,):
     return sino
 
 @tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
-def poisson_noise(sino: Sinogram, 
+def poisson_noise(sino: Data, 
                   rescale:float=True):
     """Add Poisson noise to the sinogram.
     Arguments:
@@ -33,7 +33,7 @@ def poisson_noise(sino: Sinogram,
         sino (sinogram): The result
     """
     sino.data = sino.data*rescale
-    sino.data = xp.random.poisson(sino.data)
+    sino.data = xp.xupy.random.poisson(sino.data)
     return sino
 
 
