@@ -1,6 +1,5 @@
 import os
-import napari
-
+import numpy as np
 from qtpy.QtWidgets import QApplication, QFileDialog
 import collections
 collections.Iterable = collections.abc.Iterable
@@ -9,6 +8,7 @@ from abc import ABC, abstractmethod
 
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.registrations.environment import GPUContext, xp
+
 class Data(ABC):
     """Abstract base class for microscopy and tomography datasets
 
@@ -27,6 +27,7 @@ class Data(ABC):
         self.metadata = metadata
         self._context = GPUContext.NUMPY
         self._device = 0
+        self._layer_index = None
 
     @classmethod
     def from_file(cls, filename=None, **kwargs):
@@ -96,9 +97,6 @@ class Data(ABC):
         except KeyError:
             raise ValueError(f"The given file type {ext.upper()} is not supported.")
 
-    @abstractmethod
-    def show(self):
-        pass
 
     @property
     @abstractmethod
@@ -120,3 +118,52 @@ class Data(ABC):
         self._context = context
         self._device = device
 
+    
+
+    @property
+    def layer_metadata(self, metadata={}):
+        # We dont want to clutter the metadata with ctomo data in case other plugins would like to use it 
+        if 'ctomo' not in metadata:
+            metadata['ctomo'] = {}
+
+        for key, value in self.metadata.items():
+            metadata['ctomo'][key] = value
+
+        #must replace with the correct type in subclasses
+        metadata['ctomo']['type'] = TOMOBASE_DATATYPES.DATA.value()
+
+    @property
+    def layer_attributes(self, attributes={}):     
+        attributes['name'] = attributes.get('name', 'Data')
+        attributes['scale'] = attributes.get('pixelsize' ,(self.pixelsize, self.pixelsize, self.pixelsize))
+        attributes['colormap'] = attributes.get('colormap', 'gray')
+        attributes['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
+        return attributes
+
+    def to_data_tuple(self, attributes:dict={}, metadata:dict={}):
+        """_summary_
+
+        Args:
+            attributes (dict, optional): _description_. Defaults to {}.
+            metadata (dict, optional): _description_. Defaults to {}.
+
+        Returns:
+            layerdata: Napari Layer Data Tuple
+        """
+        attributes = self.layer_attributes(attributes)
+        metadata = self.layer_metadata(metadata)
+        layerdata = (self.data, attributes, 'image')
+        return layerdata
+    
+    @classmethod
+    def from_data_tuple(cls, index, layer, attributes=None):
+        if attributes is None:
+            data = layer.data
+            scale = layer.scale[0]
+            layer_metadata = layer.metadata['ctomo']
+        else:
+            data = layer
+            scale = attributes['scale'][0]
+            layer_metadata = attributes['metadata']['ctomo']
+
+        return cls(data, scale, index)

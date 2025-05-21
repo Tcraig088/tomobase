@@ -51,7 +51,7 @@ class Sinogram(Data):
             Read a sinogram from an HDF5 file(.h5) 
     """
 
-    def __init__(self, data, angles, pixelsize=1.0, times=None, metadata={}):
+    def __init__(self, data, angles, pixelsize=1.0, times=None, metadata={}, layer_index=None):
         """Create a sinogram
 
         Arguments:
@@ -253,7 +253,7 @@ class Sinogram(Data):
         return layerdata
     
     @classmethod
-    def from_data_tuple(cls, layerdata, attributes=None):
+    def from_data_tuple(cls, index, layerdata, attributes=None):
         if attributes is None:
             data = layerdata.data
             scale = layerdata.scale[0]
@@ -269,34 +269,8 @@ class Sinogram(Data):
         metadata.pop('axis')
         metadata.pop('type')
 
-        return cls(data, angles, scale)
+        return cls(data, angles, scale, layer_index=index)
 
-    def show(self, display_width=800, display_height=800, showdisplay=True):
-        """shows the sinogram in a stackview window
-
-        Returns:
-            _type_: _description_
-        """
-        self._angle_widget = widgets.FloatText(value=self.angles[0],description='Angle:',disabled=True)
-        self._time_widget = widgets.FloatText(value=self.times[0],description='Time:',disabled=True)
-        
-        
-        
-        data = self._transpose_to_view(use_copy=True)
-        
-        image_widget = stackview.slice(data, display_width=display_width, display_height=display_height)
-        slider = image_widget.children[0].children[0].children[1].children[0].children[0].children[1]
-        slider.observe(self._on_slider_change, names='value')
-        slider.value = 0
-        obj = widgets.VBox([image_widget, self._angle_widget, self._time_widget]) 
-        if showdisplay:
-            display(obj)
-        else: 
-            return obj
-        
-    def _on_slider_change(self, change):
-            self._angle_widget.value = self.angles[change['new']]
-            self._time_widget.value = self.times[change['new']]
 
 # Register the readers
 Sinogram._readers = {
