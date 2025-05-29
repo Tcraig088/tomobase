@@ -135,9 +135,6 @@ class ItemDictNonSingleton():
 
             
     def update(self):
-        #logger.warning(f"Updating modlules {self }")
-        #logger.info(f"Module {self}: {self._module} {self._folder}")
-        
         spec = importlib.util.find_spec(self._module)
         if spec is None or spec.origin is None:
             raise ImportError(f"Cannot find the {self._module} package")
@@ -153,7 +150,6 @@ class ItemDictNonSingleton():
                     for name, obj in inspect.getmembers(module):
                         if inspect.isclass(obj) or inspect.isfunction(obj):
                             if hasattr(obj, self._hook):
-                                #logger.info(f"Found {self._hook} in {name}")
                                 self._update_item(obj)
                             
     def _update_item(self, obj):

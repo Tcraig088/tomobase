@@ -12,6 +12,24 @@ from typing import Union
 from collections.abc import Iterable
 
 
+def phantom_hook(name:str=''):
+
+    """a decorator used to mark a function as a tomography process. The function is either a standard function used to define the process or a QWidget used to attach to napari. 
+    see the plugins tutorial for more information on how to use this decorator. returns a decorated function
+
+    Args:
+        name (str): the name of the process. Should be readable casing and spaces. 
+    """
+    def decorator(func):
+        local_name = name
+        if local_name == '':
+            local_name = func.__name__.replace('_', ' ')
+        func.tomobase_name = local_name
+        func.is_tomobase_phantom = True
+
+        return func
+    return decorator
+
 def tomobase_hook_tiltscheme(name: str):
     """a decorator used to mark a class as a tiltscheme. The class is either a standard class used to define the tiltscheme or a QWidget used to attach to napari. 
     see the plugins tutorial for more information on how to use this decorator. returns a decorated class

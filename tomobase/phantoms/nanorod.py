@@ -1,6 +1,8 @@
 import numpy as np
 from tomobase.data import Volume
+from tomobase.hooks import phantom_hook
 
+@phantom_hook()
 def nanorod(dim=512,length=300,radius=100,proportion=0.5,intensity=0.3):
     pradius = 2*(radius/dim)
     obj = np.zeros((dim,dim,dim),dtype=np.float32)

@@ -56,7 +56,7 @@ class Sinogram(Data):
             Read a sinogram from an HDF5 file(.h5) 
     """
 
-    def __init__(self, data, angles, pixelsize=1.0, times=None, metadata={}):
+    def __init__(self, data, angles, pixelsize=1.0, times=None, metadata={}, layer_index=None):
         """Create a sinogram
 
         Arguments:
@@ -261,7 +261,7 @@ class Sinogram(Data):
         return layerdata
     
     @classmethod
-    def from_data_tuple(cls, layerdata, attributes=None):
+    def from_data_tuple(cls, index, layerdata, attributes=None):
         if attributes is None:
             data = layerdata.data
             scale = layerdata.scale[0]
@@ -277,7 +277,8 @@ class Sinogram(Data):
         metadata.pop('axis')
         metadata.pop('type')
 
-        return cls(data, angles, scale)
+        return cls(data, angles, scale, layer_index=index)
+
 
 # Register the readers
 Sinogram._readers = {
