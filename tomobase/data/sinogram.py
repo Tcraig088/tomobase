@@ -4,6 +4,8 @@ import h5py
 import numpy as np
 import imageio as iio
 import stackview
+print(stackview.__version__)
+print(hasattr(stackview, 'converters'))
 
 
 import ipywidgets as widgets
@@ -28,6 +30,9 @@ from tomobase.data.base import Data
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.registrations.environment import GPUContext, xp
 from tomobase.data.image import Image
+
+
+
 
 
 class Sinogram(Data):
@@ -146,6 +151,9 @@ class Sinogram(Data):
         return Sinogram(data, angles, times=times)
 
 
+    def labels(self):
+        return [f"t={t:.2f}s, θ={a:.1f}°" for t, a in zip(self.times, self.angles)]
+    
     @staticmethod
     def _read_mrc(filename, **kwargs):
         data, metadata = mrcz.readMRC(filename)
@@ -261,7 +269,7 @@ class Sinogram(Data):
         else:
             data = layerdata
             scale = attributes['scale'][0]
-            layer_metadata = attributes['metadata']
+            layer_metadata = attributes['metadata'] 
 
         layer_metadata = deepcopy(layer_metadata)
         metadata = layer_metadata['ct metadata']
@@ -271,33 +279,6 @@ class Sinogram(Data):
 
         return cls(data, angles, scale)
 
-    def show(self, display_width=800, display_height=800, showdisplay=True):
-        """shows the sinogram in a stackview window
-
-        Returns:
-            _type_: _description_
-        """
-        self._angle_widget = widgets.FloatText(value=self.angles[0],description='Angle:',disabled=True)
-        self._time_widget = widgets.FloatText(value=self.times[0],description='Time:',disabled=True)
-        
-        
-        
-        data = self._transpose_to_view(use_copy=True)
-        
-        image_widget = stackview.slice(data, display_width=display_width, display_height=display_height)
-        slider = image_widget.children[0].children[0].children[1].children[0].children[0].children[1]
-        slider.observe(self._on_slider_change, names='value')
-        slider.value = 0
-        obj = widgets.VBox([image_widget, self._angle_widget, self._time_widget]) 
-        if showdisplay:
-            display(obj)
-        else: 
-            return obj
-        
-    def _on_slider_change(self, change):
-            self._angle_widget.value = self.angles[change['new']]
-            self._time_widget.value = self.times[change['new']]
-
 # Register the readers
 Sinogram._readers = {
     'mrc': Sinogram._read_mrc,
@@ -306,4 +287,3 @@ Sinogram._readers = {
     'mat': Sinogram._read_mat,
     'h5': Sinogram._read_h5,
 }
-
