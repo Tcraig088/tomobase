@@ -9,7 +9,7 @@ from tomobase.data import Sinogram
 import ipywidgets as widgets
 from IPython.display import display, clear_output
 import stackview
-
+from magicgui.tqdm import trange, tqdm
 
 _subcategories=['Translation']
 @tomobase_hook_process(name='Align Sinogram XCorrelation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
@@ -24,12 +24,11 @@ def align_sinogram_xcorr(sino: Sinogram, shifts=None):
         Sinogram: The result
         shifts (xp.ndarray): The shifts in pixels
     """
-    progressbar = progresshandler.add_signal('align_sinogram_xcorr')
-    progressbar.value.start(sino.data.shape[0]-1, 'Align Sinogram XCorrelation')
+
     if shifts is None:
         shifts = xp.xupy.zeros((sino.data.shape[0], 2))
         fft_fixed = xp.xupy.fft.fft2(sino.data[0, :, :])
-        for i in range(sino.data.shape[0] - 1):
+        for i in tqdm(range(sino.data.shape[0] - 1), label='Calculating shifts with cross-correlation'):
             fft_moving = xp.xupy.fft.fft2(sino.data[i + 1, :, :])
             xcorr = xp.xupy.fft.ifft2(xp.xupy.multiply(fft_fixed, xp.xupy.conj(fft_moving)))
             fft_fixed = fft_moving
@@ -38,8 +37,8 @@ def align_sinogram_xcorr(sino: Sinogram, shifts=None):
 
         shifts %= xp.xupy.asarray(sino.data.shape[1:])[None, :]
         shifts = xp.xupy.rint(shifts).astype(int)
-        progressbar.value.update(i) # Note their is another loop in the function but it isnt tracked cause its too fast
-    for i in range(sino.data.shape[0]):
+
+    for i in tqdm(range(sino.data.shape[0]), label='Aligning sinogram with cross-correlation'):
         sino.data[i, :, :] = xp.xupy.roll(sino.data[i, :, :], shifts[i, :], axis=(0, 1))
 
     return sino, shifts

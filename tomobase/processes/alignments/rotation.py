@@ -10,7 +10,6 @@ from scipy.optimize import minimize_scalar
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from tomobase.registrations.environment import xp
-from tomobase.registrations.progress import progresshandler
 
 from tomobase.data import Sinogram
 from tomobase.processes.reconstruct import astra_reconstruct
@@ -19,6 +18,7 @@ from tomobase.log import logger
 
 from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QDoubleSpinBox
 from qtpy.QtCore import Qt
+from magicgui.tqdm import trange, tqdm
 
 _subcategories= ['Tilt Axis']
 @tomobase_hook_process(name='Tilt Shift', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories, use_numpy=True)
@@ -42,16 +42,11 @@ def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=0.0, *
     mse = np.zeros(len(offsets))
     sino_shifted = copy(sino)
 
-    progressbar = progresshandler.add_signal('align_tilt_axis_shift')
-    progressbar.value.start(len(offsets), 'Aligning tilt axis shift')
-    for i in range(len(offsets)):
+    for i in tqdm(range(len(offsets)), label='Aligning tilt axis shift'):
         sino_shifted.data = shift(sino.data, (0, offsets[i], 0))
-        progresshandler.add_subsignal('align_tilt_axis_shift', 'astra_reconstuct')
         reproj = project(astra_reconstruct(sino_shifted, method, **kwargs), sino.angles)
         mse[i] = np.mean((sino_shifted.data - reproj.data) ** 2)
-        progressbar.value.update(i)
     offset = offsets[np.argmin(mse)]
-    progressbar.value.finish()
 
     sino.data = shift(sino.data, (0, offset, 0))
 
@@ -84,16 +79,13 @@ def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=0.0, *
         mse = np.zeros(len(angles))
         sino_rot = copy(sino)
 
-        progressbar = progresshandler.add_signal('align_tilt_axis_rotation')
-        progressbar.value.start(len(angles), 'Aligning tilt axis rotation')
-        for i in range(len(angles)):
+        for i in tqdm(range(len(angles)), label='Aligning tilt axis rotation'):
             sino_rot.data = rotate(sino.data, angles[i], reshape=False)
             reproj = project(astra_reconstruct(sino_rot, method, **kwargs),
                             sino.angles)
             mse[i] = np.mean((sino_rot.data - reproj.data) ** 2)
-            progressbar.value.update(i)
+            
         angle = angles[np.argmin(mse)]
-        progressbar.value.finish()
 
     sino.data = rotate(sino.data, angle, reshape=False)
 
@@ -114,8 +106,6 @@ def backlash_correct(sino: Sinogram, tolerance:float= 10.0, method:str='bounded'
         angle (float): The angle in degrees
     """
     
-    progressbar = progresshandler.add_signal('backlash_correct')
-    progressbar.value.start(sino.data.shape[0], 'Backlash Correction')
     progress = 0
 
     def objective_function(value, sino, indices):
@@ -125,11 +115,8 @@ def backlash_correct(sino: Sinogram, tolerance:float= 10.0, method:str='bounded'
         error = np.sqrt(np.mean((sino.data[indices,:,: ] - reproj.data) ** 2))
         sino.angles = angles
         logger.debug(f'Error: {error}')
-        progressbar.value.update(progress)
         progress += 1
 
-        if tomobase_logger.progress_bar.max_value < progress:
-            tomobase_logger.progress_bar.update_max(progress+10)
 
         return  error
     
@@ -142,6 +129,5 @@ def backlash_correct(sino: Sinogram, tolerance:float= 10.0, method:str='bounded'
         result = minimize_scalar(objective_function, value, args=(sino, indices), method=method)
         
     sino.angles[indices] += result.x
-    tomobase_logger.progress_bar.finish()
     logger.debug(f'Final Error: {result.fun}, Angle Shift: {result.x}')
     return sino, result.x

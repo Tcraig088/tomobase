@@ -3,6 +3,7 @@ from tomobase.data import Volume
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.environment import xp
+from magicgui.tqdm import tqdm
 
 def _knockon(volume, knockon):
     kernel = xp.xupy.ones((3, 3, 3))
@@ -35,6 +36,7 @@ def _deform(obj, deform, normalize=True):
         seed[i] = (seed[i] * deform) / amplitude
     coord = coord + seed
     obj = xp.scipy.ndimage.map_coordinates(obj, coord, order=1, mode='constant', cval=0.0)
+    
     if normalize:
         obj_flat = obj.flatten()
         nonzero_indices = xp.xupy.where(obj_flat != 0)[0]

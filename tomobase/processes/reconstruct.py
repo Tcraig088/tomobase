@@ -7,8 +7,9 @@ from tomobase.utils import _create_projector, _get_default_iterations, _circle_m
 from tomobase.data import Volume, Sinogram
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from tomobase.registrations.progress import progresshandler
+
 from tomobase.log import  tomobase_logger, logger
+from magicgui.tqdm import tqdm, trange
 
 @tomobase_hook_process(name='OpTomo', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value, use_numpy=True)
 def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weighted:bool=False):
@@ -53,7 +54,6 @@ def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weigh
     z, n, d = data.shape
     proj_id = _create_projector(d, d, sino.angles, use_gpu)
 
-    iterator = range(z)
 
     vol = np.zeros((z, d, d))
     default_mask = _circle_mask(d)
@@ -72,13 +72,10 @@ def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weigh
     R = np.minimum(R, 1 / 10**-6)
     C = np.minimum(C, 1 / 10**-6)
 
-    slice_progressbar = progresshandler.add_signal('optomo_reconstruct')
-    slice_progressbar.value.start(z, 'Reconstruction Slices with Optomo')
 
-    for i in iterator:
-        for j in range(iterations):
-            iteration_progressbar = progresshandler.add_subsignal('optomo_reconstruct')
-            iteration_progressbar.start(iterations, 'Reconstruction Iterations with Optomo')
+
+    for i in trange(z, label='Reconstruction Slice'):
+        for j in trange(iterations,label='Reconstruction Iteration'):
             A = np.transpose(np.transpose(np.reshape(W*vol[i, :, :], (n, d)), (1,0))*weights,(1,0)) 
             B = np.transpose(np.reshape(np.transpose(data[i, :, :],(1,0))*weights,(d,n)), (1,0))
             D = R*(B - A)
@@ -86,15 +83,6 @@ def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weigh
             vol[i, :, :] = np.reshape(np.minimum(vol[i, :, :], data.max()), (d, d))
             vol[i, :, :] = np.reshape(np.maximum(vol[i, :, :], 0), (d, d))
             vol[i, :, :] = vol[i, :, :] * (default_mask & mask[i, :, :])
-            iteration_progressbar.value.update(j)
-        progresshandler.remove_signal(iteration_progressbar)
-        slice_progressbar.value.update(i)
-    progresshandler.remove_signal(slice_progressbar)
-
-
-
-            
-
 
     volume = Volume(np.transpose(vol, (2, 1,0)), sino.pixelsize)  # ASTRA gives (z, y, x)
     astra.astra.delete(proj_id)
@@ -148,7 +136,7 @@ def astra_reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gp
 
     message = f"Reconstruction using the {method} algorithm on the {'GPU' if use_gpu else 'CPU'}..."
     logger.info(message)
-    iterator = range(z)
+
 
     vol = np.empty((z, d, d))
     default_mask = _circle_mask(d)
@@ -159,19 +147,17 @@ def astra_reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gp
     else:
         mask = np.transpose(mask, (2, 1, 0))  # ASTRA expects (z, y, x)
 
-    progressbar = progresshandler.add_signal('astra_reconstruct')
-    progressbar.value.start(z, 'Reconstruction Iteratively with Astra')
-    for i in iterator:
+
+    for i in trange(z, label='Reconstruction Slice'):
         vol_id, vol[i, :, :] = astra.creators.create_reconstruction(
             method, proj_id, data[i, :, :], iterations,
             use_minc='yes', minc=0.0,           # min is zero
             use_maxc='yes', maxc=data.max(),    # max voxel can't be larger than max from sino
             use_mask='yes', mask=default_mask & mask[i, :, :],
         )
-        progressbar.value.update(i)
         astra.astra.delete(vol_id)
         
-    progresshandler.remove_signal(progressbar)
+
     volume = Volume(np.transpose(vol, (2, 1, 0)), sino.pixelsize)  # ASTRA gives (z, y, x)
     astra.astra.delete(proj_id)
     logger.info('type of volume: ' + str(type(volume)))

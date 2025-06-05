@@ -6,7 +6,9 @@ from tomobase.data import Volume, Sinogram
 from tomobase.log import logger
 from tomobase.hooks import tomobase_hook_process
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from tomobase.registrations.progress import progresshandler
+
+from magicgui import magicgui
+from magicgui.tqdm import trange
 
 
 @tomobase_hook_process(name='Project', category=TOMOBASE_TRANSFORM_CATEGORIES.PROJECT.value, use_numpy=True)
@@ -21,7 +23,6 @@ def project(volume:Volume, angles:np.ndarray, use_gpu:bool=True):
     Notes:
         - The Context is overriden to use numpy instead of the GPU context - This is because GPU controls for ASTRA are set in CUDA and not using CUPY wrapper and this can cause issues, (May be deprecated in the future)
     """
-    progressbar = progresshandler.add_signal('project')
 
     data = np.transpose(volume.data, (2, 1, 0))  # ASTRA expects (z, y, x)
     angles = np.asarray(angles)
@@ -29,11 +30,9 @@ def project(volume:Volume, angles:np.ndarray, use_gpu:bool=True):
 
     z, y, x = data.shape
     proj_id = _create_projector(x, y, angles, use_gpu)
-    iterator = range(z)
 
-    progressbar.value.start(z, 'Forward Projection')
     sino = np.empty((z, len(angles), max(x, y)))
-    for i in iterator:
+    for i in trange(z, label="Forward projecting"):
         sino_id, sino[i, :, :] = astra.creators.create_sino(data[i, :, :], proj_id)
         astra.astra.delete(sino_id)
 

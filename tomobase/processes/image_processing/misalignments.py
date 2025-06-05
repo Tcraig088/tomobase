@@ -4,7 +4,7 @@ from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from tomobase.registrations.environment import xp
 from tomobase.data import Sinogram, Data
 from typing import Union, Tuple
-from tomobase.registrations.progress import progresshandler
+from magicgui.tqdm import tqdm
 
 
 _subcategories = ['Misalignment']
@@ -50,13 +50,9 @@ def translational_misalignment(sino: Sinogram, offset:float=0.25):
         sino (Sinogram): The result
         shifts (ndarray): The shifts applied to each projection (only if extend_return is True)
     """
-
-    progressbar = progresshandler.add_signal('translational_misalignment')
-    progressbar.start(sino.data.shape[0], 'Translational Misalignment')
-
     
     shifts = xp.xupy.zeros((sino.data.shape[0], 2))
-    for i in range(sino.data.shape[0]):
+    for i in tqdm(range(sino.data.shape[0]), label='Translational Misalignment'):
         if i == 0:
             shifts[i, :] = 0
             continue
@@ -64,9 +60,7 @@ def translational_misalignment(sino: Sinogram, offset:float=0.25):
         image_offset_y = int(xp.xupy.round(sino.data.shape[2] * xp.xupy.random.uniform(-offset, offset)))
         sino.data[i, :, :] = xp.xupy.roll(sino.data[i, :, :], (image_offset_x, image_offset_y), axis=(0, 1))
         shifts[i, :] = (image_offset_x, image_offset_y)
-        progressbar.update(i)
-    
-    progresshandler.remove_signal('translational_misalignment')
+
 
     return sino, shifts
 
@@ -91,15 +85,13 @@ def rotational_misalignment(sino: Sinogram,
         sino (Sinogram): The result
         rotations (ndarray): The rotations applied to each projection (only if extend_return is True)
     """
-    progressbar = progresshandler.add_signal('rotational_misalignment')
-    progressbar.value.start(sino.data.shape[0], 'Rotational Misalignment')
 
     angles_original =  deepcopy(sino.angles)  
     rotations = xp.xupy.zeros(sino.data.shape[0])
-    for i in range(sino.data.shape[0]):
+    for i in tqdm(range(sino.data.shape[0]), label='Rotational Misalignment'):
         rotations[i] = tilt_theta * xp.xupy.random.uniform(-1, 1)
         sino.data[i, :, : ] = xp.scipy.ndimage.rotate(sino.data[i, :, :], rotations[i], reshape=False)
-        progressbar.update(i)
+
 
     for i in range(sino.data.shape[0]):
         offset = tilt_alpha * xp.xupy.random.uniform(-1, 1)
@@ -110,7 +102,6 @@ def rotational_misalignment(sino: Sinogram,
                 offset += backlash
         sino.angles = sino.angles + offset
 
-    progresshandler.remove_signal(progressbar) 
     return sino, rotations, angles_original
 
     

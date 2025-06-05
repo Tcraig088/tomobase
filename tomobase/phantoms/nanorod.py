@@ -2,6 +2,10 @@ import numpy as np
 from tomobase.data import Volume
 from tomobase.hooks import phantom_hook
 
+
+from magicgui import magicgui
+from magicgui.tqdm import trange, tqdm
+
 @phantom_hook()
 def nanorod(dim=512,length=300,radius=100,proportion=0.5,intensity=0.3):
     pradius = 2*(radius/dim)
@@ -18,9 +22,9 @@ def nanorod(dim=512,length=300,radius=100,proportion=0.5,intensity=0.3):
     img[dissk2>0] = 1
 
     L = length - 2*radius
-    #L =length
+
     z1, z2 = dim//2 - L//2, dim//2 + L//2
-    for i in range(dim):
+    for i in tqdm(range(dim), label="building nanorod slice by slice"):
         if i >= z1 and i <= z2:
             obj[:,:,i] = img
 
