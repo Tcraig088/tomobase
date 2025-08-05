@@ -1,6 +1,7 @@
 import types
 import copy
 import inspect
+import functools
 from copy import deepcopy
 from tomobase.log import logger
 import re
@@ -10,6 +11,7 @@ from tomobase.data.base import Data
 from inspect import signature, Parameter
 from typing import Union
 from collections.abc import Iterable
+import makefun
 
 
 def phantom_hook(name:str=''):
@@ -74,8 +76,11 @@ def _function_wrapper(func, use_numpy, isquantification, units=None):
                     params[i] = param.replace(annotation=dict[str, Data])
                     object_name = param.name
 
+    # Add inplace and verbose_outputs as keyword-only parameters
     params.append(Parameter("inplace", kind=Parameter.KEYWORD_ONLY, default=True, annotation=bool))
     params.append(Parameter("verbose_outputs", kind=Parameter.KEYWORD_ONLY, default=False, annotation=bool))
+
+    # Sort parameters so keyword-only are last
     params = sorted(
         params,
         key=lambda p: (
@@ -88,9 +93,15 @@ def _function_wrapper(func, use_numpy, isquantification, units=None):
     )
 
     new_sig = original_sig.replace(parameters=params)
+     
 
-    @wraps(func)
-    def wrapper(*args, inplace:bool=True, verbose_outputs:bool=False, **kwargs):
+    @makefun.with_signature(new_sig)
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        inplace = kwargs.pop("inplace", True)
+        verbose_outputs = kwargs.pop("verbose_outputs", False)
+        logger.debug(args)
+        logger.debug(kwargs)
         if use_numpy:
             xp.set_context(GPUContext.NUMPY, 0)
         context = xp.get_context()
@@ -105,17 +116,16 @@ def _function_wrapper(func, use_numpy, isquantification, units=None):
                 if not inplace:
                     kwargs[key] = deepcopy(value)
                 kwargs[key].set_context()
-                
         if isquantification:
-            results = _quantify(func, object_name, units, *args, **kwargs)     
+            results = _quantify(func, object_name, units, *args, **kwargs)
         else:
-            results =  func(*args, **kwargs)
+            results = func(*args, **kwargs)
         xp.set_context(context)
         if isinstance(results, tuple) and verbose_outputs == False:
             return results[0]
         else:
             return results
-    wrapper.__signature__ = new_sig
+
     return wrapper
 
 def _quantify(func, object_name, units, *args, **kwargs):

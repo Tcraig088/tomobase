@@ -56,7 +56,7 @@ class Sinogram(Data):
             Read a sinogram from an HDF5 file(.h5) 
     """
 
-    def __init__(self, data, angles, pixelsize=1.0, times=None, metadata={}, layer_index=None):
+    def __init__(self, data, angles, pixelsize=1.0, times=None, metadata={}):
         """Create a sinogram
 
         Arguments:
@@ -73,7 +73,7 @@ class Sinogram(Data):
         if len(angles) != data.shape[0]:
             raise ValueError(("There should be the same number of projection images as tilt angles."))
         if times is None:
-            times = np.linspace(1, len(angles), len(angles)+1)
+            times = np.linspace(1, len(angles), len(angles))
         elif len(times) != len(angles):
             raise ValueError(("There should be the same number of projection images as times."))
 
@@ -230,54 +230,45 @@ class Sinogram(Data):
     }
     
 
-    def to_data_tuple(self, attributes:dict={}, metadata:dict={}):
-        """_summary_
 
-        Args:
-            attributes (dict, optional): _description_. Defaults to {}.
-            metadata (dict, optional): _description_. Defaults to {}.
-
-        Returns:
-            layerdata: Napari Layer Data Tuple
-        """
-        logger.debug('Converting Sinogram to Napari Layer Data Tuple: Shape: %s, Angles: %s, Pixelsize: %s', self.data.shape, self.angles, self.pixelsize)
-        attributes = attributes
-        attributes['name'] = attributes.get('name', 'Sinogram')
-        attributes['scale'] = attributes.get('pixelsize' ,(self.pixelsize, self.pixelsize, self.pixelsize))
-        attributes['colormap'] = attributes.get('colormap', 'gray')
-        attributes['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
-        
-        metadata = metadata
-        metadata['type'] = TOMOBASE_DATATYPES.SINOGRAM.value
-        metadata['angles'] = self.angles
-        metadata['axis'] = ['Projection', 'y', 'x'] if len(self.data.shape) == 3 else ['Projection', 'Signal', 'y', 'x']
-        
-        for key, value in self.metadata.items():
-            metadata[key] = value
-
-        attributes['metadata'] = {'ct metadata': metadata}
-        layerdata = (self.data, attributes, 'image')
-        
-        return layerdata
+    def layer_attributes(self, attributes={}):
+        attr = super().layer_attributes(attributes)
+        attr['name'] = attributes.get('name', 'Sinogram')
+        attr['scale'] = attributes.get('pixelsize' ,(self.pixelsize, self.pixelsize, self.pixelsize))
+        attr['colormap'] = attributes.get('colormap', 'gray')
+        attr['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
+        return attr
     
+
+    def layer_metadata(self, metadata={}):
+        meta = super().layer_metadata(metadata)
+        meta['ct metadata']['type'] = TOMOBASE_DATATYPES.SINOGRAM.value
+        meta['ct metadata']['angles'] = self.angles
+        meta['ct metadata']['times'] = self.times
+        meta['ct metadata']['axis'] = ['Projection', 'y', 'x'] if len(self.data.shape) == 3 else ['Projection', 'Signal', 'y', 'x']
+
+        return meta
+
     @classmethod
-    def from_data_tuple(cls, index, layerdata, attributes=None):
+    def from_data_tuple(cls, layer, attributes=None):
         if attributes is None:
-            data = layerdata.data
-            scale = layerdata.scale[0]
-            layer_metadata = layerdata.metadata
+            data = layer.data
+            scale = layer.scale[0]
+            times = layer.metadata['ct metadata']['times']
+            angles = layer.metadata['ct metadata']['angles']
+            layer_metadata = layer.metadata['ct metadata']
         else:
-            data = layerdata
+            data = layer
             scale = attributes['scale'][0]
-            layer_metadata = attributes['metadata'] 
+            layer_metadata = attributes['metadata']['ct metadata']
+            times =attributes['metadata']['ct metadata']['times']
+            angles = attributes['metadata']['ct metadata']['angles']
 
-        layer_metadata = deepcopy(layer_metadata)
-        metadata = layer_metadata['ct metadata']
-        angles = metadata.pop('angles')
-        metadata.pop('axis')
-        metadata.pop('type')
+        layer_metadata.pop('times', None)
+        layer_metadata.pop('angles', None)
 
-        return cls(data, angles, scale, layer_index=index)
+        return cls(data, angles, scale, times, layer_metadata)
+
 
 
 # Register the readers

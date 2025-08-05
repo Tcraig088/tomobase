@@ -63,40 +63,20 @@ class Image(Data):
         iio.imwrite(filename, self.data)
 
 
-    def show(self, width = 800, height=800):
-        data = self._transpose_to_view()
-        self.view = stackview.slice(self.data, display_width=width, display_height=height)
-        display(self.view)
 
+    def layer_metadata(self, metadata={}):
+        meta = super().layer_metadata(metadata)
+        meta['ct metadata']['type'] = TOMOBASE_DATATYPES.IMAGE.value
+        meta['ct metadata']['axis'] = ['Signal', 'y', 'x'] if len(self.data.shape) == 3 else ['y', 'x']
+        return meta
 
-    def to_data_tuple(self, attributes:dict={}, metadata:dict={}):
-        """_summary_
+    def layer_attributes(self, attributes={}):
+        attr = super().layer_attributes(attributes)
+        attr['name'] = attr.get('name', 'Image')
+        attr['scale'] = attr.get('pixelsize' ,(self.pixelsize, self.pixelsize))
+        attr['contrast_limits'] = attr.get('contrast_limits', [0, np.max(self.data)*1.5])
+        return attr
 
-        Args:
-            attributes (dict, optional): _description_. Defaults to {}.
-            metadata (dict, optional): _description_. Defaults to {}.
-
-        Returns:
-            layerdata: Napari Layer Data Tuple
-        """
-        logger.debug('Converting Image to Napari Layer Data Tuple: Shape: %s, Pixelsize: %s', self.data.shape, self.pixelsize)
-        attributes = attributes
-        attributes['name'] = attributes.get('name', 'Image')
-        attributes['scale'] = attributes.get('pixelsize' ,(self.pixelsize, self.pixelsize, self.pixelsize))
-        attributes['colormap'] = attributes.get('colormap', 'gray')
-        attributes['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
-        
-        metadata = metadata
-        metadata['type'] = TOMOBASE_DATATYPES.IMAGE.value
-        metadata['axis'] = ['Signal', 'y', 'x'] if len(self.data.shape) == 3 else ['y', 'x']
-        
-        for key, value in self.metadata.items():
-            metadata[key] = value
-
-        attributes['metadata'] = {'ct metadata': metadata}
-        layerdata = (self.data, attributes, 'image')
-        
-        return layerdata
 
     _readers = {}
     _writers = {

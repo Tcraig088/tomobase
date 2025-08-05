@@ -6,6 +6,7 @@ collections.Iterable = collections.abc.Iterable
 
 from abc import ABC, abstractmethod
 
+from tomobase.log import logger
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.registrations.environment import GPUContext, xp
 
@@ -27,7 +28,6 @@ class Data(ABC):
         self.metadata = metadata
         self._context = GPUContext.NUMPY
         self._device = 0
-        self._layer_index = None
 
     @classmethod
     def from_file(cls, filename=None, **kwargs):
@@ -118,27 +118,27 @@ class Data(ABC):
         self._context = context
         self._device = device
 
-    
-
-    @property
     def layer_metadata(self, metadata={}):
-        # We dont want to clutter the metadata with ctomo data in case other plugins would like to use it 
-        if 'ctomo' not in metadata:
-            metadata['ctomo'] = {}
+        meta = {}
+        if 'ct metadata' not in metadata:
+            meta['ct metadata'] = {}
+        else:
+            meta['ct metadata'] = metadata['ct metadata']
 
         for key, value in self.metadata.items():
-            metadata['ctomo'][key] = value
+            meta['ct metadata'][key] = value
 
         #must replace with the correct type in subclasses
-        metadata['ctomo']['type'] = TOMOBASE_DATATYPES.DATA.value()
+        meta['ct metadata']['type'] = TOMOBASE_DATATYPES.DATA.value
+        return meta
 
-    @property
-    def layer_attributes(self, attributes={}):     
-        attributes['name'] = attributes.get('name', 'Data')
-        attributes['scale'] = attributes.get('pixelsize' ,(self.pixelsize, self.pixelsize, self.pixelsize))
-        attributes['colormap'] = attributes.get('colormap', 'gray')
-        attributes['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
-        return attributes
+    def layer_attributes(self, attributes={}):  
+        attr = {}
+        attr['name'] = attributes.get('name', 'Data')
+        attr['scale'] = attributes.get('pixelsize' ,(self.pixelsize, self.pixelsize, self.pixelsize))
+        attr['colormap'] = attributes.get('colormap', 'gray')
+        attr['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
+        return attr
 
     def to_data_tuple(self, attributes:dict={}, metadata:dict={}):
         """_summary_
@@ -152,18 +152,21 @@ class Data(ABC):
         """
         attributes = self.layer_attributes(attributes)
         metadata = self.layer_metadata(metadata)
+        attributes['metadata'] = metadata
         layerdata = (self.data, attributes, 'image')
+        logger.debug(f"Created layerdata tuple: {layerdata}")
         return layerdata
     
     @classmethod
-    def from_data_tuple(cls, index, layer, attributes=None):
+    def from_data_tuple(cls, layer, attributes=None):
         if attributes is None:
             data = layer.data
             scale = layer.scale[0]
-            layer_metadata = layer.metadata['ctomo']
+            layer_metadata = layer.metadata['ct metadata']
         else:
             data = layer
             scale = attributes['scale'][0]
-            layer_metadata = attributes['metadata']['ctomo']
+            layer_metadata = attributes['metadata']['ct metadata']
 
-        return cls(data, scale, index)
+
+        return cls(data, scale, layer_metadata)

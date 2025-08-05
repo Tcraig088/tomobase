@@ -10,7 +10,6 @@ from tomobase.data.base import Data
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.data.image import Image
 
-import stackview
 import ipywidgets as widgets
 from IPython.display import display
 
@@ -156,62 +155,25 @@ class Volume(Data):
     }
 
 
-    def to_data_tuple(self, attributes:dict={}, metadata:dict={}):
-        """_summary_
+    def layer_attributes(self, attributes={}):
+        attr = super().layer_attributes(attributes)
+        attr['name'] = attributes.get('name', 'Volume')
+        attr['scale'] = attributes.get('pixelsize', (self.pixelsize, self.pixelsize, self.pixelsize))
+        attr['colormap'] = attributes.get('colormap', 'magma')
+        attr['rendering'] = attributes.get('rendering', 'attenuated_mip')
+        attr['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
+        return attr
 
-        Args:
-            attributes (dict, optional): _description_. Defaults to {}.
-            metadata (dict, optional): _description_. Defaults to {}.
-
-        Returns:
-            layerdata: Napari Layer Data Tuple
-        """
-        logger.debug('Converting Volume to Napari Layer Data Tuple: Shape: %s, Pixelsize: %s', self.data.shape, self.pixelsize)
-        attributes = attributes
-        attributes['name'] = attributes.get('name', 'Volume')
-        attributes['colormap'] = 'magma'  
-        attributes['rendering'] = 'attenuated_mip'
-        attributes['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
-        
-        metadata = metadata
-        metadata['type'] = TOMOBASE_DATATYPES.VOLUME.value
-        metadata['axis'] = ['Projection', 'y', 'x'] if len(self.data.shape) == 3 else ['Projection', 'Signal', 'y', 'x']
-        
-        for key, value in self.metadata.items():
-            metadata[key] = value
-
-        attributes['metadata'] = {'ct metadata': metadata}
-        layerdata = (self.data, attributes, 'image')
-        
-        return layerdata
     
-    @classmethod
-    def from_data_tuple(cls, layerdata, attributes=None):
-        if attributes is None:
-            data = layerdata.data
-            scale = layerdata.scale[0]
-            layer_metadata = layerdata.metadata
-        else:
-            data = layerdata
-            scale = attributes['scale'][0]
-            layer_metadata = attributes['metadata']
 
-        layer_metadata = deepcopy(layer_metadata)
-        metadata = layer_metadata['ct metadata']
-        metadata.pop('axis')
-        metadata.pop('type')
+    def layer_metadata(self, metadata={}):
+        meta = super().layer_metadata(metadata)
+        meta['ct metadata']['type'] = TOMOBASE_DATATYPES.VOLUME.value
+        meta['ct metadata']['axis'] = ['z', 'y', 'x'] if len(self.data.shape) == 3 else ['z', 'Signal', 'y', 'x']
 
-        return cls(data, scale, metadata)
+        return meta
 
-    def show(self, display_width=800, display_height=800):
-        """shows the sinogram in a stackview window
 
-        Returns:
-            _type_: _description_
-        """
-        data = self._transpose_to_view(use_copy=True)
-        display(stackview.orthogonal(data, display_width=display_width, display_height=display_height))
-    
 Volume._readers = {
     'rec': Volume._read_rec,
     'tif': Volume._read_tiff,
