@@ -3,43 +3,48 @@ import copy
 import inspect
 import functools
 from copy import deepcopy
-from tomobase.log import logger
+
 import re
 from functools import wraps
 from tomobase.registrations.environment import xp, GPUContext
 from tomobase.data.base import Data
 from inspect import signature, Parameter
 from typing import Union
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 import makefun
 
 
-def phantom_hook(name:str=''):
+from .log import logger
 
-    """a decorator used to mark a function as a tomography process. The function is either a standard function used to define the process or a QWidget used to attach to napari. 
-    see the plugins tutorial for more information on how to use this decorator. returns a decorated function
-
+def phantom_hook(name:str| None= None) -> Callable:
+    #use sphynx style
+    """
+    A decorator used to mark a function as a phantom. The function must return a Volume class.
     Args:
-        name (str): the name of the process. Should be readable casing and spaces. 
+        name (str | None): The name of the phantom. Should be human readable casing.
+    Returns:
+        Callable: The decorated function.
     """
     def decorator(func):
-        local_name = name
-        if local_name == '':
-            local_name = func.__name__.replace('_', ' ')
-        func.tomobase_name = local_name
+        if name is None:
+            name = func.__name__.replace('_', ' ')
+        func.tomobase_name = name
         func.is_tomobase_phantom = True
 
         return func
     return decorator
 
-def tomobase_hook_tiltscheme(name: str):
-    """a decorator used to mark a class as a tiltscheme. The class is either a standard class used to define the tiltscheme or a QWidget used to attach to napari. 
-    see the plugins tutorial for more information on how to use this decorator. returns a decorated class
+def tiltscheme_hook(name: str) -> Callable:
+    """
+    A decorator used to mark a class as a tiltscheme. The class must be a child of the TiltScheme class.
 
-    Args:
-        name (str): the name of the tilt scheme. Should be readable casing and spaces. 
+    :param name: the name of the tilt scheme. Should be human readable casing.
+    :type name: str
+    :return: the decorated class
+    :rtype: Callable
     """
     def decorator(cls):
+        #TODO: Check if the class is a child of the TiltScheme class
         cls.tomobase_name = name
         cls.is_tomobase_tiltscheme = True
         return cls

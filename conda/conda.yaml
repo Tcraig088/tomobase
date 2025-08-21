@@ -22,6 +22,7 @@ requirements:
     - progress
     - h5py
     - mrcz
+    - makefun
 
 outputs:
   - name: tomobase
