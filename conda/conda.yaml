@@ -29,6 +29,7 @@ requirements:
     - colorama
     - plotly
     - scikit-image
+    - tqdm
 
 channels:
   - defaults
