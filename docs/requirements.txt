@@ -1,0 +1,5 @@
+sphinx==8.2.3
+myst-parser>=4.0
+sphinx-rtd-theme>=2.0
+linkify-it-py       
+sphinx-autodoc-typehints
