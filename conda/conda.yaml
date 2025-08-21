@@ -26,6 +26,8 @@ requirements:
     - qtpy
     - magicgui
     - pandas
+    - colorama
+    - plotly
 
 channels:
   - defaults

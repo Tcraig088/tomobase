@@ -8,3 +8,6 @@ __pycache__/
 build/
 .vscode/
 docs/_build/
+docs/.doctrees/
+docs/_static/
+docs/_sources/
