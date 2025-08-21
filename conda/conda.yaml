@@ -28,7 +28,7 @@ requirements:
     - pandas
     - colorama
     - plotly
-    - skimage
+    - scikit-image
 
 channels:
   - defaults
