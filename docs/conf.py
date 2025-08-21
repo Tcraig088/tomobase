@@ -25,7 +25,6 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",      # Google/Numpy docstrings
     "sphinx.ext.viewcode",
-    "autodoc_traits",
     'sphinx.ext.intersphinx'
 ]
 
