@@ -23,29 +23,8 @@ requirements:
     - h5py
     - mrcz
     - makefun
-
-outputs:
-  - name: tomobase
-    requirements:
-      run:
-        - python >=3.10
-        - numpy
-        - matplotlib
-        - scipy
-        - imageio
-        - progress
-
-  - name: tomobase-minimal
-    requirements:
-      run:
-        - python >=3.10
-        - numpy
-        - matplotlib
-        - scipy
-        - imageio
-        - progress
-        - optional-package1
-        - optional-package2
+    - qtpy
+    - magicgui
 
 channels:
   - defaults
@@ -63,4 +42,4 @@ about:
 
 extra:
   recipe-maintainers:
-    - tcraig258
+    - Tcraig088

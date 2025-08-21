@@ -57,7 +57,7 @@ myst_fence_as_directive = [
 
 autodoc_mock_imports = [
     "napari", "qtpy", "PyQt5", "PySide6",
-    "matplotlib", "stackview", "scipy", "cupy" # if your package imports it at top-level
+    "matplotlib", "stackview", "scipy", "cupy", "astra" # if your package imports it at top-level
 ]
 
 
