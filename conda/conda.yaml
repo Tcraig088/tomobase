@@ -25,6 +25,7 @@ requirements:
     - makefun
     - qtpy
     - magicgui
+    - pandas
 
 channels:
   - defaults

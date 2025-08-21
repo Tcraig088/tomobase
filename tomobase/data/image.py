@@ -1,7 +1,6 @@
 import imageio as iio
-import stackview
+
 from copy import deepcopy
-from IPython.display import display
 import collections
 collections.Iterable = collections.abc.Iterable
 from tomobase.log import logger

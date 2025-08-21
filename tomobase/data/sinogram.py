@@ -3,13 +3,7 @@ import glob
 import h5py
 import numpy as np
 import imageio as iio
-import stackview
-print(stackview.__version__)
-print(hasattr(stackview, 'converters'))
 
-
-import ipywidgets as widgets
-from IPython.display import display, clear_output
 from copy import deepcopy
 from tomobase.log import logger
 

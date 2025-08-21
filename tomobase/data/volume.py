@@ -10,8 +10,6 @@ from tomobase.data.base import Data
 from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
 from tomobase.data.image import Image
 
-import ipywidgets as widgets
-from IPython.display import display
 
 def _rescale(data, lower=0, upper=1, inplace=True):
     """Rescale data by scaling it to a given range.
