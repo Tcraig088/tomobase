@@ -1,0 +1,12 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.registrations.progress`
+
+```{py:module} tomobase.registrations.progress
+```
+
+```{autodoc2-docstring} tomobase.registrations.progress
+:allowtitles:
+```

@@ -1,0 +1,57 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.hooks`
+
+```{py:module} tomobase.hooks
+```
+
+```{autodoc2-docstring} tomobase.hooks
+:allowtitles:
+```
+
+## Module Contents
+
+### Functions
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`phantom_hook <tomobase.hooks.phantom_hook>`
+  - ```{autodoc2-docstring} tomobase.hooks.phantom_hook
+    :summary:
+    ```
+* - {py:obj}`tiltscheme_hook <tomobase.hooks.tiltscheme_hook>`
+  - ```{autodoc2-docstring} tomobase.hooks.tiltscheme_hook
+    :summary:
+    ```
+* - {py:obj}`tomobase_hook_process <tomobase.hooks.tomobase_hook_process>`
+  - ```{autodoc2-docstring} tomobase.hooks.tomobase_hook_process
+    :summary:
+    ```
+````
+
+### API
+
+````{py:function} phantom_hook(name: str | None = None) -> collections.abc.Callable
+:canonical: tomobase.hooks.phantom_hook
+
+```{autodoc2-docstring} tomobase.hooks.phantom_hook
+```
+````
+
+````{py:function} tiltscheme_hook(name: str) -> collections.abc.Callable
+:canonical: tomobase.hooks.tiltscheme_hook
+
+```{autodoc2-docstring} tomobase.hooks.tiltscheme_hook
+```
+````
+
+````{py:function} tomobase_hook_process(**kwargs)
+:canonical: tomobase.hooks.tomobase_hook_process
+
+```{autodoc2-docstring} tomobase.hooks.tomobase_hook_process
+```
+````

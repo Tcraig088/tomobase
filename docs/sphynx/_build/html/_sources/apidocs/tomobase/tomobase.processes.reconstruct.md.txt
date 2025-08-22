@@ -1,0 +1,46 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.processes.reconstruct`
+
+```{py:module} tomobase.processes.reconstruct
+```
+
+```{autodoc2-docstring} tomobase.processes.reconstruct
+:allowtitles:
+```
+
+## Module Contents
+
+### Functions
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`optomo_reconstruct <tomobase.processes.reconstruct.optomo_reconstruct>`
+  - ```{autodoc2-docstring} tomobase.processes.reconstruct.optomo_reconstruct
+    :summary:
+    ```
+* - {py:obj}`astra_reconstruct <tomobase.processes.reconstruct.astra_reconstruct>`
+  - ```{autodoc2-docstring} tomobase.processes.reconstruct.astra_reconstruct
+    :summary:
+    ```
+````
+
+### API
+
+````{py:function} optomo_reconstruct(sino: tomobase.data.Sinogram, iterations: int = 0, use_gpu: bool = True, weighted: bool = False)
+:canonical: tomobase.processes.reconstruct.optomo_reconstruct
+
+```{autodoc2-docstring} tomobase.processes.reconstruct.optomo_reconstruct
+```
+````
+
+````{py:function} astra_reconstruct(sino: tomobase.data.Sinogram, method: str = 'sirt', iterations: int = 0, use_gpu: bool = True)
+:canonical: tomobase.processes.reconstruct.astra_reconstruct
+
+```{autodoc2-docstring} tomobase.processes.reconstruct.astra_reconstruct
+```
+````

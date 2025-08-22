@@ -6,20 +6,11 @@
 ![Testing](https://img.shields.io/badge/test-Experimental-orange)
 ![build](https://img.shields.io/badge/tested%20build-Windows%2011%20-orange)
 
+# Description
+
 This is the landing page documentation for Tomo Base. The Tomo Base (tomobase) library is a library of basic tools for scanning transmission electron tomography (STEM). It allows the reconstruction of 3D volume data using the ASTRA Toolbox. The library is designed to allow users to perform allignments, reconstructions, and post processing steps withing a Juypter Notebook. Additionally, tomobase is designed as base library with registration systems to allow for extended functionalities to be built on top of. 
 
 For source code visit [Github](https://github.com/Tcraig088/tomobase). 
-
-## Table of Contents
-
-```{toctree}
-:maxdepth: 2
-
-guide/index
-api/index
-license
-```
-
 
 ## Installation
 

@@ -1,16 +1,10 @@
 import numpy as np
 
+from .tiltscheme import TiltScheme
+from ..hooks import tiltscheme_hook
+from ..log import logger
 
-from tomobase.tiltschemes.tiltscheme import TiltScheme
-from tomobase.hooks import tomobase_hook_tiltscheme
-from ipywidgets import widgets
-from IPython.display import display
-from tomobase.log import logger
-
-
-
-    
-@tomobase_hook_tiltscheme('BINARY')  
+@tiltscheme_hook('BINARY')  
 class Binary(TiltScheme):
     """Binary Tilt Scheme Class.
     The purpose of this class is to calculate angles using the binary acquisition tilt scheme.
@@ -25,6 +19,14 @@ class Binary(TiltScheme):
             If false the tiltscheme will be calculated unidirectionally min to max for all sets of 8 angles.
     """
     def __init__(self, angle_min:float=-70, angle_max:float=70, k:int=8, isbidirectional:bool=True):
+        """Initialize the Binary Tilt Scheme.
+
+        Args:
+            angle_min (float, optional): The minimum angle in the tilt series. Defaults to -70.
+            angle_max (float, optional): The maximum angle in the tilt series. Defaults to 70.
+            k (int, optional): The number of angles in one subdivision of the tiltscheme. Defaults to 8.
+            isbidirectional (bool, optional): Determines whether the tiltscheme is calculated bidirectionally. Defaults to True.
+        """
         super().__init__()
         self.angle_max = angle_max
         self.angle_min = angle_min
@@ -101,21 +103,3 @@ class Binary(TiltScheme):
     def get_angle_array(self, indices):
         return super().get_angle_array(indices)
     
-    @staticmethod
-    def TiltSchemeWidget():
-        widget_max = widgets.FloatText(value=70, description='angle_max')
-        widget_min = widgets.FloatText(value=70, description='angle_min')
-        widget_k = widgets.IntText(value=8, description='k')
-        widget_bidirectional = widgets.Checkbox(value=True, description='bidirectional')
-        widget = widgets.HBox([widget_max, widget_min, widget_k, widget_bidirectional])
-        return widget
-    
-    @classmethod
-    def parsewidget(cls, widget):
-        _dict = {
-            'angle_max': widget.children[0].value,
-            'angle_min': widget.children[1].value,
-            'k': widget.children[2].value,
-            'isbidirectional': widget.children[3].value
-        }
-        return cls(**_dict)

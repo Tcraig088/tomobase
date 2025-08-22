@@ -1,0 +1,12 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.processes.alignments`
+
+```{py:module} tomobase.processes.alignments
+```
+
+```{autodoc2-docstring} tomobase.processes.alignments
+:allowtitles:
+```

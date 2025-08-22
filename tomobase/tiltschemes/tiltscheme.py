@@ -2,14 +2,14 @@ from abc import ABC, abstractmethod
 import numpy as  np
 
 class TiltScheme(ABC):
-    """Base Class for a Tilt Scheme Plugin.
+    """Base Class for a Tilt Schemes.
+
+    This class provides the basic structure and functionality for all tilt schemes.
 
     Attributes:
-        index (int): The index of the data type in the library
-        isfinished (bool): Whether the tilt scheme is finished. Set to true on the last angle in the series if the scheme has a termination point.
-                
-    Methods:
-        get_angle(): Returns the next tilt angle in the scheme must be set for the child classes.
+        index (int): The current index in the tilt series.
+        _isfinished (bool): Whether the tilt scheme has finished.
+
     """
     def __init__(self):
         self.index = 0
@@ -20,7 +20,10 @@ class TiltScheme(ABC):
         return self._isfinished
     
     @abstractmethod
-    def get_angle(self, index=None):
+    def get_angle(self):
+        """Get the tilt angle for the current index.
+
+        """
         pass
     
     @abstractmethod

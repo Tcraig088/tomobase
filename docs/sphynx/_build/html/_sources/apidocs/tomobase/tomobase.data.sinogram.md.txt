@@ -1,0 +1,90 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.data.sinogram`
+
+```{py:module} tomobase.data.sinogram
+```
+
+```{autodoc2-docstring} tomobase.data.sinogram
+:allowtitles:
+```
+
+## Module Contents
+
+### Classes
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`Sinogram <tomobase.data.sinogram.Sinogram>`
+  - ```{autodoc2-docstring} tomobase.data.sinogram.Sinogram
+    :summary:
+    ```
+````
+
+### API
+
+`````{py:class} Sinogram(data, angles, pixelsize=1.0, times=None, metadata={})
+:canonical: tomobase.data.sinogram.Sinogram
+
+Bases: {py:obj}`tomobase.data.base.Data`
+
+```{autodoc2-docstring} tomobase.data.sinogram.Sinogram
+```
+
+```{rubric} Initialization
+```
+
+```{autodoc2-docstring} tomobase.data.sinogram.Sinogram.__init__
+```
+
+````{py:method} sort(bytime=False)
+:canonical: tomobase.data.sinogram.Sinogram.sort
+
+```{autodoc2-docstring} tomobase.data.sinogram.Sinogram.sort
+```
+
+````
+
+````{py:method} insert(img, angle, time=None)
+:canonical: tomobase.data.sinogram.Sinogram.insert
+
+```{autodoc2-docstring} tomobase.data.sinogram.Sinogram.insert
+```
+
+````
+
+````{py:method} remove(index)
+:canonical: tomobase.data.sinogram.Sinogram.remove
+
+```{autodoc2-docstring} tomobase.data.sinogram.Sinogram.remove
+```
+
+````
+
+````{py:method} from_file(filename=None, **kwargs)
+:canonical: tomobase.data.sinogram.Sinogram.from_file
+:classmethod:
+
+````
+
+````{py:method} get_type_id()
+:canonical: tomobase.data.sinogram.Sinogram.get_type_id
+:classmethod:
+
+````
+
+````{py:method} to_file(filename=None, **kwargs)
+:canonical: tomobase.data.sinogram.Sinogram.to_file
+
+````
+
+````{py:method} to_data_tuple(attributes: dict = {}, metadata: dict = {})
+:canonical: tomobase.data.sinogram.Sinogram.to_data_tuple
+
+````
+
+`````

@@ -1,0 +1,35 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.plots.tiltscheme`
+
+```{py:module} tomobase.plots.tiltscheme
+```
+
+```{autodoc2-docstring} tomobase.plots.tiltscheme
+:allowtitles:
+```
+
+## Module Contents
+
+### Functions
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`acquisition_radial_plot <tomobase.plots.tiltscheme.acquisition_radial_plot>`
+  - ```{autodoc2-docstring} tomobase.plots.tiltscheme.acquisition_radial_plot
+    :summary:
+    ```
+````
+
+### API
+
+````{py:function} acquisition_radial_plot(**kwargs)
+:canonical: tomobase.plots.tiltscheme.acquisition_radial_plot
+
+```{autodoc2-docstring} tomobase.plots.tiltscheme.acquisition_radial_plot
+```
+````

@@ -13,17 +13,15 @@ from magicgui.tqdm import trange
 
 @tomobase_hook_process(name='Project', category=TOMOBASE_TRANSFORM_CATEGORIES.PROJECT.value, use_numpy=True)
 def project(volume:Volume, angles:np.ndarray, use_gpu:bool=True):
-    """Create a sinogram from a volume using forward projection.
-    Arguments:
+    """Create a sinogram from a volume using forward projection. The GPU Context is overriden due to underlying astra gpu usage. 
+    Args:
         volume (Volume): The input volume to be projected.
         angles (np.array): The angles at which to project the volume.
         use_gpu (bool): Whether to use GPU for projection. Default is True.
     Returns:
         Sinogram: The resulting sinogram.
-    Notes:
-        - The Context is overriden to use numpy instead of the GPU context - This is because GPU controls for ASTRA are set in CUDA and not using CUPY wrapper and this can cause issues, (May be deprecated in the future)
-    """
 
+    """
     data = np.transpose(volume.data, (2, 1, 0))  # ASTRA expects (z, y, x)
     angles = np.asarray(angles)
     use_gpu = use_gpu and astra.use_cuda()

@@ -2,29 +2,26 @@
 import numpy as np
 from copy import copy
 
-
 from scipy.ndimage import center_of_mass, shift, rotate
 from scipy.optimize import minimize_scalar
 
+from ...hooks import tomobase_hook_process
+from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
+from ...registrations.environment import xp
 
-from tomobase.hooks import tomobase_hook_process
-from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from tomobase.registrations.environment import xp
+from ...data import Sinogram
+from ..reconstruct import astra_reconstruct
+from ..forward_project import project
+from ...log import logger
 
-from tomobase.data import Sinogram
-from tomobase.processes.reconstruct import astra_reconstruct
-from tomobase.processes.forward_project import project
-from tomobase.log import logger
-
-from qtpy.QtWidgets import QWidget, QComboBox, QLabel, QSpinBox, QHBoxLayout, QLineEdit, QVBoxLayout, QPushButton, QGridLayout, QDoubleSpinBox
-from qtpy.QtCore import Qt
 from magicgui.tqdm import trange, tqdm
 
 _subcategories= ['Tilt Axis']
 @tomobase_hook_process(name='Tilt Shift', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories, use_numpy=True)
 def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=0.0, **kwargs):
     """Align the tilt axis shift of a sinogram using reprojection
-    Arguments:
+
+    Args:
         sino (Sinogram): The projection data
         method (str): The reconstruction algorithm (default: 'fbp')
         offsets (np.ndarray): A list of offsets to try in pixels, if None is given it will use ``numpy.arange(-10, 11)`` (default: None)
@@ -32,6 +29,7 @@ def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=0.0, *
         inplace (bool): Whether to do the alignment in-place in the input data object (default: True)
         extend_return (bool): If True, the return value will be a tuple with the offset in the second item (default: False)
         kwargs (dict): Other keyword arguments are passed to ``reconstruct`` see astra reconstruct
+    
     Returns:
         Sinogram: The result
         offset (float): The offset in pixels
@@ -56,7 +54,7 @@ def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=0.0, *
 @tomobase_hook_process(name='Tilt Rotation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories, use_numpy=True)
 def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=0.0, **kwargs):
     """Align the tilt axis rotation of a sinogram using reprojection
-    Arguments:
+    Args:
         sino (Sinogram): The projection data
         method (str): The reconstruction algorithm (default: 'fbp')
         angle (float): A pre-calculated angle in degrees, this is useful for aligning multiple sinograms simultaneously (default: None)
@@ -64,6 +62,7 @@ def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=0.0, *
         inplace (bool): Whether to do the alignment in-place in the input data object (default: True)
         extend_return (bool): If True, the return value will be a tuple with the angle in the second item (default: False)
         kwargs (dict): Other keyword arguments are passed to ``reconstruct`` see astra reconstruct
+    
     Returns:
         Sinogram: The result
         angle (float): The angle in degrees

@@ -7,7 +7,7 @@ __pycache__/
 *.pyc
 build/
 .vscode/
-docs/_build/
-docs/.doctrees/
-docs/_static/
-docs/_sources/
+docs/_build/*
+docs/.doctrees/*
+docs/_static/*
+docs/_sources/*

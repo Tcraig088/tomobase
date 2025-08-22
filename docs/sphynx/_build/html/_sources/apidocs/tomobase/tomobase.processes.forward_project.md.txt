@@ -1,0 +1,35 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.processes.forward_project`
+
+```{py:module} tomobase.processes.forward_project
+```
+
+```{autodoc2-docstring} tomobase.processes.forward_project
+:allowtitles:
+```
+
+## Module Contents
+
+### Functions
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`project <tomobase.processes.forward_project.project>`
+  - ```{autodoc2-docstring} tomobase.processes.forward_project.project
+    :summary:
+    ```
+````
+
+### API
+
+````{py:function} project(volume: tomobase.data.Volume, angles: numpy.ndarray, use_gpu: bool = True)
+:canonical: tomobase.processes.forward_project.project
+
+```{autodoc2-docstring} tomobase.processes.forward_project.project
+```
+````

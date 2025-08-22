@@ -1,40 +1,42 @@
 from copy import deepcopy
-from tomobase.hooks import tomobase_hook_process
-from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from tomobase.registrations.environment import xp
-from tomobase.data import Sinogram, Data
+
+from ...hooks import tomobase_hook_process
+from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
+from ...registrations.environment import xp
+from ...data import Sinogram, Data
+
 from typing import Union, Tuple
 from magicgui.tqdm import tqdm
 
 
 _subcategories = ['Misalignment']
 @tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
-def gaussian_filter(sino: Data, gaussian_sigma:float=1,):
+def gaussian_filter(obj: Data, gaussian_sigma:float=1,):
     """Add Gaussian noise to the sinogram.
-    Arguments:
-        sino (Sinogram): The projection data
+    Args:
+        obj (Data): The input data object
         gaussian_sigma (float): Standard deviation of the Gaussian noise (default: 1)
         inplace (bool): Whether to do the operation in-place in the input data object (Default: True)
     Returns:
-        sino (sinogram): The result
+        Data: The result
     """
-    sino.data = xp.scipy.ndimage.gaussian_filter(sino.data, gaussian_sigma)
-    return sino
+    obj.data = xp.scipy.ndimage.gaussian_filter(obj.data, gaussian_sigma)
+    return obj
 
 @tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
-def poisson_noise(sino: Data, 
+def poisson_noise(obj: Data, 
                   rescale:float=True):
     """Add Poisson noise to the sinogram.
-    Arguments:
-        sino (Sinogram): The projection data
+    Args:
+        obj (Data): The input data object
         rescale (float): Rescale the data to the range of the Poisson noise (default: True)
-        inplace (bool): Whether to do the operation in-place in the input data object (Default: True)
+ 
     Returns:
-        sino (sinogram): The result
+        Data: The result
     """
-    sino.data = sino.data*rescale
-    sino.data = xp.xupy.random.poisson(sino.data)
-    return sino
+    obj.data = obj.data*rescale
+    obj.data = xp.xupy.random.poisson(obj.data)
+    return obj
 
 
 
@@ -44,8 +46,7 @@ def translational_misalignment(sino: Sinogram, offset:float=0.25):
     Arguments:
         sino (Sinogram): The projection data
         offset (float): The maximum offset in pixels (default: 0.25)
-        inplace (bool): Whether to do the operation in-place in the input data object (Default: True)
-        extend_return (bool): Whether to return the shifts as well (default: False)
+
     Returns:
         sino (Sinogram): The result
         shifts (ndarray): The shifts applied to each projection (only if extend_return is True)
@@ -73,14 +74,13 @@ def rotational_misalignment(sino: Sinogram,
                             backlash:float=0.5, 
                             backlash_backwards:bool =  True):
     """ Apply a random rotational misalignment to the sinogram.
-    Arguments:
+    Args:
         sino (Sinogram): The projection data
         tilt_theta (float): The maximum rotation angle in degrees (default: 3)
         tilt_alpha (float): The maximum offset in degrees (default: 2)
         backlash (float): The maximum backlash in degrees (default: 0.5)
         backlash_backwards (bool): Whether to apply the backlash backwards or forwards (default: True)
-        inplace (bool): Whether to do the operation in-place in the input data object (Default: True)
-        extend_return (bool): Whether to return the rotations as well (default: False)
+
     Returns:
         sino (Sinogram): The result
         rotations (ndarray): The rotations applied to each projection (only if extend_return is True)

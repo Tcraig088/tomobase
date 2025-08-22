@@ -1,4 +1,6 @@
 from .image import Image
 from .volume import Volume
-from tomobase.data.sinogram import Sinogram
-from tomobase.data.base import Data
+from .sinogram import Sinogram
+from .base import Data
+
+all = [Image, Volume, Sinogram, Data]

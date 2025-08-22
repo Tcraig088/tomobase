@@ -1,0 +1,12 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.processes.deformations.beamdamage`
+
+```{py:module} tomobase.processes.deformations.beamdamage
+```
+
+```{autodoc2-docstring} tomobase.processes.deformations.beamdamage
+:allowtitles:
+```

@@ -1,0 +1,12 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.processes.gui`
+
+```{py:module} tomobase.processes.gui
+```
+
+```{autodoc2-docstring} tomobase.processes.gui
+:allowtitles:
+```

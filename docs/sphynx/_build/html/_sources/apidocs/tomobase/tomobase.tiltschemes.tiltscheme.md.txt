@@ -1,0 +1,44 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.tiltschemes.tiltscheme`
+
+```{py:module} tomobase.tiltschemes.tiltscheme
+```
+
+```{autodoc2-docstring} tomobase.tiltschemes.tiltscheme
+:allowtitles:
+```
+
+## Module Contents
+
+### Classes
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`TiltScheme <tomobase.tiltschemes.tiltscheme.TiltScheme>`
+  - ```{autodoc2-docstring} tomobase.tiltschemes.tiltscheme.TiltScheme
+    :summary:
+    ```
+````
+
+### API
+
+````{py:class} TiltScheme()
+:canonical: tomobase.tiltschemes.tiltscheme.TiltScheme
+
+Bases: {py:obj}`abc.ABC`
+
+```{autodoc2-docstring} tomobase.tiltschemes.tiltscheme.TiltScheme
+```
+
+```{rubric} Initialization
+```
+
+```{autodoc2-docstring} tomobase.tiltschemes.tiltscheme.TiltScheme.__init__
+```
+
+````

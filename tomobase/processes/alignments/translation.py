@@ -1,14 +1,11 @@
 import copy
 
-from tomobase.hooks import tomobase_hook_process
-from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from tomobase.registrations.environment import xp
-from tomobase.registrations.progress import progresshandler
-from tomobase.data import Sinogram
+from ...hooks import tomobase_hook_process
+from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
+from ...registrations.environment import xp
+from ...registrations.progress import progresshandler
+from ...data import Sinogram
 
-import ipywidgets as widgets
-from IPython.display import display, clear_output
-import stackview
 from magicgui.tqdm import trange, tqdm
 
 _subcategories=['Translation']

@@ -1,14 +1,14 @@
-from tomobase.log import logger
+from ..log import logger
 import os
 import importlib
 import inspect
 from collections.abc import Iterable
-
 from colorama import Fore, Style, init
 init(autoreset=True)
 
 
 class Item(object):
+
     def __init__(self, value, name):
         self._value = value    
         self._name = name

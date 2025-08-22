@@ -1,14 +1,27 @@
 
 import numpy as np
 
-from qtpy.QtWidgets import QDoubleSpinBox, QSpinBox, QGridLayout, QLabel
+from .tiltscheme import TiltScheme
+from ..hooks import tiltscheme_hook
 
-from tomobase.tiltschemes.tiltscheme import TiltScheme
-from tomobase.hooks import tomobase_hook_tiltscheme
- 
-@tomobase_hook_tiltscheme('GRS')  
+@tiltscheme_hook('GRS')  
 class GRS(TiltScheme):
+    """Golden Ratio Sequence Tilt Scheme.
+
+    Attributes:
+        angle_min (float): The minimum angle in the tilt series.
+        angle_max (float): The maximum angle in the tilt series.
+        index (int): The index to start acquisition from.
+    """
+
     def __init__(self, angle_min:float=-70, angle_max:float=70, index:int=1):
+        """Initialize the Golden Ratio Sequence Tilt Scheme.
+
+        Args:
+            angle_min (float, optional): The minimum angle in the tilt series. Defaults to -70.
+            angle_max (float, optional): The maximum angle in the tilt series. Defaults to 70.
+            index (int, optional): The index to start acquisition from. Defaults to 1.
+        """
         super().__init__()
         self.angle_max = angle_max
         self.angle_min = angle_min
@@ -21,6 +34,3 @@ class GRS(TiltScheme):
         self.index += 1
         return np.round(np.degrees(angle_rad),2)
     
-    def get_angle_array(self, indices):
-        angles = np.mod(indices*self.gr*self.range, self.range) + np.radians(self.angle_min)
-        return np.round(np.degrees(angles),2)

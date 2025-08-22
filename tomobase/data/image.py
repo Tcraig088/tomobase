@@ -3,40 +3,39 @@ import imageio as iio
 from copy import deepcopy
 import collections
 collections.Iterable = collections.abc.Iterable
-from tomobase.log import logger
-from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
-from tomobase.registrations.environment import xp
 
-
-from tomobase.data.base import Data
+from ..log import logger
+from ..registrations.datatypes import TOMOBASE_DATATYPES
+from ..registrations.environment import xp
+from .base import Data
 
 class Image(Data):
-    """An image
+    """ A class for single image datasets.
+
+    Supported File Formats:
+        - .png
+        - .jpg
+        - .jpeg
+        - .bmp
+        - .tif
+        - .tiff
+
     Attributes:
-        data (numpy.ndarray)
-            The image. The data is indexed using the (rows, columns, channels)
-            standard, which corresponds to (y, x, color)
-        pixelsize (float)
-            The width of the pixels in nanometer
-        metadata (dict)
-            A dictionary with additional metadata, the contents of this
-            attribute depend on from which file they were read
+        data (numpy.ndarray | cupy.ndarray): The image data. The data is indexed using the (rows, columns, channels) standard, which corresponds to (x, y, color)
     """
 
-    def __init__(self, data, pixelsize=1.0, metadata={}):
-        """Create an image
-
-        Arguments:
-            data (numpy.ndarray)
-                The image. The data is indexed using the
-                (rows, columns, channels) standard, which corresponds to
-                (y, x, color)
-            pixelsize (float)
-                The width of the pixels in nanometer (default 1.0)
+    def __init__(self, data, pixelsize: float = 1.0, metadata: dict = {}):
         """
+        Initialize the Image object
+
+        Args:
+            data (numpy.ndarray) : the image data
+            pixelsize (float): The size of the pixels in the dataset. Defaults to 1.0 nm
+            metadata (dict): A dictionary containing metadata about the dataset. Defaults to {}.
+        """
+
         self.data = data
         super().__init__(pixelsize, metadata=metadata)
-        self.dim_default = 2
 
     @staticmethod
     def _read_emi(filename, **kwargs):
@@ -60,8 +59,6 @@ class Image(Data):
 
     def _write_image(self, filename, **kwargs):
         iio.imwrite(filename, self.data)
-
-
 
     def layer_metadata(self, metadata={}):
         meta = super().layer_metadata(metadata)

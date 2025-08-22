@@ -1,0 +1,35 @@
+site_name: Tomo Base
+repo_url: https://example.com/your/repo
+theme:
+  name: readthedocs
+
+
+plugins:
+  - autorefs
+  - mkdocs-jupyter
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            # Rendering
+            show_root_heading: false
+            show_object_full_path: false
+            show_source: true
+            members_order: source
+            inherited_members: true
+            separate_signature: true
+            docstring_style: google     # or "numpy"
+            # Selection (hide private/dunder)
+            filters:
+              - "!^_"
+            # Signatures & typing
+            show_signature_annotations: true
+            signature_crossrefs: true
+            # Navigation
+            show_submodules: true
+
+nav:
+  - Home: index.md
+  - User Guide: scripts/tomography_tutorial.ipynb
+  - API Reference: apis.md
+  - License: license.md

@@ -1,0 +1,341 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tomobase.registrations.environment &mdash; tomobase  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            tomobase
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guide/index.html">Tomo Base</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/index.html#description">Description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/index.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guide/index.html#license">License</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/index.html#top-level-package">Top-level package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/index.html#hooks">Hooks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api/index.html#data">Data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">License</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../license.html#preamble">Preamble</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../license.html#terms-and-conditions">Terms and Conditions</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">tomobase</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">tomobase.registrations.environment</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for tomobase.registrations.environment</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">enum</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tomobase.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+
+<div class="viewcode-block" id="GPUContext">
+<a class="viewcode-back" href="../../../apidocs/tomobase/tomobase.registrations.environment.html#tomobase.registrations.environment.GPUContext">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">GPUContext</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">CUPY</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">NUMPY</span> <span class="o">=</span> <span class="mi">2</span></div>
+
+
+
+<div class="viewcode-block" id="EnvironmentContext">
+<a class="viewcode-back" href="../../../apidocs/tomobase/tomobase.registrations.environment.html#tomobase.registrations.environment.EnvironmentContext">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EnvironmentContext</span><span class="p">:</span>
+    <span class="n">_instance</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="EnvironmentContext.__new__">
+<a class="viewcode-back" href="../../../apidocs/tomobase/tomobase.registrations.environment.html#tomobase.registrations.environment.EnvironmentContext.__new__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">_instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">EnvironmentContext</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_instance</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cupy_checked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cupy_available</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">GPUContext</span><span class="o">.</span><span class="n">NUMPY</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device_count</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">skimage</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_xupy</span> <span class="o">=</span> <span class="n">BackendProxy</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span><span class="n">np</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scipy</span> <span class="o">=</span> <span class="n">BackendProxy</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span><span class="n">scipy</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">BackendProxy</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span><span class="n">pd</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_skimage</span> <span class="o">=</span> <span class="n">BackendProxy</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span><span class="n">skimage</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_cupy</span><span class="p">()</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">df</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the DataFrame backend module (pandas or cudf).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">xupy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the array backend module (numpy or cupy).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xupy</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">scipy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the scientific backend module (scipy or cupyx).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scipy</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">skimage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the scientific backend module (scipy or cupyx).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_skimage</span>
+<div class="viewcode-block" id="EnvironmentContext.check_cupy">
+<a class="viewcode-back" href="../../../apidocs/tomobase/tomobase.registrations.environment.html#tomobase.registrations.environment.EnvironmentContext.check_cupy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_cupy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cupy_checked</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cupy_checked</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">cupy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cp</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cupy_available</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">device_count</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">getDeviceCount</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cupy_available</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;CUPY module not found. Please install it via Conda or pip.&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cupy_available</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cupy_available</span></div>
+
+
+
+<div class="viewcode-block" id="EnvironmentContext.set_context">
+<a class="viewcode-back" href="../../../apidocs/tomobase/tomobase.registrations.environment.html#tomobase.registrations.environment.EnvironmentContext.set_context">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">GPUContext</span> <span class="o">=</span> <span class="n">GPUContext</span><span class="o">.</span><span class="n">NUMPY</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">context</span> <span class="o">==</span> <span class="n">GPUContext</span><span class="o">.</span><span class="n">CUPY</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_cupy</span><span class="p">():</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">cupy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cp</span>
+                <span class="k">if</span> <span class="n">cp</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">getDeviceCount</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">device</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No GPU available with device ID </span><span class="si">{</span><span class="n">device</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">GPUContext</span><span class="o">.</span><span class="n">CUPY</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+                    <span class="kn">import</span><span class="w"> </span><span class="nn">cupyx.scipy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cupyx_scipy</span>
+                    <span class="c1">#import cudf</span>
+                    <span class="c1">#import cucim.skimage as skimage</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_xupy</span> <span class="o">=</span> <span class="n">BackendProxy</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span><span class="n">cp</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_scipy</span> <span class="o">=</span> <span class="n">BackendProxy</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">cupyx_scipy</span><span class="p">)</span>
+                    <span class="c1">#self._df = BackendProxy(lambda: cudf)</span>
+                    <span class="c1">#self._skimage = BackendProxy(lambda: skimage)</span>
+
+        <span class="k">elif</span> <span class="n">context</span> <span class="o">==</span> <span class="n">GPUContext</span><span class="o">.</span><span class="n">NUMPY</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">GPUContext</span><span class="o">.</span><span class="n">NUMPY</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">skimage</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_xupy</span> <span class="o">=</span> <span class="n">BackendProxy</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">np</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scipy</span> <span class="o">=</span> <span class="n">BackendProxy</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">scipy</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">BackendProxy</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">pd</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_skimage</span> <span class="o">=</span> <span class="n">BackendProxy</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">skimage</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Unknown context. Context unchanged.&quot;</span><span class="p">)</span>
+            <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="EnvironmentContext.get_context">
+<a class="viewcode-back" href="../../../apidocs/tomobase/tomobase.registrations.environment.html#tomobase.registrations.environment.EnvironmentContext.get_context">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;context&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="s2">&quot;device&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="EnvironmentContext.asdataframe">
+<a class="viewcode-back" href="../../../apidocs/tomobase/tomobase.registrations.environment.html#tomobase.registrations.environment.EnvironmentContext.asdataframe">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">asdataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">data</span>
+        <span class="c1">#TODO Implement once cudf is available on 3.11 and 3.12</span>
+        <span class="k">if</span> <span class="n">context</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span>
+        <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">device</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cupy_available</span><span class="p">:</span>
+            <span class="c1">#import cudf</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">context</span> <span class="o">==</span> <span class="n">GPUContext</span><span class="o">.</span><span class="n">CUPY</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">xp</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">from_pandas</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">data</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">cudf</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">context</span> <span class="o">==</span> <span class="n">GPUContext</span><span class="o">.</span><span class="n">NUMPY</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">data</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported data conversion. Data is of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">. No Change made.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">data</span></div>
+
+        
+<div class="viewcode-block" id="EnvironmentContext.asarray">
+<a class="viewcode-back" href="../../../apidocs/tomobase/tomobase.registrations.environment.html#tomobase.registrations.environment.EnvironmentContext.asarray">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">asarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">context</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span>
+        <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1">#Not used atm but may in future</span>
+            <span class="n">device</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cupy_available</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">cupy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cp</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">context</span> <span class="o">==</span> <span class="n">GPUContext</span><span class="o">.</span><span class="n">CUPY</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">xp</span><span class="o">.</span><span class="n">xupy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">data</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">cp</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">context</span> <span class="o">==</span> <span class="n">GPUContext</span><span class="o">.</span><span class="n">NUMPY</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">data</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported data conversion. Data is of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">. No Change made.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">data</span></div>
+</div>
+
+            
+        
+
+<div class="viewcode-block" id="BackendProxy">
+<a class="viewcode-back" href="../../../apidocs/tomobase/tomobase.registrations.environment.html#tomobase.registrations.environment.BackendProxy">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BackendProxy</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context_getter</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the proxy with a function to get the current backend context.</span>
+<span class="sd">        :param context_getter: A callable that returns the current backend module (e.g., numpy or cupy).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_context_getter</span> <span class="o">=</span> <span class="n">context_getter</span>
+
+<div class="viewcode-block" id="BackendProxy.__getattr__">
+<a class="viewcode-back" href="../../../apidocs/tomobase/tomobase.registrations.environment.html#tomobase.registrations.environment.BackendProxy.__getattr__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Dynamically resolve attributes or submodules.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">backend</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_context_getter</span><span class="p">()</span>  <span class="c1"># Get the current backend (numpy, cupy, scipy, or cupyx)</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>  <span class="c1"># Get the attribute from the backend</span>
+
+        <span class="c1"># If the attribute is a module (e.g., scipy.ndimage), wrap it in another BackendProxy</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">backend</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">BackendProxy</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_context_getter</span><span class="p">(),</span> <span class="n">name</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">attr</span></div>
+</div>
+
+
+<span class="n">xp</span> <span class="o">=</span> <span class="n">EnvironmentContext</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Timothy Craig.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,78 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.data.base`
+
+```{py:module} tomobase.data.base
+```
+
+```{autodoc2-docstring} tomobase.data.base
+:allowtitles:
+```
+
+## Module Contents
+
+### Classes
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`Data <tomobase.data.base.Data>`
+  - ```{autodoc2-docstring} tomobase.data.base.Data
+    :summary:
+    ```
+````
+
+### API
+
+`````{py:class} Data(pixelsize, metadata={})
+:canonical: tomobase.data.base.Data
+
+Bases: {py:obj}`abc.ABC`
+
+```{autodoc2-docstring} tomobase.data.base.Data
+```
+
+```{rubric} Initialization
+```
+
+```{autodoc2-docstring} tomobase.data.base.Data.__init__
+```
+
+````{py:method} from_file(filename=None, **kwargs)
+:canonical: tomobase.data.base.Data.from_file
+:classmethod:
+
+```{autodoc2-docstring} tomobase.data.base.Data.from_file
+```
+
+````
+
+````{py:method} get_type_id()
+:canonical: tomobase.data.base.Data.get_type_id
+:classmethod:
+
+```{autodoc2-docstring} tomobase.data.base.Data.get_type_id
+```
+
+````
+
+````{py:method} to_file(filename=None, **kwargs)
+:canonical: tomobase.data.base.Data.to_file
+
+```{autodoc2-docstring} tomobase.data.base.Data.to_file
+```
+
+````
+
+````{py:method} to_data_tuple(attributes: dict = {}, metadata: dict = {})
+:canonical: tomobase.data.base.Data.to_data_tuple
+
+```{autodoc2-docstring} tomobase.data.base.Data.to_data_tuple
+```
+
+````
+
+`````

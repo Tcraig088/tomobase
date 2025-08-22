@@ -1,0 +1,44 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.tiltschemes.binary`
+
+```{py:module} tomobase.tiltschemes.binary
+```
+
+```{autodoc2-docstring} tomobase.tiltschemes.binary
+:allowtitles:
+```
+
+## Module Contents
+
+### Classes
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`Binary <tomobase.tiltschemes.binary.Binary>`
+  - ```{autodoc2-docstring} tomobase.tiltschemes.binary.Binary
+    :summary:
+    ```
+````
+
+### API
+
+````{py:class} Binary(angle_min: float = -70, angle_max: float = 70, k: int = 8, isbidirectional: bool = True)
+:canonical: tomobase.tiltschemes.binary.Binary
+
+Bases: {py:obj}`tomobase.tiltschemes.tiltscheme.TiltScheme`
+
+```{autodoc2-docstring} tomobase.tiltschemes.binary.Binary
+```
+
+```{rubric} Initialization
+```
+
+```{autodoc2-docstring} tomobase.tiltschemes.binary.Binary.__init__
+```
+
+````

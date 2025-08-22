@@ -2,14 +2,8 @@ import numpy as np
 import copy
 from copy import deepcopy
 
-import collections
-collections.Iterable = collections.abc.Iterable
-
-from tomobase.log import logger  
-from tomobase.data.base import Data 
-from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
-from tomobase.data.image import Image
-
+from .base import Data 
+from ..registrations.datatypes import TOMOBASE_DATATYPES
 
 def _rescale(data, lower=0, upper=1, inplace=True):
     """Rescale data by scaling it to a given range.
@@ -44,28 +38,30 @@ def _rescale(data, lower=0, upper=1, inplace=True):
     return data
 
 class Volume(Data):
-    """A 3D volume that is the result of a tomographic reconstruction
+    """
+    A 3D volume that is the result of a tomographic reconstruction. 
+
+    Supported file formats:
+        - .rec
+        - .tiff
 
     Attributes:
-        data (numpy.ndarray)
-            The data represented by voxels. The data is indexed using the
-            (rows, columns, slices) standard, which corresponds to (y, x, z)
-        pixelsize (float)
-            The width of the voxels in nanometer
+        data (numpy.ndarray): The data represented by voxels. The data is indexed using  (y, x, z) notation
+
     """
 
-    def __init__(self, data, pixelsize=1.0, metadata = {}):
-        """Create a volume
+    def __init__(self, data:np.ndarray, pixelsize:float=1.0, metadata:dict={}):
+        """
+        Initialize a volume object.
+
         Arguments:
-            data (numpy.ndarray)
-                The data represented by voxels. The data is indexed using the
-                (rows, columns, slices) standard, which corresponds to (y, x, z)
-            pixelsize (float)
-                The width of the voxels in nanometer (default 1.0)
+            data (numpy.ndarray): The volume data.
+            pixelsize (float): The size of the pixels in nanometers (default 1.0).
+            metadata (dict): Additional metadata for the volume (default empty).
         """
         self.data = data
         super().__init__(pixelsize, metadata)
-        self.dim_default = 3
+
     
     @staticmethod
     def _read_rec(filename, normalize=True, **kwargs):

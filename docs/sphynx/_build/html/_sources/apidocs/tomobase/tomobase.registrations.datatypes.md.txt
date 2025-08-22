@@ -1,0 +1,12 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.registrations.datatypes`
+
+```{py:module} tomobase.registrations.datatypes
+```
+
+```{autodoc2-docstring} tomobase.registrations.datatypes
+:allowtitles:
+```

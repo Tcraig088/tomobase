@@ -1,10 +1,17 @@
 import numpy as np
 
-from tomobase.hooks import tomobase_hook_tiltscheme
-from tomobase.tiltschemes.tiltscheme import TiltScheme
+from ..hooks import tiltscheme_hook
+from .tiltscheme import TiltScheme
 
-@tomobase_hook_tiltscheme('INCREMENTAL')  
+@tiltscheme_hook('INCREMENTAL')  
 class Incremental(TiltScheme):
+    """Incremental Tilt Scheme.
+
+    Attributes:
+        angle_start (float): The starting angle for the tilt series.
+        angle_end (float): The ending angle for the tilt series.
+        step (float): The step size for each increment.
+    """
     def __init__(self, angle_start:float=-70, angle_end:float=70, step:float=2):
         super().__init__()
         self.angle_start = angle_start
@@ -22,5 +29,3 @@ class Incremental(TiltScheme):
                 self._isfinished = True
         return angle
     
-    def get_angle_array(self, indices):
-        return self.angle_start + (indices*self.step)

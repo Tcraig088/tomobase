@@ -1,0 +1,73 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.registrations.environment`
+
+```{py:module} tomobase.registrations.environment
+```
+
+```{autodoc2-docstring} tomobase.registrations.environment
+:allowtitles:
+```
+
+## Module Contents
+
+### Classes
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`GPUContext <tomobase.registrations.environment.GPUContext>`
+  -
+````
+
+### API
+
+`````{py:class} GPUContext(*args, **kwds)
+:canonical: tomobase.registrations.environment.GPUContext
+
+Bases: {py:obj}`enum.Enum`
+
+````{py:method} __repr__()
+:canonical: tomobase.registrations.environment.GPUContext.__repr__
+
+````
+
+````{py:method} __str__()
+:canonical: tomobase.registrations.environment.GPUContext.__str__
+
+````
+
+````{py:method} __dir__()
+:canonical: tomobase.registrations.environment.GPUContext.__dir__
+
+````
+
+````{py:method} __format__(format_spec)
+:canonical: tomobase.registrations.environment.GPUContext.__format__
+
+````
+
+````{py:method} __hash__()
+:canonical: tomobase.registrations.environment.GPUContext.__hash__
+
+````
+
+````{py:method} __reduce_ex__(proto)
+:canonical: tomobase.registrations.environment.GPUContext.__reduce_ex__
+
+````
+
+````{py:method} name()
+:canonical: tomobase.registrations.environment.GPUContext.name
+
+````
+
+````{py:method} value()
+:canonical: tomobase.registrations.environment.GPUContext.value
+
+````
+
+`````

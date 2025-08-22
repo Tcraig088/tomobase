@@ -1,0 +1,33 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.tiltschemes.incremental`
+
+```{py:module} tomobase.tiltschemes.incremental
+```
+
+```{autodoc2-docstring} tomobase.tiltschemes.incremental
+:allowtitles:
+```
+
+## Module Contents
+
+### Classes
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`Incremental <tomobase.tiltschemes.incremental.Incremental>`
+  -
+````
+
+### API
+
+```{py:class} Incremental(angle_start: float = -70, angle_end: float = 70, step: float = 2)
+:canonical: tomobase.tiltschemes.incremental.Incremental
+
+Bases: {py:obj}`tomobase.tiltschemes.tiltscheme.TiltScheme`
+
+```

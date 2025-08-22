@@ -1,0 +1,33 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.tiltschemes.grs`
+
+```{py:module} tomobase.tiltschemes.grs
+```
+
+```{autodoc2-docstring} tomobase.tiltschemes.grs
+:allowtitles:
+```
+
+## Module Contents
+
+### Classes
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`GRS <tomobase.tiltschemes.grs.GRS>`
+  -
+````
+
+### API
+
+```{py:class} GRS(angle_min: float = -70, angle_max: float = 70, index: int = 1)
+:canonical: tomobase.tiltschemes.grs.GRS
+
+Bases: {py:obj}`tomobase.tiltschemes.tiltscheme.TiltScheme`
+
+```

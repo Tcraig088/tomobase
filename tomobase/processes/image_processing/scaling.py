@@ -1,11 +1,7 @@
-from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from tomobase.registrations.environment import xp
-from tomobase.data import Sinogram, Data, Volume
-from tomobase.hooks import tomobase_hook_process
-
-import ipywidgets as widgets
-from IPython.display import display, clear_output
-import stackview
+from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
+from ...registrations.environment import xp
+from ...data import Sinogram, Data, Volume
+from ...hooks import tomobase_hook_process
 
 
 _subcategories =['Image Scaling']
@@ -13,11 +9,12 @@ _subcategories =['Image Scaling']
 def normalize(sino: Sinogram):
     """Normalize the sinogram data to the range [0, 1].
     
-    Arguments:
+    Args:
         sino (Sinogram): The projection data
-        inplace (bool): Whether to do the operation in-place in the input data object (default: True)
+
     Returns:
         Sinogram: The result
+
     """
     sino.data = (sino.data - xp.xupy.min(sino.data)) / (xp.xupy.max(sino.data) - xp.xupy.min(sino.data))
     return sino
@@ -25,14 +22,15 @@ def normalize(sino: Sinogram):
 @tomobase_hook_process(name='Bin Data', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
 def bin(obj: Data, factor: int = 2):
     """Bin the sinogram data by a specified factor.
-    
-    Arguments:
+
+    Args:
         sino (Sinogram): The projection data
         factor (int): The binning factor (default: 2)
-        inplace (bool): Whether to do the operation in-place in the input data object (default: True)
+
     Returns:
         Sinogram: The result
     """
+
     skipped_axis = 0
     if isinstance(obj, Sinogram):
         skipped_axis += 1
@@ -66,14 +64,16 @@ def bin(obj: Data, factor: int = 2):
 @tomobase_hook_process(name='Pad Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
 def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0):
     """ Pad the sinogram to the specified size.
-    Arguments:
+
+    Args:
         sino (Sinogram): The projection data
         x (int): The target size for the x dimension
         y (int): The target size for the y dimension
-        inplace (bool): Whether to do the operation in-place in the input data object (default: True)
+
     Returns:
         Sinogram: The result
     """
+    
     pad_x = x - sino.data.shape[-2]
     pad_y = y - sino.data.shape[-1]
     if pad_x < 0 or pad_y < 0:

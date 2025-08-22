@@ -1,0 +1,12 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.globals`
+
+```{py:module} tomobase.globals
+```
+
+```{autodoc2-docstring} tomobase.globals
+:allowtitles:
+```

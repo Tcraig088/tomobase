@@ -20,8 +20,10 @@ def phantom_hook(name:str| None= None) -> Callable:
     #use sphynx style
     """
     A decorator used to mark a function as a phantom. The function must return a Volume class.
+    
     Args:
         name (str | None): The name of the phantom. Should be human readable casing.
+    
     Returns:
         Callable: The decorated function.
     """

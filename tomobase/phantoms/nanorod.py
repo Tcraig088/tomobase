@@ -1,13 +1,24 @@
 import numpy as np
-from tomobase.data import Volume
-from tomobase.hooks import phantom_hook
-
+from ..data import Volume
+from ..hooks import phantom_hook
 
 from magicgui import magicgui
 from magicgui.tqdm import trange, tqdm
 
 @phantom_hook()
-def nanorod(dim=512,length=300,radius=100,proportion=0.5,intensity=0.3):
+def get_nanorod(dim:int=512,length:int=300,radius:int=100,proportion:float=0.5,intensity:float=0.3):
+    """Creates a nanorod phantom.
+
+    Args:
+        dim (int, optional): The dimension of the volume. Defaults to 512.
+        length (int, optional): The length of the rod. Defaults to 300.
+        radius (int, optional): The radius of the rod. Defaults to 100.
+        proportion (float, optional): The proportion of the rod's radius to its length. Defaults to 0.5.
+        intensity (float, optional): The intensity of the rod. Defaults to 0.3.
+
+    Returns:
+        Volume: The created nanorod phantom.
+    """
     pradius = 2*(radius/dim)
     obj = np.zeros((dim,dim,dim),dtype=np.float32)
     img = np.zeros((dim,dim),dtype=np.float32)

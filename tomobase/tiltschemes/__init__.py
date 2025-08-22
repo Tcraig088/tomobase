@@ -1,3 +1,6 @@
-from tomobase.tiltschemes.incremental import Incremental
-from tomobase.tiltschemes.grs import GRS
-from tomobase.tiltschemes.binary import Binary
+from .incremental import Incremental
+from .grs import GRS
+from .binary import Binary
+from .tiltscheme import TiltScheme
+
+__all__ = ['TiltScheme', 'Incremental', 'GRS', 'Binary']

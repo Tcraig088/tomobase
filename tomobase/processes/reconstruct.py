@@ -3,17 +3,17 @@ import numpy as np
 from copy import deepcopy
 from scipy import ndimage
 
-from tomobase.utils import _create_projector, _get_default_iterations, _circle_mask
-from tomobase.data import Volume, Sinogram
-from tomobase.hooks import tomobase_hook_process
-from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
+from ..utils import _create_projector, _get_default_iterations, _circle_mask
+from ..data import Volume, Sinogram
+from ..hooks import tomobase_hook_process
+from ..registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 
-from tomobase.log import  tomobase_logger, logger
+from ..log import  logger
 from magicgui.tqdm import tqdm, trange
 
 @tomobase_hook_process(name='OpTomo', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value, use_numpy=True)
 def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weighted:bool=False):
-    """Reconstruct a volume from a given sinogram.
+    """Reconstruct a volume from a given sinogram using SIRT ASTRA. Allows for projections to be weighted by angular distribution.
     Arguments:
         sino (Sinogram): The projection data
         iterations (int):
@@ -106,8 +106,6 @@ def astra_reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gp
             for the given algorithm (default: None)
         use_gpu (bool)
             Use a GPU if it is available (default: True)
-        verbose (bool)
-            Display a progress bar if applicable (default: True)
         mask (numpy.ndarray)
             Boolean mask that indicates which voxels should be used in the
             reconstruction (default: None)

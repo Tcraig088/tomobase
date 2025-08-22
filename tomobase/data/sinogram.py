@@ -5,65 +5,47 @@ import numpy as np
 import imageio as iio
 
 from copy import deepcopy
-from tomobase.log import logger
-
 from scipy.io import savemat, loadmat
 import mrcz
 
-from qtpy.QtWidgets import QApplication, QFileDialog
-import collections
-collections.Iterable = collections.abc.Iterable
 
-from abc import ABC, abstractmethod
+from ..registrations.datatypes import TOMOBASE_DATATYPES
+from ..registrations.environment import GPUContext, xp
 
-
-from tomobase.registrations.environment import xp
-
-    
-from tomobase.data.base import Data
-from tomobase.registrations.datatypes import TOMOBASE_DATATYPES
-from tomobase.registrations.environment import GPUContext, xp
-from tomobase.data.image import Image
-
-
-
-
+from .image import Image
+from .base import Data
 
 class Sinogram(Data):
-    """A stack of projection images
-
+    """
     The sinogram is a stack of projection images, indexed using the
-    (rows, columns, slices) standard, which corresponds to (y, x, alpha).
-    
+    (n, x, y) orientation. 
+
+    Supported File Types:
+        - .h5
+        - .mrc
+        - .emi
+        - .mat (experimental)
+
     Attributes:
-        data (numpy.ndarray)
-            The data as a stack of images. The data is indexed using the
-            (rows, columns, slices) standard, which corresponds to
-            (y, x, alpha)
-        angles (numpy.ndarray)
-            The tilt angles in degrees corresponding to the projection images
-        pixelsize (float)
-            The width of the pixels in nanometer
-            
-    Methods:
-        _read_h5(filename)
-            Read a sinogram from an HDF5 file(.h5) 
+        data (numpy.ndarray): The sinogram data, indexed using the (n, x, y) orientation.
+        angles (numpy.ndarray): The tilt angles in degrees corresponding to the projection images.
+        times (numpy.ndarray): The times of acquisition corresponding to the projection images. This defaults to the projection index starting at 1. Otherwise it should be provided in seconds
+
+
     """
 
-    def __init__(self, data, angles, pixelsize=1.0, times=None, metadata={}):
-        """Create a sinogram
+    def __init__(self, data, angles: np.ndarray, pixelsize: float = 1.0, times: np.ndarray | None = None, metadata: dict = {}):
+        """Initialize a sinogram class
 
         Arguments:
-            data (numpy.ndarray)
-                The data as a stack of images. The data is indexed using the
-                (rows, columns, slices) standard, which corresponds to
-                (y, x, alpha)
-            angles (numpy.ndarray)
-                The tilt angles in degrees corresponding to the projection
-                images
-            pixelsize (float)
-                The width of the pixels in nanometer (default 1.0)
+            data (numpy.ndarray): The sinogram data, indexed using the (n, x, y) orientation.
+            angles (numpy.ndarray): The tilt angles in degrees corresponding to the projection images.
+            pixelsize (float): The width of the pixels in nanometer (default 1.0)
+            times (numpy.ndarray | None): The times of acquisition corresponding to the projection images. This defaults to the projection index starting at 1. Otherwise it should be provided in seconds.
+            metadata (dict): Additional metadata to store with the sinogram.
+
         """
+
         if len(angles) != data.shape[0]:
             raise ValueError(("There should be the same number of projection images as tilt angles."))
         if times is None:
@@ -77,7 +59,7 @@ class Sinogram(Data):
         self.angles = np.asarray(angles)
         self.dim_default = 3
         
-    def sort(self, bytime = False):
+    def sort(self, bytime:bool = False):
         """
         Sort the sinogram by angles or by time
         
@@ -94,8 +76,8 @@ class Sinogram(Data):
             self.angles = self.angles[indices]
             self.times = self.times[indices]
             self.data = self.data[indices,:,:]
-            
-    def insert(self, img, angle, time=None):
+
+    def insert(self, img: np.ndarray, angle: float, time: float | None = None):
         """
         Insert a new image into the sinogram
         
@@ -116,8 +98,8 @@ class Sinogram(Data):
         #self.data = np.dstack((self.data, img))
         self.angles = np.append(self.angles, angle)
         self.times = np.append(self.times, time)
-        
-    def remove(self, index):
+
+    def remove(self, index: int):
         """
         Remove an image from the sinogram
         
@@ -144,10 +126,6 @@ class Sinogram(Data):
             angles[i] = np.array(f[key]['alpha tilt (deg)']).item()
         return Sinogram(data, angles, times=times)
 
-
-    def labels(self):
-        return [f"t={t:.2f}s, θ={a:.1f}°" for t, a in zip(self.times, self.angles)]
-    
     @staticmethod
     def _read_mrc(filename, **kwargs):
         data, metadata = mrcz.readMRC(filename)
@@ -228,11 +206,7 @@ class Sinogram(Data):
     def layer_attributes(self, attributes={}):
         attr = super().layer_attributes(attributes)
         attr['name'] = attributes.get('name', 'Sinogram')
-        attr['scale'] = attributes.get('pixelsize' ,(self.pixelsize, self.pixelsize, self.pixelsize))
-        attr['colormap'] = attributes.get('colormap', 'gray')
-        attr['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
         return attr
-    
 
     def layer_metadata(self, metadata={}):
         meta = super().layer_metadata(metadata)

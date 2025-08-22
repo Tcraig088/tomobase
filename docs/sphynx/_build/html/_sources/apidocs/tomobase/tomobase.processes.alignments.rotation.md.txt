@@ -1,0 +1,57 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.processes.alignments.rotation`
+
+```{py:module} tomobase.processes.alignments.rotation
+```
+
+```{autodoc2-docstring} tomobase.processes.alignments.rotation
+:allowtitles:
+```
+
+## Module Contents
+
+### Functions
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`align_tilt_axis_shift <tomobase.processes.alignments.rotation.align_tilt_axis_shift>`
+  - ```{autodoc2-docstring} tomobase.processes.alignments.rotation.align_tilt_axis_shift
+    :summary:
+    ```
+* - {py:obj}`align_tilt_axis_rotation <tomobase.processes.alignments.rotation.align_tilt_axis_rotation>`
+  - ```{autodoc2-docstring} tomobase.processes.alignments.rotation.align_tilt_axis_rotation
+    :summary:
+    ```
+* - {py:obj}`backlash_correct <tomobase.processes.alignments.rotation.backlash_correct>`
+  - ```{autodoc2-docstring} tomobase.processes.alignments.rotation.backlash_correct
+    :summary:
+    ```
+````
+
+### API
+
+````{py:function} align_tilt_axis_shift(sino: tomobase.data.Sinogram, method: str = 'fbp', offsets: float = 0.0, **kwargs)
+:canonical: tomobase.processes.alignments.rotation.align_tilt_axis_shift
+
+```{autodoc2-docstring} tomobase.processes.alignments.rotation.align_tilt_axis_shift
+```
+````
+
+````{py:function} align_tilt_axis_rotation(sino: tomobase.data.Sinogram, method: str = 'fbp', angle: float = 0.0, **kwargs)
+:canonical: tomobase.processes.alignments.rotation.align_tilt_axis_rotation
+
+```{autodoc2-docstring} tomobase.processes.alignments.rotation.align_tilt_axis_rotation
+```
+````
+
+````{py:function} backlash_correct(sino: tomobase.data.Sinogram, tolerance: float = 10.0, method: str = 'bounded')
+:canonical: tomobase.processes.alignments.rotation.backlash_correct
+
+```{autodoc2-docstring} tomobase.processes.alignments.rotation.backlash_correct
+```
+````

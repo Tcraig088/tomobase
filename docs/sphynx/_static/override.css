@@ -1,0 +1,21 @@
+/* More breathing room in parameter fields */
+dl.field-list > dt, dl.field-list > dd {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+/* Better wrapping for long signatures / generics */
+.sig, .sig-object, .sig-name, .sig-param, .sig-return {
+  white-space: normal !important;
+  word-break: break-word;
+}
+
+/* Make inline type hints look like code */
+.sig-param .n, .sig-param .p, .sig-return .n {
+  font-family: var(--code-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace);
+}
+
+/* Definition list spacing for attributes/methods */
+dl.py, dl.function, dl.class, dl.method, dl.attribute {
+  margin-bottom: 1.0rem;
+}

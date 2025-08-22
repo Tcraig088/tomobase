@@ -1,8 +1,9 @@
 
-from tomobase.data import Volume
-from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from tomobase.hooks import tomobase_hook_process
-from tomobase.registrations.environment import xp
+from ...data import Volume
+from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
+from ...hooks import tomobase_hook_process
+from ...registrations.environment import xp
+
 from magicgui.tqdm import tqdm
 
 def _knockon(volume, knockon):
@@ -54,6 +55,18 @@ def _deform(obj, deform, normalize=True):
 
 @tomobase_hook_process(name='Beam Damage', category=TOMOBASE_TRANSFORM_CATEGORIES.DEFORM.value)
 def beamdamage(volume: Volume, knock_on: float = 0.01, elastic_deform:float=0.1, normalize:bool=True):
+    """Apply beam damage simulation to a volume.
+
+    Args:
+        volume (Volume): The input volume to be deformed.
+        knock_on (float, optional): The knock-on effect strength. Defaults to 0.01.
+        elastic_deform (float, optional): The elastic deformation strength. Defaults to 0.1.
+        normalize (bool, optional): Whether to normalize the output. Defaults to True.
+
+    Returns:
+        Volume: The deformed volume.
+    """
+    
     volume.data = _deform(volume.data, elastic_deform, normalize)
     volume.data = _knockon(volume.data, knock_on)
     return volume

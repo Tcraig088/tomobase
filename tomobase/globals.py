@@ -9,6 +9,9 @@ from .registrations.environment import xp, GPUContext
 from .log import logger
 
 __all__ = [
+    "xp",
+    "GPUContext",
+    "logger",
     "ItemDictNonSingleton",
     "ItemDict",
     "Item",
@@ -17,7 +20,4 @@ __all__ = [
     "TOMOBASE_DATATYPES",
     "TOMOBASE_TILTSCHEMES",
     "TOMOBASE_PHANTOMS",
-    "xp",
-    "GPUContext",
-    "logger",
 ]

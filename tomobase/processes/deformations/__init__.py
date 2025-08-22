@@ -1,1 +1,5 @@
-from tomobase.processes.deformations.beamdamage import *
+from .beamdamage import beamdamage
+
+__all__ = [
+    "beamdamage",
+]
