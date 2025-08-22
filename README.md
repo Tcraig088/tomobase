@@ -10,7 +10,7 @@
 
 The TomoBase (tomobase) library is a library of basic tools for scanning transmission electron tomography (STEM). It allows the reconstruction of 3D volume data using the ASTRA Toolbox. The library is designed to allow users to perform allignments, reconstructions, and post processing steps withing a Juypter Notebook. Additionally, tomobase is part of the Time-Depenedent Tomography library which is to be released. As such, it has additional components to be used for common datatypes and processes with the other libraries.
 
-For in depth usage instructions refer to the documents [landing page](https://tomobase.readthedocs.io/en/latest/api/index.html)
+For in depth usage instructions refer to the documents [landing page](https://tomobase.readthedocs.io/en/latest)
 
 
 
