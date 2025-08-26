@@ -5,7 +5,7 @@ from ..hooks import phantom_hook
 from magicgui import magicgui
 from magicgui.tqdm import trange, tqdm
 
-@phantom_hook()
+@phantom_hook(name='nanorod')
 def get_nanorod(dim:int=512,length:int=300,radius:int=100,proportion:float=0.5,intensity:float=0.3):
     """Creates a nanorod phantom.
 

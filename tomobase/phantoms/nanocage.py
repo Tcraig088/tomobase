@@ -5,7 +5,7 @@ from ..data import Volume
 from ..hooks import phantom_hook
 
 
-@phantom_hook()
+@phantom_hook(name='nanocage')
 def get_nanocage():
     """
     Creates a nanocage phantom.

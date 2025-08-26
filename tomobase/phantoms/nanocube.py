@@ -3,7 +3,7 @@ import numpy as np
 from ..data import Volume
 from ..hooks import phantom_hook
 
-@phantom_hook()
+@phantom_hook(name='nanocube')
 def get_nanocube(size:int=256,dim:int=512):
     """
     Creates a nanocube phantom.

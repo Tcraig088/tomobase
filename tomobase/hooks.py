@@ -28,8 +28,7 @@ def phantom_hook(name:str| None= None) -> Callable:
         Callable: The decorated function.
     """
     def decorator(func):
-        if name is None:
-            name = func.__name__.replace('_', ' ')
+        hook_name = name if name is not None else func.__name__.replace('_', ' ')
         func.tomobase_name = name
         func.is_tomobase_phantom = True
 
