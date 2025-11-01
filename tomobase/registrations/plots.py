@@ -4,7 +4,7 @@ import progressbar
 from qtpy.QtCore import QObject, Signal
 
 from tomobase.registrations.base import ItemDictNonSingleton, ItemDict, Item
-from tomobase.registrations.environment import xp
+from tomobase.registrations.environment import proxy
 
 
 

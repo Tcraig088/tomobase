@@ -5,11 +5,11 @@ from .registrations.processes import TOMOBASE_PROCESSES
 from .registrations.datatypes import TOMOBASE_DATATYPES
 from .registrations.tiltschemes import TOMOBASE_TILTSCHEMES
 from .registrations.phantoms import TOMOBASE_PHANTOMS
-from .registrations.environment import xp, GPUContext
+from .registrations.environment import proxy, GPUContext
 from .log import logger
 
 __all__ = [
-    "xp",
+    "proxy",
     "GPUContext",
     "logger",
     "ItemDictNonSingleton",

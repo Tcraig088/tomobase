@@ -7,7 +7,7 @@ from scipy.optimize import minimize_scalar
 
 from ...hooks import tomobase_hook_process
 from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from ...registrations.environment import xp
+from ...registrations.environment import proxy
 
 from ...data import Sinogram
 from ..reconstruct import astra_reconstruct

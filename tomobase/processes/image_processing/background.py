@@ -7,7 +7,7 @@ from skimage.filters import threshold_otsu
 from ...hooks import tomobase_hook_process
 from ...data import Sinogram, Image, Data
 from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from ...registrations.environment import xp, GPUContext
+from ...registrations.environment import proxy, GPUContext
 
 import io
 from typing import Union
@@ -25,7 +25,7 @@ def background_subtract_median(image: Data):
         Data: The resulting image data
     """
     
-    median = xp.xupy.median(image.data)
+    median = proxy.xupy.median(image.data)
     image.data[image.data<median] = 0
 
     return image

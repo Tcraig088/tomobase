@@ -4,21 +4,21 @@ import time
 from qtpy.QtCore import QObject, Signal
 
 from tomobase.registrations.base import ItemDictNonSingleton, ItemDict, Item
-from tomobase.registrations.environment import xp
+from tomobase.registrations.environment import proxy
 
 import plotly.graph_objects as go
 
 
 def concatenate(df, *args, **kwargs):
-    df = xp.df.DataFrame({})
+    df = proxy.df.DataFrame({})
     for arg in args:
         if df.metadata['data type'] == arg.metadata['data type']:
             if df.metadata['plot type'] != 'line':
                 # add the new rows to the dataframe
-                df = xp.df.concat([df, arg], axis=0)
+                df = proxy.df.concat([df, arg], axis=0)
             else:
                 # add the new columns to the dataframe
-                df = xp.df.concat([df, arg], axis=1)
+                df = proxy.df.concat([df, arg], axis=1)
         else:
             pass
 

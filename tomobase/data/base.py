@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 
 from ..log import logger
 from ..registrations.datatypes import TOMOBASE_DATATYPES
-from ..registrations.environment import GPUContext, xp
+from ..registrations.environment import GPUContext, proxy
 
 class Data(ABC):
     """
@@ -124,11 +124,11 @@ class Data(ABC):
     def _set_context(self, context:GPUContext | None = None, device:int | None = None):
         # used to set the context 
         if context is None:
-            context = xp.context
+            context = proxy.context
         if device is None:
-            device = xp.device
+            device = proxy.device
 
-        self.data = xp.asarray(self.data, context, device)
+        self.data = proxy.asarray(self.data, context, device)
         self._context = context
         self._device = device
 

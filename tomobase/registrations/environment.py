@@ -130,7 +130,7 @@ class EnvironmentContext:
 
         if isinstance(data, pd.DataFrame):
             if context == GPUContext.CUPY:
-                return xp.df.from_pandas(data)
+                return proxy.df.from_pandas(data)
             
             else:
                 return data
@@ -155,7 +155,7 @@ class EnvironmentContext:
 
         if isinstance(data, np.ndarray):
             if context == GPUContext.CUPY:
-                return xp.xupy.asarray(data)
+                return proxy.xupy.asarray(data)
             else:
                 return data
 
@@ -192,4 +192,4 @@ class BackendProxy:
 
         return attr
 
-xp = EnvironmentContext()
+proxy = EnvironmentContext()

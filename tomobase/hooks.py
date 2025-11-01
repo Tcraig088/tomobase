@@ -6,7 +6,7 @@ from copy import deepcopy
 
 import re
 from functools import wraps
-from tomobase.registrations.environment import xp, GPUContext
+from tomobase.registrations.environment import proxy, GPUContext
 from tomobase.data.base import Data
 from inspect import signature, Parameter
 from typing import Union
@@ -109,8 +109,8 @@ def _function_wrapper(func, use_numpy, isquantification, units=None):
         logger.debug(args)
         logger.debug(kwargs)
         if use_numpy:
-            xp.set_context(GPUContext.NUMPY, 0)
-        context = xp.get_context()
+            proxy.set_context(GPUContext.NUMPY, 0)
+        context = proxy.get_context()
         for key, value in kwargs.items():
             if isinstance(value, dict):
                 for subkey, subvalue in value.items():
@@ -126,7 +126,7 @@ def _function_wrapper(func, use_numpy, isquantification, units=None):
             results = _quantify(func, object_name, units, *args, **kwargs)
         else:
             results = func(*args, **kwargs)
-        xp.set_context(context)
+        proxy.set_context(context)
         if isinstance(results, tuple) and verbose_outputs == False:
             return results[0]
         else:
@@ -151,18 +151,18 @@ def _quantify(func, object_name, units, *args, **kwargs):
         results_list.append(output)       
         results_list = list(zip(*results_list))
             
-        df = xp.df.DataFrame({})
+        df = proxy.df.DataFrame({})
         first_outputs = results_list.pop(0)
-        if isinstance(first_outputs[0], xp.df.DataFrame):
+        if isinstance(first_outputs[0], proxy.df.DataFrame):
             for i, output in enumerate(first_outputs):
                 first_outputs[i].columns = [names[i]+"_x", names[i]+"_y"]
-                df = xp.df.concat([df, first_outputs[i]], axis=1)
+                df = proxy.df.concat([df, first_outputs[i]], axis=1)
                 df.metadata = {}
-        if isinstance(first_outputs[0], xp.xupy.ndarray):
-            df = xp.df.DataFrame({'x':names, 'y':first_outputs} )
+        if isinstance(first_outputs[0], proxy.xupy.ndarray):
+            df = proxy.df.DataFrame({'x':names, 'y':first_outputs} )
             df.metadata ={}
         else:
-            df = xp.df.DataFrame({'x':names, 'y':first_outputs} )
+            df = proxy.df.DataFrame({'x':names, 'y':first_outputs} )
             df.metadata = {}
                 
         df.metadata['data type'] = type(value).__name__

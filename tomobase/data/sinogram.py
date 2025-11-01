@@ -10,7 +10,7 @@ import mrcz
 
 
 from ..registrations.datatypes import TOMOBASE_DATATYPES
-from ..registrations.environment import GPUContext, xp
+from ..registrations.environment import GPUContext, proxy
 
 from .image import Image
 from .base import Data
@@ -120,7 +120,7 @@ class Sinogram(Data):
             key = 'image '+str(i)
             if i == 0:
                 nx, ny = f[key]['HAADF'].shape
-                data = xp.zeros([nx,ny,nt])
+                data = proxy.zeros([nx,ny,nt])
             data[:,:,i] = f[key]['HAADF']
             times[i] = np.array(f[key]['acquisition timee (s)']).item()
             angles[i] = np.array(f[key]['alpha tilt (deg)']).item()
@@ -129,7 +129,7 @@ class Sinogram(Data):
     @staticmethod
     def _read_mrc(filename, **kwargs):
         data, metadata = mrcz.readMRC(filename)
-        data = xp.asarray(data)
+        data = proxy.asarray(data)
         pixelsize = metadata['pixelsize'][0]
         angles = metadata['angles']
         if 'times' in metadata:
@@ -160,7 +160,7 @@ class Sinogram(Data):
         else:
             t = np.linspace(1, len(a), len(a)+1)
 
-        ts = Sinogram(xp.asarray(d.squeeze()), a.squeeze(), p.squeeze(), t.squeeze())
+        ts = Sinogram(proxy.asarray(d.squeeze()), a.squeeze(), p.squeeze(), t.squeeze())
         return ts
     
     def _write_mrc(self, filename, **kwargs):

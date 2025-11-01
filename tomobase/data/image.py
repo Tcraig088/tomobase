@@ -6,7 +6,7 @@ collections.Iterable = collections.abc.Iterable
 
 from ..log import logger
 from ..registrations.datatypes import TOMOBASE_DATATYPES
-from ..registrations.environment import xp
+from ..registrations.environment import proxy
 from .base import Data
 
 class Image(Data):
@@ -55,7 +55,7 @@ class Image(Data):
 
     @staticmethod
     def _read_image(filename, **kwargs):
-        return Image(xp.asarray(iio.imread(filename), dtype=float))
+        return Image(proxy.asarray(iio.imread(filename), dtype=float))
 
     def _write_image(self, filename, **kwargs):
         iio.imwrite(filename, self.data)

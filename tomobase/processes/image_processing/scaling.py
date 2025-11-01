@@ -1,5 +1,5 @@
 from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from ...registrations.environment import xp
+from ...registrations.environment import proxy
 from ...data import Sinogram, Data, Volume
 from ...hooks import tomobase_hook_process
 
@@ -16,7 +16,7 @@ def normalize(sino: Sinogram):
         Sinogram: The result
 
     """
-    sino.data = (sino.data - xp.xupy.min(sino.data)) / (xp.xupy.max(sino.data) - xp.xupy.min(sino.data))
+    sino.data = (sino.data - proxy.xupy.min(sino.data)) / (proxy.xupy.max(sino.data) - proxy.xupy.min(sino.data))
     return sino
 
 @tomobase_hook_process(name='Bin Data', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
@@ -78,7 +78,7 @@ def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0):
     pad_y = y - sino.data.shape[-1]
     if pad_x < 0 or pad_y < 0:
         raise ValueError("Cannot pad to a smaller size")
-    sino.data = xp.xupy.pad(sino.data, ( (0, 0), (pad_x // 2, pad_x // 2), (pad_y // 2, pad_y // 2)), mode='constant')
+    sino.data = proxy.xupy.pad(sino.data, ( (0, 0), (pad_x // 2, pad_x // 2), (pad_y // 2, pad_y // 2)), mode='constant')
 
     return sino
 
