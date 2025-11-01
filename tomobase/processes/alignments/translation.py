@@ -3,7 +3,6 @@ import copy
 from ...hooks import tomobase_hook_process
 from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from ...registrations.environment import xp
-from ...registrations.progress import progresshandler
 from ...data import Sinogram
 
 from magicgui.tqdm import trange, tqdm

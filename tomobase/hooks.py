@@ -117,11 +117,11 @@ def _function_wrapper(func, use_numpy, isquantification, units=None):
                     if isinstance(subvalue, Data):
                         if not inplace:
                             subvalue = deepcopy(subvalue)
-                        subvalue.set_context()
+                        subvalue._set_context()
             if isinstance(value, Data):
                 if not inplace:
                     kwargs[key] = deepcopy(value)
-                kwargs[key].set_context()
+                kwargs[key]._set_context()
         if isquantification:
             results = _quantify(func, object_name, units, *args, **kwargs)
         else:

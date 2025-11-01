@@ -30,6 +30,7 @@ requirements:
     - plotly
     - scikit-image
     - tqdm
+    - coolname
 
 channels:
   - defaults
