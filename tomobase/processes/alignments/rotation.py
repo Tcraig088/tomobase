@@ -41,12 +41,12 @@ def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=0.0, *
     sino_shifted = copy(sino)
 
     for i in tqdm(range(len(offsets)), label='Aligning tilt axis shift'):
-        sino_shifted.data = shift(sino.data, (0, offsets[i], 0))
+        sino_shifted.data = shift(sino.data, (0, 0, offsets[i]), mode='wrap')
         reproj = project(astra_reconstruct(sino_shifted, method, **kwargs), sino.angles)
         mse[i] = np.mean((sino_shifted.data - reproj.data) ** 2)
     offset = offsets[np.argmin(mse)]
 
-    sino.data = shift(sino.data, (0, offset, 0))
+    sino.data = shift(sino.data, (0, 0, offset), mode='wrap')
 
     return sino, offset
 
@@ -79,14 +79,14 @@ def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=0.0, *
         sino_rot = copy(sino)
 
         for i in tqdm(range(len(angles)), label='Aligning tilt axis rotation'):
-            sino_rot.data = rotate(sino.data, angles[i], reshape=False)
+            sino_rot.data = rotate(sino.data, angles[i], reshape=False, axes=(2,1))
             reproj = project(astra_reconstruct(sino_rot, method, **kwargs),
                             sino.angles)
             mse[i] = np.mean((sino_rot.data - reproj.data) ** 2)
             
         angle = angles[np.argmin(mse)]
 
-    sino.data = rotate(sino.data, angle, reshape=False)
+    sino.data = rotate(sino.data, angle, reshape=False, axes=(2,1))
 
     return sino, angle
 
