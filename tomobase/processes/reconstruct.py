@@ -5,13 +5,13 @@ from scipy import ndimage
 
 from ..utils import _create_projector, _get_default_iterations, _circle_mask
 from ..data import Volume, Sinogram
-from ..hooks import tomobase_hook_process
+from ..hooks import process_hook
 from ..registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 
 from ..log import  logger
 from magicgui.tqdm import tqdm, trange
 
-@tomobase_hook_process(name='OpTomo', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value, use_numpy=True)
+@process_hook(name='OpTomo', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value, use_numpy=True)
 def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weighted:bool=False):
     """Reconstruct a volume from a given sinogram using SIRT ASTRA. Allows for projections to be weighted by angular distribution.
     Arguments:
@@ -90,7 +90,7 @@ def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weigh
     return volume
 
 
-@tomobase_hook_process(name='Astra', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value, use_numpy=True)
+@process_hook(name='Astra', category=TOMOBASE_TRANSFORM_CATEGORIES.RECONSTRUCT.value, use_numpy=True)
 def astra_reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gpu:bool=True):
     """Reconstruct a volume from a given sinogram.
 

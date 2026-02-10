@@ -7,7 +7,7 @@ from copy import deepcopy
 import re
 from functools import wraps
 from tomobase.registrations.environment import proxy, GPUContext
-from tomobase.data.base import Data
+from tomobase.data import BaseImageModel
 from inspect import signature, Parameter
 from typing import Union
 from collections.abc import Callable, Iterable
@@ -51,7 +51,7 @@ def tiltscheme_hook(name: str) -> Callable:
         return cls
     return decorator
 
-def tomobase_hook_process(**kwargs):
+def process_hook(**kwargs):
     """A decorator used to mark a function or class as a tomography process. The function or class is either a standard function or class used to define the process or a QWidget used to attach to napari.
     Args:
         name (str): the name of the process. Should be readable casing and spaces.
@@ -61,26 +61,17 @@ def tomobase_hook_process(**kwargs):
         subcategories (dict(enum.TransformCategory,[list[str]])): a list of strings that define the subcategories of the process. Used when adding the process to the napari menu.
     """
     use_numpy = kwargs.get("use_numpy", False)
-    isquantification = kwargs.get("isquantification", False)
-    units = kwargs.get("units", None)
     def decorator(obj):
         if inspect.isfunction(obj):
-                wrapper = _function_wrapper(obj, use_numpy, isquantification, units)
+                wrapper = _function_wrapper(obj, use_numpy)
         obj = _registration(wrapper, **kwargs)
         return obj
     return decorator
 
 
-def _function_wrapper(func, use_numpy, isquantification, units=None):
+def _function_wrapper(func, use_numpy):
     original_sig = signature(func)
     params = list(original_sig.parameters.values())
-
-    if isquantification:
-        for i, param in enumerate(params):
-            if param.name != "reference":
-                if isinstance(param.annotation, type) and issubclass(param.annotation, Data):
-                    params[i] = param.replace(annotation=dict[str, Data])
-                    object_name = param.name
 
     # Add inplace and verbose_outputs as keyword-only parameters
     params.append(Parameter("inplace", kind=Parameter.KEYWORD_ONLY, default=True, annotation=bool))
@@ -114,18 +105,15 @@ def _function_wrapper(func, use_numpy, isquantification, units=None):
         for key, value in kwargs.items():
             if isinstance(value, dict):
                 for subkey, subvalue in value.items():
-                    if isinstance(subvalue, Data):
+                    if isinstance(subvalue, BaseImageModel):
                         if not inplace:
                             subvalue = deepcopy(subvalue)
-                        subvalue._set_context()
-            if isinstance(value, Data):
+                        subvalue.set_context()
+            if isinstance(value, BaseImageModel):
                 if not inplace:
                     kwargs[key] = deepcopy(value)
-                kwargs[key]._set_context()
-        if isquantification:
-            results = _quantify(func, object_name, units, *args, **kwargs)
-        else:
-            results = func(*args, **kwargs)
+                kwargs[key].set_context()
+        results = func(*args, **kwargs)
         proxy.set_context(context)
         if isinstance(results, tuple) and verbose_outputs == False:
             return results[0]
@@ -133,49 +121,6 @@ def _function_wrapper(func, use_numpy, isquantification, units=None):
             return results
 
     return wrapper
-
-def _quantify(func, object_name, units, *args, **kwargs):
-    object = kwargs.pop(object_name, None)
-    if not isinstance(object, dict):
-        object = {object_name: object}
-
-    results_list = []
-    names = [name.replace("_", " ") for name in object.keys()]
-    for key, value in object.items():
-        kwargs[object_name] = value
-        output = func(*args, **kwargs)
-        kwargs.pop(object_name, None)
-        if not isinstance(output, tuple):
-            output = (output,)
-
-        results_list.append(output)       
-        results_list = list(zip(*results_list))
-            
-        df = proxy.df.DataFrame({})
-        first_outputs = results_list.pop(0)
-        if isinstance(first_outputs[0], proxy.df.DataFrame):
-            for i, output in enumerate(first_outputs):
-                first_outputs[i].columns = [names[i]+"_x", names[i]+"_y"]
-                df = proxy.df.concat([df, first_outputs[i]], axis=1)
-                df.metadata = {}
-        if isinstance(first_outputs[0], proxy.xupy.ndarray):
-            df = proxy.df.DataFrame({'x':names, 'y':first_outputs} )
-            df.metadata ={}
-        else:
-            df = proxy.df.DataFrame({'x':names, 'y':first_outputs} )
-            df.metadata = {}
-                
-        df.metadata['data type'] = type(value).__name__
-        if units is not None:
-            if isinstance(units, str):
-                df.metadata['unit_x'] = "(a.u.)"
-                df.metadata['unit_y'] = units
-            elif isinstance(units, dict):
-                df.metadata['unit_x'] = units['x']
-                df.metadata['unit_y'] = units['y']
-            else:
-                raise ValueError("units must be a string or a dict with x and y keys")
-        return df, *results_list
 
 def _registration(obj, **kwargs):
     obj.tomobase_name = kwargs.get("name", obj.__name__)
@@ -197,7 +142,7 @@ def _registration(obj, **kwargs):
     return obj
 
 
-def tomobase_class_method(**kwargs):
+def class_process(**kwargs):
     def decorator(func):
         for name, obj in inspect.getmembers(func):
             func.process_step = kwargs.get("step", "pre") # can be pre or final

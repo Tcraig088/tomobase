@@ -7,7 +7,7 @@ class PhantomItemDict(ItemDict):
         self._hook = 'is_tomobase_phantom'
         self._folder = 'phantoms'
 
-TOMOBASE_PHANTOMS = PhantomItemDict()
-TOMOBASE_PHANTOMS._hook = 'is_tomobase_phantom'
-TOMOBASE_PHANTOMS._folder = 'phantoms'
-TOMOBASE_PHANTOMS.update()
+phantoms_register = PhantomItemDict()
+phantoms_register._hook = 'is_tomobase_phantom'
+phantoms_register._folder = 'phantoms'
+phantoms_register.update()

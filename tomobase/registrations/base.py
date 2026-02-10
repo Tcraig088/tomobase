@@ -117,6 +117,9 @@ class ItemDictNonSingleton():
     def items(self):
         return self._dict.items()
     
+    def keys(self):
+        return self._dict.keys()
+    
     def key(self, index):
         for key, item in self._dict.items():
             if item.value == index:

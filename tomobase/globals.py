@@ -2,9 +2,9 @@
 from .registrations.base import ItemDictNonSingleton, ItemDict, Item
 from .registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from .registrations.processes import TOMOBASE_PROCESSES
-from .registrations.datatypes import TOMOBASE_DATATYPES
-from .registrations.tiltschemes import TOMOBASE_TILTSCHEMES
-from .registrations.phantoms import TOMOBASE_PHANTOMS
+from .registrations.datatypes import image_datatypes_register
+from .registrations.tiltschemes import tiltschemes_register
+from .registrations.phantoms import phantoms_register
 from .registrations.environment import proxy, GPUContext
 from .log import logger
 
@@ -17,7 +17,7 @@ __all__ = [
     "Item",
     "TOMOBASE_TRANSFORM_CATEGORIES",
     "TOMOBASE_PROCESSES",
-    "TOMOBASE_DATATYPES",
-    "TOMOBASE_TILTSCHEMES",
-    "TOMOBASE_PHANTOMS",
+    "image_datatypes_register",
+    "tiltschemes_register",
+    "phantoms_register",
 ]

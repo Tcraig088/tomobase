@@ -3,19 +3,18 @@ import glob
 import h5py
 import numpy as np
 import imageio as iio
+import copy
 
+from ...registrations.environment import proxy
 from copy import deepcopy
 from scipy.io import savemat, loadmat
 import mrcz
 
 
-from ..registrations.datatypes import TOMOBASE_DATATYPES
-from ..registrations.environment import GPUContext, proxy
-
 from .image import Image
-from .base import Data
+from .base import BaseImageModel
 
-class Sinogram(Data):
+class Sinogram(BaseImageModel):
     """
     The sinogram is a stack of projection images, indexed using the
     (n, x, y) orientation. 
@@ -34,7 +33,7 @@ class Sinogram(Data):
 
     """
 
-    def __init__(self, data, angles: np.ndarray, pixelsize: float = 1.0, times: np.ndarray | None = None, metadata: dict = {}):
+    def __init__(self, data, angles: np.ndarray, pixelsize: float = 1.0, times: np.ndarray | None = None, metadata: dict = {}, *args, **kwargs):
         """Initialize a sinogram class
 
         Arguments:
@@ -54,11 +53,9 @@ class Sinogram(Data):
             raise ValueError(("There should be the same number of projection images as times."))
 
         self.times = times
-        self.data = data
-        super().__init__(pixelsize, metadata)
+        super().__init__(data, pixelsize, metadata, *args, **kwargs)
         self.angles = np.asarray(angles)
-        self.dim_default = 3
-        
+
     def sort(self, bytime:bool = False):
         """
         Sort the sinogram by angles or by time
@@ -154,13 +151,21 @@ class Sinogram(Data):
 
         d = obj[key]['data'][0][0]
         a = obj[key]['angles'][0][0]
-        p = obj[key]['pixelsize'][0][0]
-        if 'times' in obj[key]:
-            t = obj[key]['times'][0][0]
+        
+        # Check field names in structured array properly
+        field_names = obj[key].dtype.names if hasattr(obj[key].dtype, 'names') else []
+        
+        if field_names and 'pixelsize' in field_names:
+            p = obj[key]['pixelsize'][0][0]
+        else:
+            p = 1.0
+        if field_names and 'times' in field_names:
+            t = np.array(obj[key]['times'][0][0])
         else:
             t = np.linspace(1, len(a), len(a)+1)
 
-        ts = Sinogram(proxy.asarray(d.squeeze()), a.squeeze(), p.squeeze(), t.squeeze())
+        d = np.transpose(d, (2, 0, 1))  # Rearrange to (n, x, y)
+        ts = Sinogram(d.squeeze(), a.squeeze(), p, t.squeeze())
         return ts
     
     def _write_mrc(self, filename, **kwargs):
@@ -194,53 +199,32 @@ class Sinogram(Data):
         angles = angles[sorted_indices]
         return Sinogram(data, angles, pixelsize)
 
-    _readers = {}
-    _writers = {
+    readers = {}
+    writers = {
         'mrc': _write_mrc,
         'mat': _write_mat,
         'ali': _write_mrc,
     }
-    
 
+    def _copy_from(self, other:'Sinogram'):
+        """Copy data from another Sinogram instance
 
-    def layer_attributes(self, attributes={}):
-        attr = super().layer_attributes(attributes)
-        attr['name'] = attributes.get('name', 'Sinogram')
-        return attr
+        Args:
+            other (Sinogram): The instance to copy from
+        """
+        self.angles = other.angles.copy()
+        self.times = other.times.copy()
+        super()._copy_from(other)
+        
+    def _deepcopy_from(self, other='Sinogram', memo:dict={}):
+        self.angles = copy.deepcopy(other.angles, memo)
+        self.times = copy.deepcopy(other.times, memo)
+        return super()._deepcopy_from(other, memo)
 
-    def layer_metadata(self, metadata={}):
-        meta = super().layer_metadata(metadata)
-        meta['ct metadata']['type'] = TOMOBASE_DATATYPES.SINOGRAM.value
-        meta['ct metadata']['angles'] = self.angles
-        meta['ct metadata']['times'] = self.times
-        meta['ct metadata']['axis'] = ['Projection', 'y', 'x'] if len(self.data.shape) == 3 else ['Projection', 'Signal', 'y', 'x']
-
-        return meta
-
-    @classmethod
-    def from_data_tuple(cls, layer, attributes=None):
-        if attributes is None:
-            data = layer.data
-            scale = layer.scale[0]
-            times = layer.metadata['ct metadata']['times']
-            angles = layer.metadata['ct metadata']['angles']
-            layer_metadata = layer.metadata['ct metadata']
-        else:
-            data = layer
-            scale = attributes['scale'][0]
-            layer_metadata = attributes['metadata']['ct metadata']
-            times =attributes['metadata']['ct metadata']['times']
-            angles = attributes['metadata']['ct metadata']['angles']
-
-        layer_metadata.pop('times', None)
-        layer_metadata.pop('angles', None)
-
-        return cls(data, angles, scale, times, layer_metadata)
-
-
-
+    def __str__(self):
+        return super().__str__()
 # Register the readers
-Sinogram._readers = {
+Sinogram.readers = {
     'mrc': Sinogram._read_mrc,
     'ali': Sinogram._read_mrc,
     'emi': Sinogram._read_emi_stack,

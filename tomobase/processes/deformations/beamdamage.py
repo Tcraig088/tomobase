@@ -1,7 +1,7 @@
 
 from ...data import Volume
 from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from ...hooks import tomobase_hook_process
+from ...hooks import process_hook
 from ...registrations.environment import proxy
 
 from magicgui.tqdm import tqdm
@@ -53,7 +53,7 @@ def _deform(obj, deform, normalize=True):
 
     return obj
 
-@tomobase_hook_process(name='Beam Damage', category=TOMOBASE_TRANSFORM_CATEGORIES.DEFORM.value)
+@process_hook(name='Beam Damage', category=TOMOBASE_TRANSFORM_CATEGORIES.DEFORM.value)
 def beamdamage(volume: Volume, knock_on: float = 0.01, elastic_deform:float=0.1, normalize:bool=True):
     """Apply beam damage simulation to a volume.
 

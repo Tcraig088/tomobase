@@ -4,14 +4,14 @@ import numpy as np
 from tomobase.utils import _create_projector
 from tomobase.data import Volume, Sinogram
 from tomobase.log import logger
-from tomobase.hooks import tomobase_hook_process
+from tomobase.hooks import process_hook
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 
 from magicgui import magicgui
 from magicgui.tqdm import trange
 
 
-@tomobase_hook_process(name='Project', category=TOMOBASE_TRANSFORM_CATEGORIES.PROJECT.value, use_numpy=True)
+@process_hook(name='Project', category=TOMOBASE_TRANSFORM_CATEGORIES.PROJECT.value, use_numpy=True)
 def project(volume:Volume, angles:np.ndarray, use_gpu:bool=True):
     """Create a sinogram from a volume using forward projection. The GPU Context is overriden due to underlying astra gpu usage. 
     Args:

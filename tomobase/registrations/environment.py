@@ -1,5 +1,6 @@
 import enum
 import logging
+from qtpy.QtCore import QObject, Signal
 import numpy as np
 import pandas as pd
 from tomobase.log import logger
@@ -9,19 +10,17 @@ class GPUContext(enum.Enum):
     NUMPY = 2
 
 
-class EnvironmentContext:
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(EnvironmentContext, cls).__new__(cls)
-        return cls._instance
-
+class EnvironmentContext(QObject):
+    context_changed = Signal(object, int)  # emits (GPUContext, device_id)
     def __init__(self):
+
+        # Initialize QObject first
+        super().__init__()
+
         self._cupy_checked = False
         self._cupy_available = False
-        self.context = GPUContext.NUMPY
-        self.device = 0
+        self._context = GPUContext.NUMPY  # backing field
+        self._device = 0  # backing field
         self.device_count = 1
 
         import numpy as np
@@ -35,6 +34,54 @@ class EnvironmentContext:
         self._skimage = BackendProxy(lambda:skimage)
 
         self.check_cupy()
+    
+    @property
+    def context(self):
+        """
+        Return the current computational context (GPUContext).
+        """
+        return self._context
+    
+    @context.setter
+    def context(self, value: GPUContext):
+        """
+        Set the computational context (GPUContext).
+        Emits context_changed signal only if value actually changes.
+        """
+        old_context = self._context
+        old_device = self._device
+        self._context = value
+        
+        # Emit only if context or device changed
+        if old_context != value:
+            try:
+                self.context_changed.emit(self._context, self._device)
+            except Exception:
+                pass  # Ignore if signal system not ready
+        
+    @property
+    def device(self):
+        """
+        Return the current device ID.
+        """
+        return self._device
+    
+    @device.setter
+    def device(self, value: int):
+        """
+        Set the current device ID.
+        Emits context_changed signal only if value actually changes.
+        """
+        old_device = self._device
+        old_context = self._context
+        self._device = value
+        
+        # Emit only if device changed
+        if old_device != value:
+            try:
+                self.context_changed.emit(self._context, self._device)
+            except Exception:
+                pass  # Ignore if signal system not ready
     
     @property
     def df(self):
@@ -192,4 +239,25 @@ class BackendProxy:
 
         return attr
 
-proxy = EnvironmentContext()
+_env = None
+
+def _get_env():
+    global _env
+    if _env is None:
+        _env = EnvironmentContext()
+    return _env
+
+
+
+class EnvironmentProxy:
+    """Plain Python facade: convenient global API + exposes signals."""
+    def __getattr__(self, name):
+        # forward everything to the QObject instance
+        return getattr(_get_env(), name)
+
+    # Optional: make it callable if you like proxy() returning the context
+    def __call__(self):
+        return _get_env()
+
+
+proxy = EnvironmentProxy()

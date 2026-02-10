@@ -1,10 +1,10 @@
-from tomobase.data import Data, Volume
+from tomobase.data import BaseImageModel, Volume
 from tomobase.registrations.environment import proxy
 from tomobase.registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from tomobase.hooks import tomobase_hook_process
+from tomobase.hooks import process_hook
 
 subcategory = ['Phyiscal Properties']
-@tomobase_hook_process(name='Surface Area', category=TOMOBASE_TRANSFORM_CATEGORIES.QUANTIFICATION.value, subcategories=subcategory, isquantification=True)
+@process_hook(name='Surface Area', category=TOMOBASE_TRANSFORM_CATEGORIES.QUANTIFICATION.value, subcategories=subcategory, isquantification=True)
 def surface_area(volume: Volume, threshold: float = 0.0, ):
     if proxy.xupy.isclose(threshold, 0.0):
         threshold = proxy.skimage.filters.threshold_otsu(volume.data)
@@ -18,7 +18,7 @@ def surface_area(volume: Volume, threshold: float = 0.0, ):
     value = proxy.xupy.sum(mask) * volume.pixelsize**2
     return value
 
-@tomobase_hook_process(name='Volume', category=TOMOBASE_TRANSFORM_CATEGORIES.QUANTIFICATION.value, subcategories=subcategory, isquantification=True)
+@process_hook(name='Volume', category=TOMOBASE_TRANSFORM_CATEGORIES.QUANTIFICATION.value, subcategories=subcategory, isquantification=True)
 def volume(volume: Volume, threshold: float = 0.0):
     if proxy.xupy.isclose(threshold, 0.0):
         threshold = proxy.skimage.filters.threshold_otsu(volume.data)
@@ -27,7 +27,7 @@ def volume(volume: Volume, threshold: float = 0.0):
     value = proxy.xupy.sum(mask) * volume.pixelsize**3
     return value
 
-@tomobase_hook_process(name='Surface Area Volume Ratio', category=TOMOBASE_TRANSFORM_CATEGORIES.QUANTIFICATION.value, subcategories=subcategory, isquantification=True)
+@process_hook(name='Surface Area Volume Ratio', category=TOMOBASE_TRANSFORM_CATEGORIES.QUANTIFICATION.value, subcategories=subcategory, isquantification=True)
 def sav(volume: Volume, threshold: float = 0.0):
     if proxy.xupy.isclose(threshold, 0.0):
         threshold = proxy.skimage.filters.threshold_otsu(volume.data)
@@ -36,7 +36,7 @@ def sav(volume: Volume, threshold: float = 0.0):
     value = sa / vol
     return value
 
-@tomobase_hook_process(name='Alloying', category=TOMOBASE_TRANSFORM_CATEGORIES.QUANTIFICATION.value, subcategories=subcategory, isquantification=True)
+@process_hook(name='Alloying', category=TOMOBASE_TRANSFORM_CATEGORIES.QUANTIFICATION.value, subcategories=subcategory, isquantification=True)
 def alloying(volume: Volume, reference:Volume, materiala:float=0.0, materialb:float=0.0, std_homogenized:float=0.0):
     """Calculate the alloying of two materials in a volume.
     Args:

@@ -7,7 +7,7 @@ class TiltSchemeItemDict(ItemDict):
         self._folder = 'tiltschemes'
 
 
-TOMOBASE_TILTSCHEMES = TiltSchemeItemDict()  
-TOMOBASE_TILTSCHEMES._hook = 'is_tomobase_tiltscheme'
-TOMOBASE_TILTSCHEMES._folder = 'tiltschemes'
-TOMOBASE_TILTSCHEMES.update() 
+tiltschemes_register = TiltSchemeItemDict()  
+tiltschemes_register._hook = 'is_tomobase_tiltscheme'
+tiltschemes_register._folder = 'tiltschemes'
+tiltschemes_register.update() 

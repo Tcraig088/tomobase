@@ -4,8 +4,8 @@ from copy import deepcopy, copy
 from scipy.ndimage import  binary_dilation
 from skimage.filters import threshold_otsu
 
-from ...hooks import tomobase_hook_process
-from ...data import Sinogram, Image, Data
+from ...hooks import process_hook
+from ...data import Sinogram, Image, BaseImageModel
 from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from ...registrations.environment import proxy, GPUContext
 
@@ -14,8 +14,8 @@ from typing import Union
 
 
 _subcategories = ['Background Corrections']
-@tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
-def background_subtract_median(image: Data):
+@process_hook(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+def background_subtract_median(image: BaseImageModel):
     """Subtract the median of the sinogram from the sinogram."
 
     Args:

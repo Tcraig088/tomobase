@@ -1,11 +1,11 @@
 from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from ...registrations.environment import proxy
-from ...data import Sinogram, Data, Volume
-from ...hooks import tomobase_hook_process
+from ...data import Sinogram, BaseImageModel, Volume
+from ...hooks import process_hook
 
 
 _subcategories =['Image Scaling']
-@tomobase_hook_process(name='Normalize', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+@process_hook(name='Normalize', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
 def normalize(sino: Sinogram):
     """Normalize the sinogram data to the range [0, 1].
     
@@ -19,8 +19,8 @@ def normalize(sino: Sinogram):
     sino.data = (sino.data - proxy.xupy.min(sino.data)) / (proxy.xupy.max(sino.data) - proxy.xupy.min(sino.data))
     return sino
 
-@tomobase_hook_process(name='Bin Data', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
-def bin(obj: Data, factor: int = 2):
+@process_hook(name='Bin Data', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+def bin(obj: BaseImageModel, factor: int = 2):
     """Bin the sinogram data by a specified factor.
 
     Args:
@@ -31,11 +31,12 @@ def bin(obj: Data, factor: int = 2):
         Sinogram: The result
     """
 
-    skipped_axis = 0
-    if isinstance(obj, Sinogram):
-        skipped_axis += 1
-    if obj.data.ndim > obj.dim_default:
-        skipped_axis += 1
+    skipped_axis = 1
+
+    #if isinstance(obj, Sinogram):
+    #    skipped_axis += 1
+    #if obj.data.ndim > obj.dim_default:
+    #    skipped_axis += 1
 
     axes = range(obj.data.ndim)
     factors = [1 if (i < skipped_axis) else factor for i in axes]
@@ -61,7 +62,7 @@ def bin(obj: Data, factor: int = 2):
     
     return obj
 
-@tomobase_hook_process(name='Pad Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+@process_hook(name='Pad Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
 def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0):
     """ Pad the sinogram to the specified size.
 

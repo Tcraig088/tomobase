@@ -2,8 +2,7 @@ import numpy as np
 import copy
 from copy import deepcopy
 
-from .base import Data 
-from ..registrations.datatypes import TOMOBASE_DATATYPES
+from .base import BaseImageModel 
 
 def _rescale(data, lower=0, upper=1, inplace=True):
     """Rescale data by scaling it to a given range.
@@ -37,7 +36,7 @@ def _rescale(data, lower=0, upper=1, inplace=True):
 
     return data
 
-class Volume(Data):
+class Volume(BaseImageModel):
     """
     A 3D volume that is the result of a tomographic reconstruction. 
 
@@ -50,7 +49,7 @@ class Volume(Data):
 
     """
 
-    def __init__(self, data:np.ndarray, pixelsize:float=1.0, metadata:dict={}):
+    def __init__(self, data:np.ndarray, pixelsize:float=1.0, metadata:dict={}, *args, **kwargs):
         """
         Initialize a volume object.
 
@@ -59,8 +58,7 @@ class Volume(Data):
             pixelsize (float): The size of the pixels in nanometers (default 1.0).
             metadata (dict): Additional metadata for the volume (default empty).
         """
-        self.data = data
-        super().__init__(pixelsize, metadata)
+        super().__init__(data=data, pixelsize=pixelsize, metadata=metadata, *args, **kwargs)
 
     
     @staticmethod
@@ -141,34 +139,20 @@ class Volume(Data):
     def _write_tiff(self, filename, **kwargs):
         raise NotImplementedError
 
-    _readers = {}
-    _writers = {
+    readers = {}
+    writers = {
         'rec': _write_rec,
         'tif': _write_tiff,
         'tiff': _write_tiff,
     }
 
-
-    def layer_attributes(self, attributes={}):
-        attr = super().layer_attributes(attributes)
-        attr['name'] = attributes.get('name', 'Volume')
-        attr['scale'] = attributes.get('pixelsize', (self.pixelsize, self.pixelsize, self.pixelsize))
-        attr['colormap'] = attributes.get('colormap', 'magma')
-        attr['rendering'] = attributes.get('rendering', 'attenuated_mip')
-        attr['contrast_limits'] = attributes.get('contrast_limits', [0, np.max(self.data)*1.5])
-        return attr
-
+    def _copy_from(self, other='Volume'):
+        return super()._copy_from(other=other)
     
-
-    def layer_metadata(self, metadata={}):
-        meta = super().layer_metadata(metadata)
-        meta['ct metadata']['type'] = TOMOBASE_DATATYPES.VOLUME.value
-        meta['ct metadata']['axis'] = ['z', 'y', 'x'] if len(self.data.shape) == 3 else ['z', 'Signal', 'y', 'x']
-
-        return meta
-
-
-Volume._readers = {
+    def _deepcopy_from(self, other='Volume', memo:dict={}):
+        return super()._deepcopy_from(other=other, memo=memo)
+    
+Volume.readers = {
     'rec': Volume._read_rec,
     'tif': Volume._read_tiff,
     'tiff': Volume._read_tiff,

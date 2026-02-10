@@ -1,17 +1,17 @@
 from copy import deepcopy
 
-from ...hooks import tomobase_hook_process
+from ...hooks import process_hook
 from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
 from ...registrations.environment import proxy
-from ...data import Sinogram, Data
+from ...data import Sinogram, BaseImageModel
 
 from typing import Union, Tuple
 from magicgui.tqdm import tqdm
 
 
 _subcategories = ['Misalignment']
-@tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
-def gaussian_filter(obj: Data, gaussian_sigma:float=1,):
+@process_hook(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+def gaussian_filter(obj: BaseImageModel, gaussian_sigma:float=1,):
     """Add Gaussian noise to the sinogram.
     Args:
         obj (Data): The input data object
@@ -23,8 +23,8 @@ def gaussian_filter(obj: Data, gaussian_sigma:float=1,):
     obj.data = proxy.scipy.ndimage.gaussian_filter(obj.data, gaussian_sigma)
     return obj
 
-@tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
-def poisson_noise(obj: Data, 
+@process_hook(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+def poisson_noise(obj: BaseImageModel, 
                   rescale:float=True):
     """Add Poisson noise to the sinogram.
     Args:
@@ -40,7 +40,7 @@ def poisson_noise(obj: Data,
 
 
 
-@tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+@process_hook(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
 def translational_misalignment(sino: Sinogram, offset:float=0.25):
     """ Apply a random translational misalignment to the sinogram.
     Arguments:
@@ -67,7 +67,7 @@ def translational_misalignment(sino: Sinogram, offset:float=0.25):
 
     
     
-@tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+@process_hook(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
 def rotational_misalignment(sino: Sinogram, 
                             tilt_theta:float = 3,
                             tilt_alpha:float=2, 
