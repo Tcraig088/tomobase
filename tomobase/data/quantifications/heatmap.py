@@ -8,11 +8,11 @@ import numpy as np
 import imageio as iio
 import pandas as pd
 
-from ...registrations.environment import GPUContext, proxy
+from ...environment import GPUContext, proxy
 
 from .quantification import Quantification
 
-
+'''
 class Heatmap(Quantification):
     def __init__(self, name, map, description: str = "", x_units="a.u.", y_units="a.u.", x_scale=1.0, y_scale=1.0, x_title="", y_title="", *args, **kwargs):
         self.data = map
@@ -109,3 +109,4 @@ class Heatmap(Quantification):
 Heatmap._readers['dat'] = Heatmap._read_dat
 
 Heatmap._writers['dat'] = Heatmap._write_dat
+'''

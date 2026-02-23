@@ -6,7 +6,7 @@ from copy import deepcopy
 
 import re
 from functools import wraps
-from tomobase.registrations.environment import proxy, GPUContext
+from tomobase.environment import proxy, GPUContext
 from tomobase.data import BaseImageModel
 from inspect import signature, Parameter
 from typing import Union
@@ -33,6 +33,7 @@ def phantom_hook(name:str| None= None) -> Callable:
         func.is_tomobase_phantom = True
 
         return func
+    
     return decorator
 
 def tiltscheme_hook(name: str) -> Callable:
@@ -125,20 +126,16 @@ def _function_wrapper(func, use_numpy):
 def _registration(obj, **kwargs):
     obj.tomobase_name = kwargs.get("name", obj.__name__)
     obj.is_tomobase_process = True
-    obj.tomobase_category = kwargs.get("category", None)
-    obj.tomobase_subcategories = deepcopy(kwargs.get("subcategories", []))
+    obj.tomobase_category = kwargs.get("category", 0)
     obj.tomobase_quantification = kwargs.get("isquantification", False)
-    if obj.tomobase_category is None:
-        raise ValueError("category is required")
-    
+
     if obj.__name__ == obj.tomobase_name:
         obj.tomobase_name = deepcopy(obj.__name__)
         obj.tomobase_name = obj.tomobase_name.replace('_', ' ').title()
         if inspect.isclass(obj):
             text = obj.tomobase_name
             obj.tomobase_name = re.sub(r'(?<!^)(?=[A-Z])', ' ', text)
-
-    obj.tomobase_subcategories.append(obj.tomobase_name)    
+  
     return obj
 
 

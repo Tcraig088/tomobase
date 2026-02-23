@@ -6,8 +6,8 @@ from scipy.ndimage import center_of_mass, shift, rotate
 from scipy.optimize import minimize_scalar
 
 from ...hooks import process_hook
-from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from ...registrations.environment import proxy
+from ...registers.categories import categories
+from ...environment import proxy
 
 from ...data import Sinogram
 from ..reconstruct import astra_reconstruct
@@ -16,8 +16,8 @@ from ...log import logger
 
 from magicgui.tqdm import trange, tqdm
 
-_subcategories= ['Tilt Axis']
-@process_hook(name='Tilt Shift', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories, use_numpy=True)
+subcategory = categories.add_category('Tilt Corrections', value=5, inheritor = 'Align')
+@process_hook(name='Tilt Shift', category=subcategory, subcategories=subcategory, use_numpy=True)
 def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=0.0, **kwargs):
     """Align the tilt axis shift of a sinogram using reprojection
 
@@ -51,7 +51,7 @@ def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=0.0, *
     return sino, offset
 
 
-@process_hook(name='Tilt Rotation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories, use_numpy=True)
+@process_hook(name='Tilt Rotation', category=subcategory, subcategories=subcategory, use_numpy=True)
 def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=0.0, **kwargs):
     """Align the tilt axis rotation of a sinogram using reprojection
     Args:

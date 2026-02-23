@@ -1,10 +1,12 @@
+
+'''
 import logging
 import time
 
 from qtpy.QtCore import QObject, Signal
 
 from tomobase.registrations.base import ItemDictNonSingleton, ItemDict, Item
-from tomobase.registrations.environment import proxy
+from tomobase.environment import proxy
 
 import plotly.graph_objects as go
 
@@ -75,5 +77,5 @@ def plot(df, fig_properties={}, plot_properties={}, **kwargs):
 
     return fig
 
-
+'''
         

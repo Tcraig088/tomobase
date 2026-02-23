@@ -6,15 +6,15 @@ from skimage.filters import threshold_otsu
 
 from ...hooks import process_hook
 from ...data import Sinogram, Image, BaseImageModel
-from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from ...registrations.environment import proxy, GPUContext
+from ...registers.categories import categories
+from ...environment import proxy, GPUContext
 
 import io
 from typing import Union
 
 
-_subcategories = ['Background Corrections']
-@process_hook(category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+subcategory = categories.add_category('Background Corrections', value=4, inheritor = 'Image Processing')
+@process_hook(category=subcategory)
 def background_subtract_median(image: BaseImageModel):
     """Subtract the median of the sinogram from the sinogram."
 

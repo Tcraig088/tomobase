@@ -8,7 +8,7 @@ import imageio as iio
 import pandas as pd
 
 from ...registrations.datatypes import image_datatypes_register
-from ...registrations.environment import GPUContext, proxy
+from ...environment import GPUContext, proxy
 
 from ..base import BaseDataModel
 

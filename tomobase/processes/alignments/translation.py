@@ -1,14 +1,14 @@
 import copy
 
 from ...hooks import process_hook
-from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from ...registrations.environment import proxy
+from ...registers.categories import categories
+from ...environment import proxy
 from ...data import Sinogram
 
 from magicgui.tqdm import trange, tqdm
 
-_subcategories=['Translation']
-@process_hook(name='Align Sinogram XCorrelation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
+subcategory = categories.add_category('Shift Corrections', value=6, inheritor = 'Align')
+@process_hook(name='Align Sinogram XCorrelation', category=subcategory)
 def align_sinogram_xcorr(sino: Sinogram, shifts=None):
     """Align the projection images using cross-correlation
     Arguments:
@@ -40,7 +40,7 @@ def align_sinogram_xcorr(sino: Sinogram, shifts=None):
     return sino, shifts
 
 
-@process_hook(name='Centre of Mass', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
+@process_hook(name='Centre of Mass', category=subcategory)
 def align_sinogram_center_of_mass(sino: Sinogram):
     """Align the projection images using the center of mass
     Arguments:
@@ -57,7 +57,7 @@ def align_sinogram_center_of_mass(sino: Sinogram):
     return sino, offset
 
 
-@process_hook(name='Weight by Angle', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
+@process_hook(name='Weight by Angle', category=subcategory)
 def weight_by_angle(sino: Sinogram):
     """Weight the sinogram by the angle
     Arguments:

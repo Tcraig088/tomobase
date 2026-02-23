@@ -3,7 +3,7 @@
 
 
 
-
+'''
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 import pyqtgraph as pg
 import numpy as np
@@ -50,3 +50,4 @@ class LineWithMarkersWidget(BasePlotWidget):
         super().__init__(parent)
         self.plot = self.plot_widget.addPlot(title="Line with Markers")
         self.plot.plot(x, y, pen=pg.mkPen(color='r', width=2), symbol='o', symbolSize=10, symbolBrush='b')
+'''

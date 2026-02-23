@@ -5,7 +5,7 @@ import numpy as np
 import imageio as iio
 import copy
 
-from ...registrations.environment import proxy
+from ...environment import proxy
 from copy import deepcopy
 from scipy.io import savemat, loadmat
 import mrcz

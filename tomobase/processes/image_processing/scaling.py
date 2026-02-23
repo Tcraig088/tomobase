@@ -1,11 +1,11 @@
-from ...registrations.transforms import TOMOBASE_TRANSFORM_CATEGORIES
-from ...registrations.environment import proxy
+from ...registers.categories import categories
+from ...environment import proxy
 from ...data import Sinogram, BaseImageModel, Volume
 from ...hooks import process_hook
 
 
-_subcategories =['Image Scaling']
-@process_hook(name='Normalize', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+subcategory = categories.add_category('Scaling', value=6, inheritor = 'Image Processing')
+@process_hook(name='Normalize', category=subcategory)
 def normalize(sino: Sinogram):
     """Normalize the sinogram data to the range [0, 1].
     
@@ -19,7 +19,7 @@ def normalize(sino: Sinogram):
     sino.data = (sino.data - proxy.xupy.min(sino.data)) / (proxy.xupy.max(sino.data) - proxy.xupy.min(sino.data))
     return sino
 
-@process_hook(name='Bin Data', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+@process_hook(name='Bin Data', category=subcategory)
 def bin(obj: BaseImageModel, factor: int = 2):
     """Bin the sinogram data by a specified factor.
 
@@ -62,7 +62,7 @@ def bin(obj: BaseImageModel, factor: int = 2):
     
     return obj
 
-@process_hook(name='Pad Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.IMAGE_PROCESSING.value, subcategories=_subcategories)
+@process_hook(name='Pad Sinogram', category=subcategory)
 def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0):
     """ Pad the sinogram to the specified size.
 

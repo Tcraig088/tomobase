@@ -11,7 +11,7 @@ collections.Iterable = collections.abc.Iterable
 from ..base import BaseDataModel
 
 from ...log import logger
-from ...registrations.environment import GPUContext, proxy
+from ...environment import GPUContext, proxy
 
 class BaseImageModel(BaseDataModel):
     """
@@ -31,7 +31,7 @@ class BaseImageModel(BaseDataModel):
         metadata (dict): A dictionary containing metadata about the dataset
 
     """
-    data_changes = Signal(object)
+    data_changed = Signal(object)
 
     def __init__(self, data, pixelsize: float=1.0, metadata: dict = {}, *args, **kwargs):
         """Initialize the Data object
@@ -55,7 +55,7 @@ class BaseImageModel(BaseDataModel):
     @data.setter
     def data(self, value):
         self._data = value
-        self.data_changes.emit(self._data)
+        self.data_changed.emit(self._data)
     
     def set_context(self, context:GPUContext | None = None, device:int | None = None):
         super().set_context(context, device)

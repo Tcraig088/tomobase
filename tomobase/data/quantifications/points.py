@@ -7,13 +7,13 @@ import json
 import numpy as np
 import imageio as iio
 import pandas as pd
-from tomobase.data.quantifications.heatmap import Heatmap
 
-from ...registrations.environment import GPUContext, proxy
+
+from ...environment import GPUContext, proxy
 
 from .quantification import Quantification
 
-
+'''
 class PointMap(Quantification):
     def __init__(self, name, value, description: str = "", units="a.u.", title="", *args, **kwargs):
         self.data = pd.DataFrame(columns=['name', 'y', 'y_error+', 'y_error-'])
@@ -85,3 +85,4 @@ class PointMap(Quantification):
 Heatmap._readers['dat'] = Heatmap._read_dat
 
 Heatmap._writers['dat'] = Heatmap._write_dat
+'''

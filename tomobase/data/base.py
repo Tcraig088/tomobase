@@ -6,9 +6,11 @@ from abc import ABC, abstractmethod
 from qtpy.QtCore import QObject, Slot
 from qtpy.QtWidgets import QApplication, QFileDialog
 
-from ..registrations.environment import GPUContext, proxy
+from ..environment import GPUContext, proxy
+import magicgui
 
 
+from ..log import logger
 class BaseDataModel(QObject):
     """Base class for GPU-backed data models with file IO."""
 
@@ -91,8 +93,19 @@ class BaseDataModel(QObject):
         writer(self, filename, **kwargs)
 
     @classmethod
+    @magicgui.magicgui(call_button='Load from File')
+    def magicgui_from_file(cls, filename: pathlib.Path | None = None, **kwargs):
+        ext = filename.suffix.lower().lstrip(".")
+        if ext not in cls.readers:
+            raise ValueError(f"The given file type {ext.upper()} is not supported.")
+        else:          
+            reader = cls.readers[ext]
+            return reader(filename, **kwargs)
+    
+    @classmethod
     def from_file(cls, filename: pathlib.Path | None = None, **kwargs):
         """Read a dataset from a file and return a model instance."""
+        logger.debug(f"Attempting to load file {filename} with {cls.readers}")
         if filename is None:
             app = QApplication.instance() or QApplication([])
             filters = ";;".join(
