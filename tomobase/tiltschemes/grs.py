@@ -4,33 +4,37 @@ import numpy as np
 from .tiltscheme import TiltScheme
 from ..hooks import tiltscheme_hook
 
-@tiltscheme_hook('GRS')  
+@tiltscheme_hook("GRS")
 class GRS(TiltScheme):
-    """Golden Ratio Sequence Tilt Scheme.
+    """Golden Ratio Sequence tilt scheme (infinite).
 
-    Attributes:
-        angle_min (float): The minimum angle in the tilt series.
-        angle_max (float): The maximum angle in the tilt series.
-        index (int): The index to start acquisition from.
+    Produces a quasi-uniform sampling over [angle_min, angle_max).
     """
 
-    def __init__(self, angle_min:float=-70, angle_max:float=70, index:int=1):
-        """Initialize the Golden Ratio Sequence Tilt Scheme.
+    def __init__(self, angle_min: float = -70, angle_max: float = 70, start_at_zero: bool = True):
+        # index=1 matches your current behavior
+          # if your base supports this; otherwise super().__init__(); self.index=index
 
-        Args:
-            angle_min (float, optional): The minimum angle in the tilt series. Defaults to -70.
-            angle_max (float, optional): The maximum angle in the tilt series. Defaults to 70.
-            index (int, optional): The index to start acquisition from. Defaults to 1.
-        """
-        super().__init__()
-        self.angle_max = angle_max
-        self.angle_min = angle_min
-        self.range = np.radians(angle_max - angle_min)
-        self.gr = (1+np.sqrt(5))/2
-        self.index = index
+        self._range_rad = np.radians(angle_max - angle_min)
+        self._min_rad = np.radians(angle_min)
+        self._gr = (1 + np.sqrt(5.0)) / 2.0
+        
+        super().__init__(angle_min, angle_max) 
+        
+        
+        if start_at_zero:
+            self.index = 0
 
-    def get_angle(self):
-        angle_rad = np.mod(self.index*self.gr*self.range, self.range) + np.radians(self.angle_min)
-        self.index += 1
-        return np.round(np.degrees(angle_rad),2)
+
+    def _angle_at_index(self, i: int) -> float:
+        # If you want to forbid i < 1 because you chose index=1:
+        if i < 0:
+            raise ValueError("GRS expects index >= 0 (set index=0 by default).")
+
+
     
+        angle_rad = np.mod(i * self._gr * self._range_rad, self._range_rad) + self._min_rad
+        return float(np.round(np.degrees(angle_rad), 2))
+    
+    def next_angle(self) -> float:
+        return self._angle_at_index(self.index)

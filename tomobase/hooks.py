@@ -12,7 +12,7 @@ from inspect import signature, Parameter
 from typing import Union
 from collections.abc import Callable, Iterable
 import makefun
-
+import coolname
 
 from .log import logger
 
@@ -98,8 +98,8 @@ def _function_wrapper(func, use_numpy):
     def wrapper(*args, **kwargs):
         inplace = kwargs.pop("inplace", True)
         verbose_outputs = kwargs.pop("verbose_outputs", False)
-        logger.debug(args)
-        logger.debug(kwargs)
+        logger.debug(f"Running process {func.__name__} with inplace={inplace} and verbose_outputs={verbose_outputs}")
+        logger.debug(f"Arguments: {args}, {kwargs}")
         if use_numpy:
             proxy.set_context(GPUContext.NUMPY, 0)
         context = proxy.get_context()
@@ -116,7 +116,14 @@ def _function_wrapper(func, use_numpy):
                 kwargs[key].set_context()
         results = func(*args, **kwargs)
         proxy.set_context(context)
-        if isinstance(results, tuple) and verbose_outputs == False:
+        
+        if not isinstance(results, Iterable):
+            results = [results]
+            
+        for item in results:
+            if isinstance(item, BaseImageModel) and not inplace:
+                item.process_name = coolname.generate_slug(2)
+        if not verbose_outputs:
             return results[0]
         else:
             return results

@@ -1,4 +1,5 @@
 
+from abc import abstractmethod
 import os
 import pathlib
 import copy
@@ -11,9 +12,10 @@ collections.Iterable = collections.abc.Iterable
 
 from ..base import BaseDataModel
 
-class BaseQuantificationModel(BaseDataModel):
+
+class BaseAnalysisModel(BaseDataModel):
     """
-    Abstract base class for quantification datasets. To implement a child of this class you must:
+    Abstract base class for analysis datasets. To implement a child of this class you must:
     
     - implement methods to read data from a file, these should be class methods
       that return an instance of the class
@@ -31,17 +33,15 @@ class BaseQuantificationModel(BaseDataModel):
     
     data_changed = Signal(object)
     
-    def __init__(self, data, metadata: dict = {}, *args, **kwargs):
+    def __init__(self, name: str=None, description: str = "", *args, **kwargs):
         """Initialize the Data object
 
         Args:
             metadata (dict, optional): A dictionary containing metadata about the dataset. Defaults to {}.
         """
         self.name = kwargs.get('name', coolname.generate_slug(2))
-        self.process_name = kwargs.get('process_name', coolname.generate_slug(2))
-        self._data = data
-        self.pixelsize = kwargs.get('pixelsize', 1.0)
-        self.metadata = metadata
+        self.description = description  
+        self.data = None
         super().__init__(*args, **kwargs)
         
         
@@ -54,5 +54,11 @@ class BaseQuantificationModel(BaseDataModel):
         self._data = value
         self.data_changed.emit(self._data)
         
-        
+    @abstractmethod  
+    def add_sample(self, sample_name, **kwaargs):
+        pass
+
+    def __str__(self):
+        msg = f"Name: {self.name}, Description: {self.description}"
+        return msg
     

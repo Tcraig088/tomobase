@@ -1,27 +1,32 @@
 import astra
 import numpy as np
+from typing import Union, Tuple
 
 from ..utils import _create_projector
 from ..data import Volume, Sinogram
 from ..log import logger
 from ..hooks import process_hook
 from ..registers.categories import categories
+from ..tiltschemes import TiltScheme
 
 from magicgui import magicgui
 from magicgui.tqdm import trange
 
 
 @process_hook(name='Project', category=categories['Project'], use_numpy=True)
-def project(volume:Volume, angles:np.ndarray, use_gpu:bool=True):
+def project(volume:Volume, angles:Union[Tuple[TiltScheme, slice], np.ndarray], use_gpu:bool=True):
     """Create a sinogram from a volume using forward projection. The GPU Context is overriden due to underlying astra gpu usage. 
     Args:
         volume (Volume): The input volume to be projected.
-        angles (np.array): The angles at which to project the volume.
+        angles (Union[Tuple[TiltScheme, slice], np.ndarray]): The angles at which to project the volume. Can be a TiltScheme with a slice of angles or a numpy array of angles.
         use_gpu (bool): Whether to use GPU for projection. Default is True.
     Returns:
         Sinogram: The resulting sinogram.
 
     """
+    if isinstance(angles, tuple) and isinstance(angles[0], TiltScheme):
+        angles = angles[0].generate_angles_from_slice(angles[1])
+        
     data = np.transpose(volume.data, (2, 1, 0))  # ASTRA expects (z, y, x)
     angles = np.asarray(angles)
     use_gpu = use_gpu and astra.use_cuda()

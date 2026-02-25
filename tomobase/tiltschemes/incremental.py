@@ -3,29 +3,37 @@ import numpy as np
 from ..hooks import tiltscheme_hook
 from .tiltscheme import TiltScheme
 
-@tiltscheme_hook('INCREMENTAL')  
+@tiltscheme_hook("Incremental")
 class Incremental(TiltScheme):
-    """Incremental Tilt Scheme.
+    """Incremental Tilt Scheme (finite).
 
-    Attributes:
-        angle_start (float): The starting angle for the tilt series.
-        angle_end (float): The ending angle for the tilt series.
-        step (float): The step size for each increment.
+    Yields angles starting at angle_start, stepping by `step` until angle_end is reached.
     """
-    def __init__(self, angle_start:float=-70, angle_end:float=70, step:float=2):
-        super().__init__()
-        self.angle_start = angle_start
-        self.angle_end = angle_end  
-        self.step = step
 
-    def get_angle(self):
-        angle = self.angle_start + (self.index*self.step)
-        self.index += 1
-        if self.angle_end > self.angle_start:
-            if angle + self.step > self.angle_end:
-                self._isfinished = True
+    def __init__(self, angle_min: float = -70, angle_max: float = 70, step: float = 2.0):
+        super().__init__(angle_min, angle_max)   # if your base supports this; otherwise super().__init__(); self.index=index
+        self.step = float(step)
+
+        if self.step == 0:
+            raise ValueError("step must be non-zero")
+
+        # Direction sanity: step should move from start toward end
+        if (self.angle_max > self.angle_min and self.step < 0) or (self.angle_max < self.angle_min and self.step > 0):
+            raise ValueError("step sign does not move angle_start toward angle_end")
+
+    def _angle_at_index(self, i: int) -> float:
+        if i < 0:
+            raise ValueError("index must be >= 0")
+
+        angle = self.angle_min + (i * self.step)
+
+        # Determine if this is the last valid angle (inclusive end)
+        next_angle = angle + self.step
+        if self.angle_max >= self.angle_min:
+            if next_angle > self.angle_max + 1e-12:
+                self._finished = True
         else:
-            if angle + self.step < self.angle_end:
-                self._isfinished = True
-        return angle
-    
+            if next_angle < self.angle_max - 1e-12:
+                self._finished = True
+
+        return float(np.round(angle, 2))

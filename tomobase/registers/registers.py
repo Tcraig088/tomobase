@@ -21,6 +21,7 @@ phantoms._hook = 'is_tomobase_phantom'
 phantoms.update(explicit=False)
 
 image_types = Registry(str, BaseImageModel)
+image_types['BaseImageModel'] = BaseImageModel
 image_types['Sinogram'] = Sinogram
 image_types['Volume'] = Volume
 image_types['Image'] = Image

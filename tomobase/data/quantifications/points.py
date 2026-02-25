@@ -3,6 +3,7 @@ import pickle
 import pathlib
 import enum
 import json
+import h5py
 
 import numpy as np
 import imageio as iio
@@ -11,7 +12,51 @@ import pandas as pd
 
 from ...environment import GPUContext, proxy
 
-from .quantification import Quantification
+from ..images.base import BaseImageModel
+from .base import BaseAnalysisModel
+
+class PointMap(BaseAnalysisModel):
+    ''' A simple analysis model for storing point-based measurements. The data is stored in a pandas DataFrame with columns for the name of the measurement, 
+    the value, and optional error bars. The class also includes metadata such as units and title. The data can be saved to and loaded from .dat files using JSON serialization.'''
+    def __init__(self, name, description: str = "", units="a.u.", axis_title="", *args, **kwargs):
+        super().__init__(name=name, description=description)
+        self.data = pd.DataFrame(columns=['name', 'process_name', 'process', 'y', 'y_error+', 'y_error-'])
+        self.units = units
+        self.axis_title = axis_title
+        
+    def add_data(self, image:BaseImageModel, value, plus_error=np.nan, minus_error=np.nan):
+        new_df = pd.DataFrame({'name': [image.sample_name], 'process_name': [image.process_name], 'process': [image.process_name], 'y': [value], 'y_error+': [plus_error], 'y_error-': [minus_error]})
+        self.data = pd.concat([self.data, new_df], ignore_index=True)
+
+    def _write_h5(self, filename: pathlib.Path, **kwargs):
+        """Writer for .h5 files."""
+        filename = pathlib.Path(filename)
+        with h5py.File(filename, "w") as f:
+            f.create_dataset("data", data=self.data.to_numpy(), compression="gzip")
+            f.attrs["columns"] = json.dumps(self.data.columns.tolist())
+            f.attrs["units"] = self.units
+            f.attrs["axis_title"] = self.axis_title
+            f.attrs["description"] = self.description
+
+
+    @classmethod
+    def _read_h5(cls, filename: pathlib.Path, **kwargs) -> "PointMap":
+        """Reader for .h5 files, returns a PointMap instance."""
+        filename = pathlib.Path(filename)
+        with h5py.File(filename, "r") as f:
+            data_array = f["data"][:]
+            columns = json.loads(f.attrs["columns"])
+            data_df = pd.DataFrame(data_array, columns=columns)
+            units = f.attrs.get("units", "a.u.")
+            axis_title = f.attrs.get("axis_title", "")
+            description = f.attrs.get("description", "")
+        
+        obj = cls(name=filename.stem, description=description, units=units, axis_title=axis_title)
+        obj.data = data_df
+        return obj
+    
+PointMap._readers['h5'] = PointMap._read_h5
+PointMap._writers['h5'] = PointMap._write_h5
 
 '''
 class PointMap(Quantification):

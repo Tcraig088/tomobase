@@ -4,102 +4,114 @@ from .tiltscheme import TiltScheme
 from ..hooks import tiltscheme_hook
 from ..log import logger
 
-@tiltscheme_hook('BINARY')  
+@tiltscheme_hook("Binary Decomposition")
 class Binary(TiltScheme):
-    """Binary Tilt Scheme Class.
-    The purpose of this class is to calculate angles using the binary acquisition tilt scheme.
+    """Binary acquisition tilt scheme.
 
-
-    Attributes:
-        angle_min (float): The minimum angle in the tilt series.
-        angle_max (float): The maximum angle in the tilt series.
-        k (int): The number of angles in one subdivision of the tiltscheme.
-        isbidirectional (bool): Default is True. Determines wether the tiltscheme is calculated performed by going unidirectionally negative to positve.
-            If true the tiltscheme will be calculated bidirectionally. The first k angles are collected from min to max but and reversed in next k angles.
-            If false the tiltscheme will be calculated unidirectionally min to max for all sets of 8 angles.
+    Stateful iterator: each call yields the next tilt angle and advances internal state.
     """
-    def __init__(self, angle_min:float=-70, angle_max:float=70, k:int=8, isbidirectional:bool=True):
-        """Initialize the Binary Tilt Scheme.
 
-        Args:
-            angle_min (float, optional): The minimum angle in the tilt series. Defaults to -70.
-            angle_max (float, optional): The maximum angle in the tilt series. Defaults to 70.
-            k (int, optional): The number of angles in one subdivision of the tiltscheme. Defaults to 8.
-            isbidirectional (bool, optional): Determines whether the tiltscheme is calculated bidirectionally. Defaults to True.
-        """
-        super().__init__()
-        self.angle_max = angle_max
-        self.angle_min = angle_min
-        self.k = k
-        
-        #Setting parameters
-        self.isbidirectional = isbidirectional
-        if isbidirectional:
-            self.isforward=True
-        
-        self.step = (self.angle_max - self.angle_min)/(k+0.5)
-        self.i = 0
-        self.offset = 0
-        self.offset_set = 2
-        self.offset_run = 1/self.offset_set
-        self.angle = 0
-        self.max_cutoff = self.angle_max - (self.step/2)
-        
-    def get_angle(self):
+    def __init__(
+        self,
+        angle_min: float = -70,
+        angle_max: float = 70,
+        k: int = 8,
+        isbidirectional: bool = True
+    ):
+        super().__init__(angle_min, angle_max)  # assumes your base stores start index + supports reset()
+        self.k = int(k)
+        self.isbidirectional = bool(isbidirectional)
+
+        # immutable derived constants
+        self._step0 = (self.angle_max - self.angle_min) / (self.k + 0.5)
+        self._max_cutoff0 = self.angle_max - (self._step0 / 2)
+
+        self._reset()
+
+    def next_angle(self) -> float:
         if self.isbidirectional:
-            return self._get_angle_bidirectional()
+            angle = self._next_bidirectional()
         else:
-            return self._get_angle_unidirectional() 
-    
-    def _get_angle_bidirectional(self):
-        if self.i == 0:
-            self.angle = self.angle_min
-        elif self.isforward:
-            if np.isclose(self.angle + self.step, self.angle_max) or (self.angle+self.step) > self.angle_max:
-                self._get_offsets()
-                self.isforward = False
-                if np.isclose(self.max_cutoff + (self.step*self.offset), self.angle_max) or (self.max_cutoff + (self.step*self.offset)) >=  self.angle_max:
-                    self.angle = self.max_cutoff + (self.step*self.offset) - self.step
+            angle = self._next_unidirectional()
+        return float(np.round(angle, 2))
+
+    def _reset(self) -> None:
+        # direction for bidirectional mode
+        self._is_forward = True
+
+        # running state
+        self._i = 0  # step counter within this scheme (not the base index)
+        self._offset = 0.0
+        self._offset_set = 2
+        self._offset_run = 1 / self._offset_set
+
+        self._step = self._step0
+        self._max_cutoff = self._max_cutoff0
+        self._angle = 0.0
+
+    def _next_bidirectional(self) -> float:
+        if self._i == 0:
+            self._angle = self.angle_min
+            self._i += 1
+            return self._angle
+
+        if self._is_forward:
+            # moving +step toward angle_max
+            if np.isclose(self._angle + self._step, self.angle_max) or (self._angle + self._step) > self.angle_max:
+                self._advance_offsets()
+                self._is_forward = False
+
+                # compute starting point on the return sweep
+                candidate = self._max_cutoff + (self._step * self._offset)
+                if np.isclose(candidate, self.angle_max) or candidate >= self.angle_max:
+                    self._angle = candidate - self._step
                 else:
-                    self.angle = self.max_cutoff + (self.step*self.offset)
-                self.step *= -1 
+                    self._angle = candidate
+
+                self._step *= -1  # reverse direction
             else:
-                self.angle = self.angle + self.step
+                self._angle = self._angle + self._step
+
         else:
-            if np.isclose(self.angle+self.step, self.angle_max) or (self.angle+self.step) < self.angle_min:
-                self._get_offsets()
-                self.isforward = True
-                self.angle = self.angle_min + (np.abs(self.step)*self.offset)
-                self.step *= -1
+            # moving -step toward angle_min
+            if np.isclose(self._angle + self._step, self.angle_max) or (self._angle + self._step) < self.angle_min:
+                self._advance_offsets()
+                self._is_forward = True
+
+                # start next forward sweep with new offset
+                self._angle = self.angle_min + (abs(self._step) * self._offset)
+                self._step *= -1  # reverse direction
             else:
-                self.angle = self.angle + self.step
-        self.i += 1
-        return np.round(self.angle,2)
-    
-    
-    def _get_angle_unidirectional(self):
-        if self.i == 0:
-            self.angle = self.angle_min
-        elif np.isclose(self.angle + self.step, self.angle_max) or (self.angle + self.step) > self.angle_max:
-            self._get_offsets()
-            self.angle = self.angle_min + (self.step * self.offset)
+                self._angle = self._angle + self._step
+
+        self._i += 1
+        return self._angle
+
+    def _next_unidirectional(self) -> float:
+        if self._i == 0:
+            self._angle = self.angle_min
+            self._i += 1
+            return self._angle
+
+        # move toward max; when you hit/past, advance offsets and restart near min
+        if np.isclose(self._angle + self._step, self.angle_max) or (self._angle + self._step) > self.angle_max:
+            self._advance_offsets()
+            self._angle = self.angle_min + (self._step * self._offset)
         else:
-            self.angle += self.step
-        self.i += 1
-        return np.round(self.angle, 2)
-    
-    def _get_offsets(self):
-        if (self.offset + 0.5) >= 1:
-            if self.offset == ((self.offset_set-1)/(self.offset_set)):
-                self.offset_set = self.offset_set*2
-                self.offset_run = 1/self.offset_set
-                self.offset = self.offset_run
+            self._angle = self._angle + self._step
+
+        self._i += 1
+        return self._angle
+
+    def _advance_offsets(self) -> None:
+        """Update offset/offset_set/offset_run according to your original logic."""
+        if (self._offset + 0.5) >= 1:
+            if np.isclose(self._offset, (self._offset_set - 1) / self._offset_set):
+                self._offset_set *= 2
+                self._offset_run = 1 / self._offset_set
+                self._offset = self._offset_run
             else:
-                self.offset_run += 2/self.offset_set
-                self.offset = self.offset_run
+                self._offset_run += 2 / self._offset_set
+                self._offset = self._offset_run
         else:
-            self.offset += 0.5  
-            
-    def get_angle_array(self, indices):
-        return super().get_angle_array(indices)
-    
+            self._offset += 0.5
