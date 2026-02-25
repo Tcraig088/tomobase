@@ -81,5 +81,5 @@ class Heatmap(BaseAnalysisModel):
         obj.data = data
         return obj
     
-Heatmap._readers['h5'] = Heatmap._read_h5
-Heatmap._writers['h5'] = Heatmap._write_h5
+Heatmap.readers['h5'] = Heatmap._read_h5
+Heatmap.writers['h5'] = Heatmap._write_h5

@@ -55,8 +55,8 @@ class PointMap(BaseAnalysisModel):
         obj.data = data_df
         return obj
     
-PointMap._readers['h5'] = PointMap._read_h5
-PointMap._writers['h5'] = PointMap._write_h5
+PointMap.readers['h5'] = PointMap._read_h5
+PointMap.writers['h5'] = PointMap._write_h5
 
 '''
 class PointMap(Quantification):
