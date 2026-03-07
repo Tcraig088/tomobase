@@ -26,3 +26,14 @@ def _create_projector(x, y, angles, use_gpu):
         proj_id = astra.creators.create_projector('linear', proj_geom, vol_geom)
     return proj_id
 
+def set_numpy(array):
+    #xp = array.__array_namespace__()
+    xp = np
+    if xp is np:
+        return array
+    
+    if hasattr(array, "get"):
+        return array.get()
+    
+    ValueError('Array must be either Numpy or CuPy to use set_numpy')
+    

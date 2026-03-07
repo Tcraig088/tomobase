@@ -4,11 +4,11 @@ from tomobase.data import BaseImageModel
 from tomobase.environment import proxy
 from ...registers.categories import categories
 from tomobase.hooks import process_hook
-
+from ...data.analysis.analysis import Coordinate
 
 subcategory = categories.add_category('Quality Metrics', value=9, inheritor = 'Analyze')
 
-@process_hook(name='Structural Similarity',category=categories['Quality Metrics'], isquantification=True)
+@process_hook(name='Structural Similarity',category=categories['Quality Metrics'], Coordinates={'ssim': [Coordinate('SSIM', 'a.u')]} )
 def ssim( image:BaseImageModel, reference:BaseImageModel):
     if image.data.dtype == proxy.xupy.uint8:
         data_range = 255
