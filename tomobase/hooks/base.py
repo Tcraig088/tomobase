@@ -2,8 +2,7 @@ import inspect
 import copy
 from collections.abc import Callable
 
-from .utils import _process_registration
-from .task_builders import _wrap_axial, _wrap_use_numpy, _wrap_inplace, _wrap_verbose, _wrap_measure, _build_decorated_function
+from .task_builders import _wrap_axial, _wrap_use_numpy,_wrap_restore_context, _wrap_use_context, _wrap_inplace, _wrap_verbose, _wrap_measure, _build_decorated_function
 
 def phantom_hook(name:str| None= None) -> Callable:
     #use sphynx style
@@ -62,6 +61,9 @@ def process_hook(**kwargs) -> Callable:
             func = _wrap_measure(func)
             if use_numpy:
                 func = _wrap_use_numpy(func)
+            else:
+                func = _wrap_use_context(func)
+            func = _wrap_restore_context(func)
             func = _wrap_inplace(func)
             func = _wrap_verbose(func)
 

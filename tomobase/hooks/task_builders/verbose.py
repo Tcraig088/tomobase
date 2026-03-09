@@ -11,3 +11,4 @@ def _wrap_verbose(func):
             return results
         else:
             return results[0]
+    return wrapper

@@ -5,7 +5,7 @@ from scipy.ndimage import  binary_dilation
 from skimage.filters import threshold_otsu
 
 from ...hooks import process_hook
-from ...data import Sinogram, Image, BaseImageModel, Volume
+from ...data import Sinogram, Image, Image, Volume
 from ...registers.categories import categories
 from ...environment import proxy, GPUContext
 

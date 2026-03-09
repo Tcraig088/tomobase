@@ -1,4 +1,4 @@
-from ...data import BaseImageModel, Volume
+from ...data import Image, Volume
 from ...environment import proxy
 from ...registers.categories import categories
 from ...hooks import process_hook

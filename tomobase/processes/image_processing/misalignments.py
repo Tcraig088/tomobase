@@ -3,7 +3,7 @@ from copy import deepcopy
 from ...hooks import process_hook
 from ...registers.categories import categories
 from ...environment import proxy
-from ...data import Sinogram, BaseImageModel
+from ...data import Sinogram, Image
 
 from typing import Union, Tuple
 from magicgui.tqdm import tqdm
@@ -11,7 +11,7 @@ from magicgui.tqdm import tqdm
 
 subcategory = categories.add_category('Misalignments', value=5, inheritor = 'Image Processing')
 @process_hook(category=subcategory)
-def gaussian_filter(obj: BaseImageModel, gaussian_sigma:float=1,):
+def gaussian_filter(obj: Image, gaussian_sigma:float=1,):
     """Add Gaussian noise to the sinogram.
     Args:
         obj (Data): The input data object
@@ -24,7 +24,7 @@ def gaussian_filter(obj: BaseImageModel, gaussian_sigma:float=1,):
     return obj
 
 @process_hook(category=subcategory)
-def poisson_noise(obj: BaseImageModel, 
+def poisson_noise(obj: Image, 
                   rescale:float=True):
     """Add Poisson noise to the sinogram.
     Args:

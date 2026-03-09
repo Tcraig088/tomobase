@@ -26,3 +26,4 @@ def _wrap_measure(func):
                 j += 1
 
         return results
+    return wrapper

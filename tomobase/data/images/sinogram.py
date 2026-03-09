@@ -12,9 +12,9 @@ import mrcz
 
 
 from .image import Image
-from .base import BaseImageModel
+from .base import Image
 
-class Sinogram(BaseImageModel):
+class Sinogram(Image):
     """
     The sinogram is a stack of projection images, indexed using the
     (n, x, y) orientation. 

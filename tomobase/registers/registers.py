@@ -10,7 +10,7 @@ from functools import partial
 from colorama import Fore, Style, init
 init(autoreset=True)
 
-from ..data import BaseImageModel, Sinogram, Volume, Image
+from ..data import Image, Sinogram, Volume, Image
 from ..tiltschemes import TiltScheme
 from ..log import logger
 from .base import Registry, CategoryRegistry
@@ -20,8 +20,8 @@ phantoms = Registry(str, Callable)
 phantoms._hook = 'is_tomobase_phantom'
 phantoms.update(explicit=False)
 
-image_types = Registry(str, BaseImageModel)
-image_types['BaseImageModel'] = BaseImageModel
+image_types = Registry(str, Image)
+image_types['BaseImageModel'] = Image
 image_types['Sinogram'] = Sinogram
 image_types['Volume'] = Volume
 image_types['Image'] = Image

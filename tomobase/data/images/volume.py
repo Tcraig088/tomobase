@@ -2,7 +2,7 @@ import numpy as np
 import copy
 from copy import deepcopy
 
-from .base import BaseImageModel 
+from .base import Image 
 
 def _rescale(data, lower=0, upper=1, inplace=True):
     """Rescale data by scaling it to a given range.
@@ -36,7 +36,7 @@ def _rescale(data, lower=0, upper=1, inplace=True):
 
     return data
 
-class Volume(BaseImageModel):
+class Volume(Image):
     """
     A 3D volume that is the result of a tomographic reconstruction. 
 

@@ -1,7 +1,7 @@
 
 from itertools import zip_longest
 
-from ...data import BaseImageModel, Analysis
+from ...data import Image, Analysis
 from ...environment import proxy, GPUContext
 
 def _wrap_axial(func):
@@ -12,8 +12,8 @@ def _wrap_axial(func):
             args_i = list(args)
             kwargs_i = dict(kwargs)
             
-            i_img_args = [i for i, arg in enumerate(args) if isinstance(arg, BaseImageModel)]
-            key_img_kwargs = [key for key, value in kwargs.items() if isinstance(value, BaseImageModel)]
+            i_img_args = [i for i, arg in enumerate(args) if isinstance(arg, Image)]
+            key_img_kwargs = [key for key, value in kwargs.items() if isinstance(value, Image)]
             image_list = [args[i] for i in i_img_args] + [kwargs[key] for key in key_img_kwargs]
             for i, outs in enumerate(zip_longest(*[img.split(axis) for img in image_list], fillvalue=None)):
                 args_i[i_img_args] = outs[:len(i_img_args)]
@@ -23,7 +23,7 @@ def _wrap_axial(func):
                     results = results_i
                 else:
                     for j in range(len(results_i)):
-                        if isinstance(results_i[j], BaseImageModel):
+                        if isinstance(results_i[j], Image):
                             results[j] = results[j].insert(results_i[j], axis=axis)
                         elif isinstance(results_i[j], Analysis):
                             results[j] = results[j].insert(results_i[j])
@@ -33,5 +33,5 @@ def _wrap_axial(func):
         else:
             results = func(*args, **kwargs)
 
-
         return results
+    return wrapper

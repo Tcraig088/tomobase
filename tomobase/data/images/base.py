@@ -13,7 +13,7 @@ from ..base import BaseDataModel
 from ...log import logger
 from ...environment import GPUContext, proxy
 
-class BaseImageModel(BaseDataModel):
+class Image(BaseDataModel):
     """
     Abstract base class for microscopy and tomography datasets. To implement a child of this class you must:
     
@@ -61,7 +61,7 @@ class BaseImageModel(BaseDataModel):
         super().set_context(context, device)
         self.data = proxy.asarray(self.data, context, device)
 
-    def _copy_from(self, other:'BaseImageModel'):
+    def _copy_from(self, other:'Image'):
         """Copy data from another BaseImageModel instance
 
         Args:

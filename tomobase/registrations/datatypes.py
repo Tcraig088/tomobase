@@ -6,4 +6,4 @@ class DataItemDict(ItemDict):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-image_datatypes_register = DataItemDict( Data=images.BaseImageModel, Image=images.Image, Sinogram=images.Sinogram, Volume=images.Volume)
+image_datatypes_register = DataItemDict( Data=images.Image, Image=images.Image, Sinogram=images.Sinogram, Volume=images.Volume)

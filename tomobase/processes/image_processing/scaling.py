@@ -1,6 +1,6 @@
 from ...registers.categories import categories
 from ...environment import proxy
-from ...data import Sinogram, BaseImageModel, Volume
+from ...data import Sinogram, Image, Volume
 from ...hooks import process_hook
 
 
@@ -20,7 +20,7 @@ def normalize(sino: Sinogram):
     return sino
 
 @process_hook(name='Bin Data', category=subcategory)
-def bin(obj: BaseImageModel, factor: int = 2):
+def bin(obj: Image, factor: int = 2):
     """Bin the sinogram data by a specified factor.
 
     Args:
