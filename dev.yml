@@ -1,0 +1,46 @@
+
+channels:
+  - conda-forge
+  - nvidia
+  - astra-toolbox
+
+dependencies:
+  - python=3.11
+
+  # core dependencies
+  - numpy>=2.0
+  - cupy
+  - scipy
+  - matplotlib
+  - scikit-image
+  - xarray
+
+  # tomography / file formats
+  - h5py
+  - mrcz
+  - ncempy
+  - imageio
+  - astra-toolbox
+
+  # GUI / widgets
+  - qtpy
+  - magicgui
+  - pyqt # needed for qtpy do not package
+
+  # utilities
+  - pandas
+  - colorama
+  - tqdm
+  - makefun
+  - coolname
+
+  # visualization
+  - hvplot
+  - stackview
+  - napari
+  - pyqtgraph
+  - pydantic
+
+
+  
+

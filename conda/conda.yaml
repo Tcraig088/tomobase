@@ -15,7 +15,7 @@ requirements:
     - pip
   run:
     - python >=3.10
-    - numpy
+    - numpy >= 2.0
     - matplotlib
     - scipy
     - imageio
@@ -31,6 +31,8 @@ requirements:
     - scikit-image
     - tqdm
     - coolname
+    - xarray
+    - ncempy
 
 channels:
   - defaults

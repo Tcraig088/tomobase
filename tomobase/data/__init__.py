@@ -1,5 +1,8 @@
-from .images import *
-from .analysis import *
+from .measurement import *
+from .image import *
+from .volume import *
+from .sinogram import *
 
 
-all = [Image, Volume, Sinogram, Image, Analysis]
+
+all = [ImageAbstract, Volume, Sinogram, Image, Measurement]

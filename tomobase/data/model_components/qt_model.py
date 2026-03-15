@@ -6,10 +6,10 @@ from abc import ABC, abstractmethod
 from qtpy.QtCore import QObject, Slot, Signal
 from qtpy.QtWidgets import QApplication, QFileDialog
 
-from ..environment import GPUContext, proxy
+from ...environment import GPUContext, proxy
 import magicgui
 
-from ..log import logger
+from ...log import logger
 
 class QTModel(QObject):
     
@@ -18,7 +18,6 @@ class QTModel(QObject):
     def __init__(self, data, *args, **kwargs):
         """Initialize the Data object."""
         super().__init__(*args, **kwargs)
-        self._data = data
         
     @property
     def data(self):

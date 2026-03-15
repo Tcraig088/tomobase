@@ -1,3 +1,5 @@
+"""
+
 import numpy as np
 import plotly.graph_objects as go
 import matplotlib
@@ -6,12 +8,7 @@ from tomobase.data import Sinogram, Volume
 
 
 def acquisition_radial_plot(**kwargs):
-    """Plot the sinogram in a radial half-circle
 
-    Arguments:
-        sinogram (Sinogram)
-            The sinogram to plot
-    """
 
     sino = kwargs.get('sinogram', None)
     angles = kwargs.get('angles', None)
@@ -156,3 +153,5 @@ def acquisition_radial_plot(**kwargs):
 
     fig.show()
     return fig
+
+"""

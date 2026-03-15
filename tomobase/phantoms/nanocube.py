@@ -19,6 +19,6 @@ def get_nanocube(size:int=256,dim:int=512):
     start = int(dim//2-size//2)
     end = int(dim//2+size//2)
     obj[start:end,start:end,start:end] = 1
-    return Volume(obj)
+    return Volume('Nanocube', obj)
 
 

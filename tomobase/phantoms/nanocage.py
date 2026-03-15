@@ -15,7 +15,7 @@ def get_nanocage():
     """
     path = os.path.dirname(__file__)
     path = os.path.join(path, 'nanocage.pkl')
-    return Volume(pickle.load(open(path,'rb')))
+    return Volume('Nanocage', pickle.load(open(path,'rb')))
 
 
 

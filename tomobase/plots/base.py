@@ -1,53 +1,60 @@
 
+from ..data import Sinogram
+from ..tiltschemes import TiltScheme
+from typing import Union
 
-
-
-
-'''
-from qtpy.QtWidgets import QVBoxLayout, QWidget
-import pyqtgraph as pg
+import holoviews as hv
 import numpy as np
 
-class BasePlotWidget(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.layout = QVBoxLayout(self)
-        self.plot_widget = pg.GraphicsLayoutWidget()
-        self.layout.addWidget(self.plot_widget)
-        self.setLayout(self.layout)
 
-        def refresh():
-            self.plot_widget.clear()
-            self.plot_widget.addItem(self.plot)
 
-class BarPlotWidget(BasePlotWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.plot = self.plot_widget.addPlot(title="Bar Plot")
-        bar_item = pg.BarGraphItem(x=x, height=y, width=0.6, brush='b')
-        self.plot.addItem(bar_item)
+def plot_tiltscheme(tilt: Union[Sinogram, TiltScheme], **kwargs):
+# ----- radial spokes -----
 
-    def addData(self, df):
-        y_axis = f"{df.metadata['name']} ({df.metadata['units_y']})"
-        for i, row in df.iterrows():
-            x = row[0]
-            y = row[1]
-            
-            bar_item = pg.BarGraphItem(x0=x-0.3, x1=x+0.3, y0=0, y1=y, brush='b')
-            self.plot.addItem(bar_item)
+    if isinstance(tilt, Sinogram):
+        angles = tilt.data.coords['angle'].values
+        times = tilt.data.coords['time'].values
+        indices = tilt.data.coords['projections'].values
 
-class HeatmapWidget(BasePlotWidget):
-    def __init__(self, data, parent=None):
-        super().__init__(parent)
-        self.plot = self.plot_widget.addPlot(title="Heatmap")
-        self.image_item = pg.ImageItem(data)
-        self.plot.addItem(self.image_item)
-        self.plot.showGrid(x=True, y=True)
-        self.plot.setAspectLocked(True)
+    else:
+        angles = tilt.angles
+        times = np.arange(len(angles))
+        indices = np.arange(len(angles))
 
-class LineWithMarkersWidget(BasePlotWidget):
-    def __init__(self, x, y, parent=None):
-        super().__init__(parent)
-        self.plot = self.plot_widget.addPlot(title="Line with Markers")
-        self.plot.plot(x, y, pen=pg.mkPen(color='r', width=2), symbol='o', symbolSize=10, symbolBrush='b')
-'''
+
+    length = 1
+    curves = []
+
+    for a in angles:
+        theta = np.deg2rad(a)
+        x = [0, length*np.sin(theta)]
+        y = [0, length*np.cos(theta)]
+        curves.append(hv.Curve((x, y)))
+
+    spokes = hv.Overlay(curves)
+
+
+    theta = np.linspace(-np.pi/2, np.pi/2, 200)
+    arc = hv.Curve((np.sin(theta), np.cos(theta)))
+
+    radial = (arc * spokes).opts(
+        width=400,
+        height=400,
+        xlim=(-1.1, 1.1),
+        ylim=(-0.1, 1.1),
+        aspect='equal',
+        title="Tilt Geometry"
+    )
+
+    xy = (
+        hv.Curve((indices, angles))
+        * hv.Scatter((indices, angles))
+    ).opts(
+        width=400,
+        height=400,
+        xlabel="Projection Index",
+        ylabel="Angle (deg)",
+        show_grid=True
+    )
+
+    return (radial + xy)

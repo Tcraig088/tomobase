@@ -44,7 +44,8 @@ class ImageAbstract(BaseDataModel):
         if not isinstance(data, xr.DataArray):
             if len(dims) != len(data.shape):
                 raise ValueError(f"Number of dimensions in data {len(data.shape)} does not match number of provided dimension names {len(dims)}")
-            data = xr.DataArray(data, dims=dims)   
+            data = xr.DataArray(data, dims=dims)  
+            self.pixel_size = pixel_size 
             for dim in dims:
                 if dim in ['x', 'y', 'z']:
                     data.coords[dim] = (data.coords[dim] * pixel_size)
@@ -60,9 +61,12 @@ class ImageAbstract(BaseDataModel):
   
     def _new_process_name(self):
         self._process_iter += 1
-        return f"{coolname.generate_slug(1)}_{self._process_iter}"
+        return f"{coolname.generate_slug(2)}_{self._process_iter}"
 
-
+    @property
+    def values(self):
+        return self.data.values
+    
     def _copy_from(self, other:'ImageAbstract'):
         super()._copy_from(other)
         self.pixel_size = other.pixel_size

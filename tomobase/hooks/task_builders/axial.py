@@ -1,7 +1,7 @@
 
 from itertools import zip_longest
 
-from ...data import Image, Analysis
+from ...data import Image, Measurement
 from ...environment import proxy, GPUContext
 
 def _wrap_axial(func):
@@ -25,7 +25,7 @@ def _wrap_axial(func):
                     for j in range(len(results_i)):
                         if isinstance(results_i[j], Image):
                             results[j] = results[j].insert(results_i[j], axis=axis)
-                        elif isinstance(results_i[j], Analysis):
+                        elif isinstance(results_i[j], Measurement):
                             results[j] = results[j].insert(results_i[j])
                         else:
                             raise TypeError(f"Unsupported result type: {type(results_i[j])}")

@@ -52,4 +52,4 @@ def get_nanorod(dim:int=512,length:int=300,radius:int=100,proportion:float=0.5,i
     top_limit,bottom_limit  = z2+radius, z1-radius
     obj[xz1:xz2, xz1:xz2, z2:top_limit] = sphere[xz1:xz2, xz1:xz2, dim//2:y1] 
     obj[xz1:xz2, xz1:xz2, bottom_limit:z1] = sphere[xz1:xz2, xz1:xz2, y2:dim//2]
-    return Volume(obj)
+    return Volume('NanoRod', obj)

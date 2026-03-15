@@ -10,7 +10,8 @@ class TiltScheme(ABC, Iterator[float]):
         self._finished = False
         
         self.current_angle = self.next_angle()
-        self.reset
+        self.angles = np.array([])
+        self.reset()
 
     def __iter__(self):
         return self
@@ -19,6 +20,7 @@ class TiltScheme(ABC, Iterator[float]):
         if self._finished:
             raise StopIteration
         angle = self.next_angle()
+        self.angles = np.append(self.angles, angle)
         self.index += 1
         return angle
 
@@ -53,4 +55,5 @@ class TiltScheme(ABC, Iterator[float]):
     
     def reset(self):
         self.index = 0
+        self.angles = np.array([])
         self._finished = False

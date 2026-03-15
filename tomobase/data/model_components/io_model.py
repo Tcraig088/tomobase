@@ -6,10 +6,10 @@ from abc import ABC, abstractmethod
 from qtpy.QtCore import QObject, Slot, Signal
 from qtpy.QtWidgets import QApplication, QFileDialog
 
-from ..environment import GPUContext, proxy
+from ...environment import GPUContext, proxy
 import magicgui
 
-from ..log import logger
+from ...log import logger
 
 
 class IOModel():
@@ -17,7 +17,7 @@ class IOModel():
     writers: dict[str, callable] = {}
     
     def __init__(self, data, *args, **kwargs):
-        self._data = data
+        super().__init__(data, *args, **kwargs)
     
     
     def write(self, filename: pathlib.Path| str | None = None, **kwargs):
@@ -43,7 +43,7 @@ class IOModel():
         ext = filename.suffix.lower().lstrip(".")
 
         try:
-            writer = self.writers[ext]
+            writer = self.writers[f'.{ext}']
         except KeyError:
             raise ValueError(f"The given file type {ext.upper()} is not supported.")
 
@@ -54,11 +54,12 @@ class IOModel():
         """Read a dataset from a file and return a model instance."""
         if isinstance(filename, str):
             filename = pathlib.Path(filename)
+
         logger.debug(f"Attempting to load file {filename} with {cls.readers}")
         if filename is None:
             app = QApplication.instance() or QApplication([])
             filters = ";;".join(
-                f"{ext.upper()} files (*.{ext})"
+                f"{ext.upper()} files (*{ext})"
                 for ext in cls.readers.keys()
             )
             filename_str, _ = QFileDialog.getOpenFileName(
@@ -67,15 +68,16 @@ class IOModel():
             if not filename_str:
                 raise Exception("No file selected or file could not be found")
             filename = pathlib.Path(filename_str)
+            
             if app is not QApplication.instance():
                 app.quit()
 
         ext = filename.suffix.lower().lstrip(".")
-
+        name = kwargs.get('name', filename.parent.name)
         try:
-            reader = cls.readers[ext]
+            reader = cls.readers[f'.{ext}']
         except KeyError:
             raise ValueError(f"The given file type {ext.upper()} is not supported.")
 
         # reader should create and return an instance of cls
-        return reader(filename, **kwargs)
+        return reader(str(filename), name=name,  **kwargs)
