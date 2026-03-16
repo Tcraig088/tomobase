@@ -57,5 +57,10 @@ class Sinogram(ImageAbstract):
     def remove(self, projections: list[int]):
         self.data = self.data.drop_sel(projections=projections)
 
+    @classmethod
+    def create(cls, name, data, angles, dims, pixel_size=1.0, metadata=None, *args, **kwargs):
+        return cls(name, data, angles, dims, pixel_size, metadata, *args, **kwargs)
+    
+    
 Sinogram.readers = {}
 Sinogram.writers = {}

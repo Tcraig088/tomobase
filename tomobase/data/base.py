@@ -98,14 +98,23 @@ class ImageAbstract(BaseDataModel):
     
     
     def append(self, other:'ImageAbstract', axis):
-        if axis in self.data.dims and axis in other.data.dims:
-            new_data = xr.concat([self.data, other.data], dim=axis)
-            return type(self)._from_dataarray(new_data)
+        if issubclass(type(other), type(ImageAbstract)):
+            data = other.data
+        else: 
+            data = other
+
+        if axis in self.data.dims and axis in data.dims:
+            self.data = xr.concat([self.data, data], dim=axis)
+            return self
         else:
-            raise ValueError(f"Axis {axis} not found in data dimensions {self.data.dims} or {other.data.dims}")  
-    
+            raise ValueError(f"Axis {axis} not found in data dimensions {self.data.dims} or {data.dims}")  
+
     @classmethod
     def _from_dataarray(cls, dataarray):
         return cls(name=dataarray.name, data=dataarray)
+    
+    @classmethod
+    def create(cls, name, data, dims, pixel_size=1.0, metadata=None, *args, **kwargs):
+        return cls(name, data, dims, pixel_size, metadata, *args, **kwargs)
     
     

@@ -16,3 +16,7 @@ class Image(ImageAbstract):
     
     def _deepcopy_from(self, other:'Image', memo:dict={}):
         return super()._deepcopy_from(other=other, memo=memo)
+    
+    @classmethod
+    def create(cls, name, data, dims, pixel_size=1, metadata=None, *args, **kwargs):
+        return cls(name, data, dims, pixel_size, metadata, *args, **kwargs)

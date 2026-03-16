@@ -33,4 +33,5 @@ class ContextModel():
 
     def get_context(self):
         return self._current_context, self._current_device
+    
 

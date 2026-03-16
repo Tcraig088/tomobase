@@ -4,7 +4,7 @@ from qtpy.QtCore import QObject, Signal
 import numpy as np
 import pandas as pd
 from tomobase.log import logger
-
+import dask.array as da
 class GPUContext(enum.Enum):
     CUPY = 1
     NUMPY = 2
@@ -56,7 +56,10 @@ class EnvironmentContext():
         return context, device
 
     def set_array_context(self, array, current_context, current_device, context: GPUContext, device: int = 0):
-        xp = array.data.__array_namespace__()
+        if isinstance(array.data, da.Array):
+            xp = da
+        else:
+            xp = array.data.__array_namespace__()
 
         valid_state = True
         if current_context == GPUContext.CUPY:
@@ -83,9 +86,9 @@ class EnvironmentContext():
                     with cp.cuda.Device(device):
                         array = array.copy()
 
-        elif context == GPUContext.NUMPY:
-            if xp is not np:
-                array = array.get()
+        #elif context == GPUContext.NUMPY:
+            #if xp is not np:
+            #    array = array.get()
         return array
         
 proxy = EnvironmentContext()

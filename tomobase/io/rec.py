@@ -1,6 +1,7 @@
 
 from os import name
 
+from pathlib import Path
 import numpy as np
 from ..data import Volume
 import copy
@@ -40,7 +41,9 @@ def _write_rec(self, filename, normalize=True, **kwargs):
 
 
 def _read_rec(filename, normalize=True, **kwargs):
-        kwargs['name'] = kwargs.get('name', filename.stem)
+        if isinstance(filename, str):
+            filename = Path(filename)
+        kwargs['name'] = kwargs.get('name', filename.parent.name)
         with open(filename, 'rb') as f:
             # Data dimensions and type
             nx, ny, nz = np.fromfile(f, count=3, dtype='int32')
