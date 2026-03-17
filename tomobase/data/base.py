@@ -39,20 +39,19 @@ class BaseDataModel(ContextModel, IOModel, QTModel):
 
 class ImageAbstract(BaseDataModel):
     
-    def __init__(self, name, data, dims, pixel_size=1.0, metadata=None, *args, **kwargs):
+    def __init__(self, name, data, dims=None, pixel_size=1.0, metadata=None, *args, **kwargs):
         
         if not isinstance(data, xr.DataArray):
             if len(dims) != len(data.shape):
                 raise ValueError(f"Number of dimensions in data {len(data.shape)} does not match number of provided dimension names {len(dims)}")
             data = xr.DataArray(data, dims=dims)  
-            self.pixel_size = pixel_size 
+
             for dim in dims:
                 if dim in ['x', 'y', 'z']:
-                    data.coords[dim] = (data.coords[dim] * pixel_size)
-                    data.attrs['pixel_size'] = pixel_size    
-                          
+                    data.coords[dim] = (data.coords[dim] * pixel_size)  
+            
         super().__init__(name, data, *args, **kwargs)
-
+        self.pixel_size = pixel_size 
         self.metadata = metadata
         self._process_iter =  0 
         
@@ -67,6 +66,17 @@ class ImageAbstract(BaseDataModel):
     def values(self):
         return self.data.values
     
+
+    @property
+    def pixel_size(self):
+        return self._data.attrs.get('pixel_size', 1.0)
+    
+    @pixel_size.setter
+    def pixel_size(self, value):
+        self._data.attrs['pixel_size'] = value
+        for dim in self.data.dims:
+            if dim in ['x', 'y', 'z']:
+                self.data.coords[dim] = (self.data.coords[dim] * value)
     def _copy_from(self, other:'ImageAbstract'):
         super()._copy_from(other)
         self.pixel_size = other.pixel_size
