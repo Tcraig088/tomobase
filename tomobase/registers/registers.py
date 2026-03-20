@@ -1,4 +1,4 @@
-from typing import List, TypeVar, Generic, Callable, Type, Any
+from typing import List, Tuple, TypeVar, Generic, Callable, Type, Any
 from collections.abc import MutableMapping
 from qtpy.QtCore import QObject, Signal
 import importlib
@@ -41,8 +41,6 @@ def help_function(name, _dict):
 phantoms.set_help(partial(help_function, "Phantoms"))
 image_types.set_help(partial(help_function, "Image Types"))
 tiltschemes.set_help(partial(help_function, "Tilt Schemes"))
-
- 
-
+    
 
 

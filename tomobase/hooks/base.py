@@ -53,7 +53,7 @@ def process_hook(**kwargs) -> Callable:
     def decorator(func):
         if inspect.isfunction(func):
             origin =  func
-            params = [("inplace", bool, True), ("verbose_outputs", bool, False), ("measurements", list | None, None)]
+            params = [("inplace", bool, True), ("verbose_outputs", bool, False)]
             
             if enable_axial:
                 func = _wrap_axial(func)
