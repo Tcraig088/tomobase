@@ -2,10 +2,9 @@ import os
 import pickle
 
 from ..data import Volume
-from ..hooks import phantom_hook
+from ..core import registers
 
-
-@phantom_hook(name='nanocage')
+@registers.phantoms.register(name='Nanocage')
 def get_nanocage():
     """
     Creates a nanocage phantom.

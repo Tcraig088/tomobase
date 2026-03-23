@@ -5,4 +5,4 @@ from .sinogram import *
 
 
 
-all = [ImageAbstract, Volume, Sinogram, Image, Measurement]
+all = [ Volume, Sinogram, Image, Measurement]

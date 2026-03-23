@@ -1,11 +1,10 @@
+import pathlib
+import os
+
 import ncempy
 import numpy as np
-import pathlib
-import os 
-
-from ..data import Sinogram, Volume, Image
-
-
+ 
+from ..data import Sinogram, Image
 
 def _convert_time_to_seconds(date_str):
     time_str = date_str.split(' ')[3]

@@ -4,7 +4,7 @@
 
 # Ignore Python cache files and directories
 __pycache__/
-*.pyc
+*.py[cod]
 build/
 .vscode/
 docs/_build/*

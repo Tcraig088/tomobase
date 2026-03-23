@@ -1,7 +1,9 @@
 
 import h5py
+import numpy as np
 
-from ..data import Image, Sinogram, Volume
+from ..core import proxy
+from ..data import Sinogram
 
 def _read_h5py(filename, **kwargs):
     f = h5py.File(filename, 'r')
@@ -21,5 +23,4 @@ def _read_h5py(filename, **kwargs):
         angles[i] = np.array(f[key]['alpha tilt (deg)']).item()
     return Sinogram(data, angles, times=times)
 
-
-    Sinogram.readers['.h5'] = _read_h5py
+Sinogram.readers['.h5'] = _read_h5py

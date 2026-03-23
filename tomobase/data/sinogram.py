@@ -1,10 +1,10 @@
 
 import numpy as np
-from .base import ImageAbstract
-from ..hooks import image_type_hook
 
-@image_type_hook()
-class Sinogram(ImageAbstract):
+from ..core import registers, base_classes
+
+@registers.image_types.register(name="Sinogram")
+class Sinogram(base_classes.ImageAbstract):
     readers: dict[str, callable] = {}
     writers: dict[str, callable] = {}
     def __init__(self, name, data, angles: np.ndarray, pixelsize: float = 1.0, times: np.ndarray | None = None, metadata: dict = {}, *args, **kwargs):

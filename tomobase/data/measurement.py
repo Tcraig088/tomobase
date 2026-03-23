@@ -1,18 +1,10 @@
-from abc import abstractmethod
 from dataclasses import dataclass
-import os
-import pathlib
-import copy
-from typing import Any
-import coolname
-import numpy as np
-from qtpy.QtWidgets import QApplication, QFileDialog
-from qtpy.QtCore import Signal
 import collections
 collections.Iterable = collections.abc.Iterable
 
 import xarray as xr
-from .base import BaseDataModel
+
+from ..core import base_classes
 
 
 @dataclass
@@ -21,7 +13,7 @@ class Coordinate:
     unit: str = 'a.u.'
     scale: float = 1.0
 
-class Measurement(BaseDataModel):
+class Measurement(base_classes.BaseDataModel):
     def __init__(self, name, dims, metadata=None, *args, **kwargs):
         sample = Coordinate(name="sample", unit="a.u.", scale=1.0)
         dims = [sample] + dims

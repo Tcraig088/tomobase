@@ -6,7 +6,6 @@ import numpy as np
 
 from ..data import Sinogram
 
-
 def _read_mrc(filename, **kwargs):
     filename = Path(filename)
 

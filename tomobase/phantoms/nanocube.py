@@ -1,9 +1,9 @@
 import numpy as np
 
 from ..data import Volume
-from ..hooks import phantom_hook
+from ..core import registers
 
-@phantom_hook(name='nanocube')
+@registers.phantoms.register(name='Nanocube')
 def get_nanocube(size:int=256,dim:int=512):
     """
     Creates a nanocube phantom.

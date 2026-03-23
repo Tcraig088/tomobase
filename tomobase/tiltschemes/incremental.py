@@ -1,10 +1,10 @@
 import numpy as np
 
-from ..hooks import tiltscheme_hook
-from .tiltscheme import TiltScheme
+from ..core.registers import tiltschemes
+from ..core.base_classes.tiltscheme import TiltSchemeAbstract
 
-@tiltscheme_hook("Incremental")
-class Incremental(TiltScheme):
+@tiltschemes.register(name='Incremental')
+class Incremental(TiltSchemeAbstract):
     """Incremental Tilt Scheme (finite).
 
     Yields angles starting at angle_start, stepping by `step` until angle_end is reached.

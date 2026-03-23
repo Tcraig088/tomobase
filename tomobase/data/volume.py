@@ -1,10 +1,9 @@
-from .base import ImageAbstract
+
 import xarray as xr
-from ..hooks import image_type_hook
+from ..core import registers, base_classes
 
-
-@image_type_hook()
-class Volume(ImageAbstract):
+@registers.image_types.register(name="Volume")
+class Volume(base_classes.ImageAbstract):
     readers: dict[str, callable] = {}
     writers: dict[str, callable] = {}
     def __init__(self, name, data, pixelsize: float = 1.0, metadata: dict = {}, *args, **kwargs):

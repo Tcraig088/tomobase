@@ -1,10 +1,11 @@
 
-from os import name
-
 from pathlib import Path
-import numpy as np
-from ..data import Volume
 import copy
+
+import numpy as np
+
+from ..data import Volume
+
 def _write_rec(self, filename, normalize=True, **kwargs):
     # Convert data to (X, Y, Z)
     data = np.transpose(self.data.values, (1, 0, 2))

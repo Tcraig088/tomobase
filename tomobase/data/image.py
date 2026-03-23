@@ -1,9 +1,10 @@
-from .base import ImageAbstract
-import xarray as xr
-from ..hooks import image_type_hook
 
-@image_type_hook()
-class Image(ImageAbstract):
+import xarray as xr
+
+from ..core import registers, base_classes
+
+@registers.image_types.register(name="Image")
+class Image(base_classes.ImageAbstract):
     def __init__(self, name, data, pixelsize: float = 1.0, metadata: dict = {}, *args, **kwargs):
         
         if not isinstance(data, xr.DataArray):

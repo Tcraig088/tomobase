@@ -1,11 +1,11 @@
 
 import numpy as np
 
-from .tiltscheme import TiltScheme
-from ..hooks import tiltscheme_hook
+from ..core.base_classes.tiltscheme import TiltSchemeAbstract
+from ..core.registers import tiltschemes
 
-@tiltscheme_hook("GRS")
-class GRS(TiltScheme):
+@tiltschemes.register(name='GRS')  
+class GRS(TiltSchemeAbstract):
     """Golden Ratio Sequence tilt scheme (infinite).
 
     Produces a quasi-uniform sampling over [angle_min, angle_max).

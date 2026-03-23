@@ -1,11 +1,12 @@
 import numpy as np
-from ..data import Volume
-from ..hooks import phantom_hook
 
 from magicgui import magicgui
 from magicgui.tqdm import trange, tqdm
 
-@phantom_hook(name='nanorod')
+from ..data import Volume
+from ..core import registers
+
+@registers.phantoms.register(name='Nanorod')
 def get_nanorod(dim:int=512,length:int=300,radius:int=100,proportion:float=0.5,intensity:float=0.3):
     """Creates a nanorod phantom.
 

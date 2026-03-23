@@ -1,11 +1,11 @@
 import numpy as np
 
-from .tiltscheme import TiltScheme
-from ..hooks import tiltscheme_hook
-from ..log import logger
+from ..core.base_classes.tiltscheme import TiltSchemeAbstract
+from ..core.registers import tiltschemes
+from ..core.log import logger
 
-@tiltscheme_hook("Binary Decomposition")
-class Binary(TiltScheme):
+@tiltschemes.register(name='Binary Decomposition')
+class Binary(TiltSchemeAbstract):
     """Binary acquisition tilt scheme.
 
     Stateful iterator: each call yields the next tilt angle and advances internal state.
