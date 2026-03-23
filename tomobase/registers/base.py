@@ -1,17 +1,11 @@
-from typing import List, TypeVar, Generic, Callable, Type, Any
+from typing import TypeVar, Generic, Callable, Type, Any
 from collections.abc import MutableMapping
 from qtpy.QtCore import QObject, Signal
-import importlib
-import inspect
-import os
-from functools import partial
-
 
 from colorama import Fore, Style, init
 init(autoreset=True)
 
 from ..log import logger
-from .packages import get_paths, get_packages, load_packages_from_files
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -89,42 +83,6 @@ class Registry(QObject, MutableMapping, Generic[K, V], metaclass=RegistryMeta):
         value = self._data.pop(old_key)
         self._data[new_key] = value
         self.renamed.emit(new_key, old_key, value)
-        
-    def update(self, explicit: bool = True):
-        if not explicit:
-            if self._init:
-                logger.debug(f"{Fore.YELLOW}Registry already initialized, skipping implicit update{Style.RESET_ALL}")
-                return
-        
-        self._init = True
-        logger.debug(f"{Fore.YELLOW}Updating registry with hook '{self._hook}' (explicit={explicit}){Style.RESET_ALL}")
-        packages = load_packages_from_files(get_paths())
-        for package in get_packages():
-            spec = importlib.util.find_spec(package)
-            if spec is None or spec.origin is None:
-                logger.warning(f"Cannot find the {package} package")
-            else:
-                path = os.path.dirname(spec.origin)
-                packages.append(path)
-        
-        for package in packages:
-            logger.debug(f"{Fore.BLUE}Scanning {package} for {self._hook} items{Style.RESET_ALL}")     
-            for root, directories, files in os.walk(package):
-                root_name = root.split(os.path.basename(package))[-1].replace(os.sep, '.').strip('.')
-                root_name = os.path.basename(package)
-                for file in files:
-                    if file.endswith('.py'):
-                        package_path = os.path.relpath(os.path.join(root, file), start=package)
-                        package_name = root_name + '.' + os.path.splitext(package_path)[0].replace(os.sep, '.')
-                        logger.debug(f"Importing {package_name} to check for {self._hook} items")
-                        subpackage = importlib.import_module(package_name)
-                        
-                        for name, obj in inspect.getmembers(subpackage):
-                            if inspect.isclass(obj) or inspect.isfunction(obj):
-                                if getattr(obj, self._hook, False):
-                                    logger.debug(f"Registered {name} from {package_name}")
-                                    self[obj.tomobase_name] = obj
-                                
                                 
     def help(self) -> str:
         self._help()
@@ -143,7 +101,7 @@ class CategoryRegistry(Registry):
     def __init__(self, key_type: Type[Any], value_type: Type[Any], parent=None):
         super().__init__(key_type, value_type, parent)
         self._shift = 8
-        self._levels = 4
+        self._levels = 5
         self._nibble = (1 << self._shift) - 1  # 0xFF
         
     def __setitem__(self, key, value):

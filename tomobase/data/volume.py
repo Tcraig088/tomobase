@@ -1,6 +1,9 @@
 from .base import ImageAbstract
 import xarray as xr
+from ..hooks import image_type_hook
 
+
+@image_type_hook()
 class Volume(ImageAbstract):
     readers: dict[str, callable] = {}
     writers: dict[str, callable] = {}

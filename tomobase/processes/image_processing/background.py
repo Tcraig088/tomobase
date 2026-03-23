@@ -5,7 +5,7 @@ from scipy.ndimage import  binary_dilation
 from skimage.filters import threshold_otsu
 
 from ...hooks import process_hook
-from ...data import Sinogram, Image, Image, Volume
+from ...data import Sinogram,  Volume, ImageAbstract
 from ...registers.categories import categories
 from ...environment import proxy, GPUContext
 
@@ -15,7 +15,7 @@ from typing import Union
 
 subcategory = categories.add_category('Background Corrections', value=4, inheritor = 'Image Processing')
 @process_hook(category=subcategory)
-def background_subtract_median(image: Volume):
+def background_subtract_median(image: ImageAbstract):
     """Subtract the median of the sinogram from the sinogram."
 
     Args:
@@ -25,8 +25,8 @@ def background_subtract_median(image: Volume):
         Data: The resulting image data
     """
     
-    median = proxy.xupy.median(image.data)
-    image.data[image.data<median] = 0
+    median = image.data.median()
+    image.data = image.data.where(image.data >= median, 0)
 
     return image
 

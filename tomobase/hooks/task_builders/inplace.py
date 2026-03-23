@@ -4,7 +4,7 @@ from ...data import Image
 
 def _wrap_inplace(func):
     def wrapper(*args, **kwargs):
-        inplace = kwargs.get("inplace", True)
+        inplace = kwargs.pop("inplace", True)
 
         if not inplace:
             args_new = list(args)

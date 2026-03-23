@@ -1,6 +1,8 @@
 from .base import ImageAbstract
 import xarray as xr
+from ..hooks import image_type_hook
 
+@image_type_hook()
 class Image(ImageAbstract):
     def __init__(self, name, data, pixelsize: float = 1.0, metadata: dict = {}, *args, **kwargs):
         

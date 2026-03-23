@@ -42,10 +42,15 @@ def help_categories(_dict):
     
 categories.set_help(help_categories)
 
-categories.add_category("Deform", value=60)
-categories.add_category("Image Processing", value=64)
-categories.add_category("Align", value=68)
-categories.add_category("Reconstruct", value=72)
-categories.add_category("Project", value=76)
-categories.add_category("Segment", value=80)
-categories.add_category("Analyze", value=84)
+categories.add_category('Acquistion', value=60)
+categories.add_category('Tomography', value=68)
+categories.add_category('Visualization', value=76)
+
+categories.add_category("Deform", value=60, inheritor = 'Tomography')
+categories.add_category("Image Processing", value=64, inheritor= 'Tomography')
+categories.add_category("Align", value=68, inheritor = 'Tomography')
+categories.add_category("Reconstruct", value=72, inheritor = 'Tomography')
+categories.add_category("Project", value=76, inheritor = 'Tomography')
+categories.add_category("Segment", value=80, inheritor='Tomography')
+categories.add_category("Analyze", value=84, inheritor='Tomography')
+

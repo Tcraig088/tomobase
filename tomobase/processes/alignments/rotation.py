@@ -6,8 +6,7 @@ from scipy.ndimage import center_of_mass, shift, rotate
 from scipy.optimize import minimize_scalar
 
 from ...hooks import process_hook
-from ...registers.categories import categories
-from ...environment import proxy
+from ...registers import categories
 
 from ...data import Sinogram
 from ..reconstruct import astra_reconstruct

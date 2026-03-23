@@ -1,13 +1,13 @@
 
 def _wrap_verbose(func):
     def wrapper(*args, **kwargs):
-        extend_returns = kwargs.get("extend_returns", False)
+        verbose_outputs = kwargs.pop("verbose_outputs", False)
         results = func(*args, **kwargs)
 
         if not isinstance(results, tuple):
             results = (results,)
 
-        if extend_returns:
+        if verbose_outputs:
             return results
         else:
             return results[0]

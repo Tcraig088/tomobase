@@ -1,1 +1,1 @@
-from .base import process_hook, phantom_hook, tiltscheme_hook
+from .base import process_hook, phantom_hook, tiltscheme_hook, image_type_hook

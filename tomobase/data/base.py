@@ -1,19 +1,8 @@
-import os
-import pathlib
-import copy
-from abc import ABC, abstractmethod
 import coolname
 
-from qtpy.QtCore import QObject, Slot, Signal
-from qtpy.QtWidgets import QApplication, QFileDialog
-
-from ..environment import GPUContext, proxy
-import magicgui
-
-from ..log import logger
 from .model_components import QTModel, ContextModel, IOModel
 import xarray as xr
-
+from ..hooks import image_type_hook
 
 class BaseDataModel(ContextModel, IOModel, QTModel):
     """Base class for GPU-backed data models with file IO."""
@@ -36,7 +25,7 @@ class BaseDataModel(ContextModel, IOModel, QTModel):
         return msg
 
 
-
+@image_type_hook()
 class ImageAbstract(BaseDataModel):
     
     def __init__(self, name, data, dims=None, pixel_size=1.0, metadata=None, *args, **kwargs):

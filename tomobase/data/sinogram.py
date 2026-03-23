@@ -1,20 +1,9 @@
-import os
-import glob
-import h5py
+
 import numpy as np
-import imageio as iio
-import copy
-
-from ..environment import proxy
-from copy import deepcopy
-from scipy.io import savemat, loadmat
-import mrcz
-
-
 from .base import ImageAbstract
-import xarray as xr
+from ..hooks import image_type_hook
 
-
+@image_type_hook()
 class Sinogram(ImageAbstract):
     readers: dict[str, callable] = {}
     writers: dict[str, callable] = {}

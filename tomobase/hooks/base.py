@@ -3,7 +3,27 @@ import copy
 from collections.abc import Callable
 
 from .task_builders import _wrap_axial, _wrap_use_numpy,_wrap_restore_context, _wrap_use_context, _wrap_inplace, _wrap_verbose, _wrap_measure, _build_decorated_function
+from ..registers.registers import phantoms, tiltschemes, processes, image_types
 
+def _hook_base(name:str| None= None) -> Callable:
+    def decorator(func):
+        if name is None:
+            func.tomobase_name = copy.deepcopy(func.__name__).replace('_', ' ').title()
+        else:
+            func.tomobase_name = name
+        return func
+    return decorator
+
+def image_type_hook(name:str| None= None) -> Callable:
+    def decorator(cls):
+        if name is None:
+            cls.tomobase_name = copy.deepcopy(cls.__name__).replace('_', ' ').title()
+        else:
+            cls.tomobase_name = name
+        image_types[cls.tomobase_name] = cls
+        return cls
+    return decorator
+ 
 def phantom_hook(name:str| None= None) -> Callable:
     #use sphynx style
     """
@@ -16,13 +36,11 @@ def phantom_hook(name:str| None= None) -> Callable:
         Callable: The decorated function.
     """
     def decorator(func):
-        hook_name = name if name is not None else func.__name__.replace('_', ' ')
-        func.tomobase_name = name
-        func.is_tomobase_phantom = True
-
+        func = _hook_base(name)(func)
+        phantoms[func.tomobase_name] = func
         return func
-    
     return decorator
+
 def tiltscheme_hook(name: str) -> Callable:
     """
     A decorator used to mark a class as a tiltscheme. The class must be a child of the TiltScheme class.
@@ -33,11 +51,11 @@ def tiltscheme_hook(name: str) -> Callable:
     :rtype: Callable
     """
     def decorator(cls):
-        #TODO: Check if the class is a child of the TiltScheme class
-        cls.tomobase_name = name
-        cls.is_tomobase_tiltscheme = True
+        cls = _hook_base(name)(cls)
+        tiltschemes[cls.tomobase_name] = cls
         return cls
     return decorator
+
 def process_hook(**kwargs) -> Callable:
     """A decorator used to mark a function or class as a tomography process. The function or class is either a standard function or class used to define the process or a QWidget used to attach to napari.
     Args:
@@ -53,7 +71,7 @@ def process_hook(**kwargs) -> Callable:
     def decorator(func):
         if inspect.isfunction(func):
             origin =  func
-            params = [("inplace", bool, True), ("verbose_outputs", bool, False)]
+            params = [("inplace", bool, True), ("verbose_outputs", bool, False), ("measurements", list | None, None)]
             
             if enable_axial:
                 func = _wrap_axial(func)
@@ -72,14 +90,7 @@ def process_hook(**kwargs) -> Callable:
         else:
             raise ValueError("The process_hook decorator can only be applied to functions for now.")
 
-
-        func.tomobase_name = kwargs.get("name", func.__name__)
-        func.is_tomobase_process = True
+        func = _hook_base(kwargs.get("name", None))(func)
         func.tomobase_category = kwargs.get("category", 0)
-
-        if func.__name__ == func.tomobase_name:
-            func.tomobase_name = copy.deepcopy(func.__name__)
-            func.tomobase_name = func.tomobase_name.replace('_', ' ').title()
-        return func
-        
+        processes[func.tomobase_name] = func   
     return decorator

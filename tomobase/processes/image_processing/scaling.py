@@ -1,23 +1,23 @@
 from ...registers.categories import categories
 from ...environment import proxy
-from ...data import Sinogram, Image, Volume
+from ...data import Sinogram, Image, Volume, ImageAbstract
 from ...hooks import process_hook
 
 
 subcategory = categories.add_category('Scaling', value=6, inheritor = 'Image Processing')
 @process_hook(name='Normalize', category=subcategory)
-def normalize(sino: Sinogram):
+def normalize(image: ImageAbstract):
     """Normalize the sinogram data to the range [0, 1].
     
     Args:
-        sino (Sinogram): The projection data
+        image (ImageAbstract): The input image data
 
     Returns:
-        Sinogram: The result
+        ImageAbstract: The result
 
     """
-    sino.data = (sino.data - proxy.xupy.min(sino.data)) / (proxy.xupy.max(sino.data) - proxy.xupy.min(sino.data))
-    return sino
+    image.data = (image.data - image.data.min()) / (image.data.max() - image.data.min())
+    return image
 
 @process_hook(name='Bin Data', category=subcategory)
 def bin(obj: Image, factor: int = 2):

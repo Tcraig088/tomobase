@@ -1,34 +1,17 @@
-from typing import List, Tuple, TypeVar, Generic, Callable, Type, Any
-from collections.abc import MutableMapping
-from qtpy.QtCore import QObject, Signal
-import importlib
-import inspect
-import os
+from typing import  Callable
 from functools import partial
-
 
 from colorama import Fore, Style, init
 init(autoreset=True)
 
-from ..data import ImageAbstract, Sinogram, Volume, Image
-from ..tiltschemes import TiltScheme
 from ..log import logger
-from .base import Registry, CategoryRegistry
+from .base import Registry
 
     
 phantoms = Registry(str, Callable)
-phantoms._hook = 'is_tomobase_phantom'
-phantoms.update(explicit=False)
-
-image_types = Registry(str, ImageAbstract)
-image_types['ImageAbstract'] = ImageAbstract
-image_types['Sinogram'] = Sinogram
-image_types['Volume'] = Volume
-image_types['Image'] = Image
-
-tiltschemes = Registry(str, TiltScheme)
-tiltschemes._hook = 'is_tomobase_tiltscheme'
-tiltschemes.update(explicit=False)
+image_types = Registry(str, 'ImageAbstract')
+tiltschemes = Registry(str, 'TiltScheme')
+processes = Registry(str, Callable)
 
 def help_function(name, _dict):
     msg = f"\n{Fore.GREEN} {name} Registration {Style.RESET_ALL}\n" 
@@ -38,9 +21,21 @@ def help_function(name, _dict):
         msg += "\n"
     logger.info(msg)
     
+def help_processes(_dict):
+    msg = f"\n{Fore.GREEN} Processes Registration {Style.RESET_ALL}\n" 
+    
+    items = sorted(_dict._data.items(), key=lambda kv: int(getattr(kv[1], 'tomobase_category', 0)))
+    
+    for key, value in _dict.items():
+        msg += f"{Fore.BLUE}{key}{Style.RESET_ALL}: {value.__name__} (Category: {getattr(value, 'tomobase_category', 'N/A')})"
+        doc = value.__doc__.strip() if value.__doc__ else "No description"
+        msg += f"\n{doc}\n"
+        
+    logger.info(msg)
+
+
 phantoms.set_help(partial(help_function, "Phantoms"))
 image_types.set_help(partial(help_function, "Image Types"))
-tiltschemes.set_help(partial(help_function, "Tilt Schemes"))
-    
-
+tiltschemes.set_help(partial(help_function, "Tilt Schemes"))     
+processes.set_help(help_processes)
 

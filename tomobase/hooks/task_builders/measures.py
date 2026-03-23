@@ -2,7 +2,7 @@ from ...data import Measurement
 
 def _wrap_measure(func):
     def wrapper(*args, **kwargs):
-        measurements = kwargs.get("measurements", [])
+        measurements = kwargs.pop("measurements", [])
         if not isinstance(measurements, list):
             measurements = [measurements]
         
