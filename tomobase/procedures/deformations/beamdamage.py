@@ -1,9 +1,6 @@
 
 from ...data import Volume
-from ...core.registers import categories, processes
-from ...core.environment import proxy
-
-from magicgui.tqdm import tqdm
+from ...core import registers, proxy
 
 def _knockon(volume, knockon):
     kernel = proxy.xupy.ones((3, 3, 3))
@@ -52,7 +49,7 @@ def _deform(obj, deform, normalize=True):
 
     return obj
 
-@processes.register(name='Beam Damage', category=categories['Deform'])
+@registers.processes.register(name='Beam Damage', category=registers.categories['Deform'])
 def beamdamage(volume: Volume, knock_on: float = 0.01, elastic_deform:float=0.1, normalize:bool=True):
     """Apply beam damage simulation to a volume.
 

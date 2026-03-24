@@ -20,10 +20,10 @@ class ContextModel():
         super().__init__(data, *args, **kwargs)
    
     def __getitem__(self, key):
-        return self.data[key]
+        return self._data[key]
     
     def __setitem__(self, key, value):
-        self.data[key] = value
+        self._data[key] = value
         
     def set_context(self, context:GPUContext= GPUContext.NUMPY, device:int = 0):
         self._data = proxy.set_array_context(self.data, self._current_context, self._current_device, context, device)

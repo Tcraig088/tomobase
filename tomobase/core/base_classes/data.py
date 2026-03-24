@@ -1,31 +1,37 @@
 import coolname
 
-from .model_components import QTModel, ContextModel, IOModel
+from .model_components import ContextModel, IOModel, EventHook
 
 import xarray as xr
 
 
-class BaseDataModel(ContextModel, IOModel, QTModel):
+'''
+    def _copy_from(self, other:'BaseDataModel'):
+        return super()._copy_from(other)
+    
+    def _deepcopy_from(self, other:'BaseDataModel'):
+        return super()._deepcopy_from(other)
+'''
+
+
+class BaseDataModel(ContextModel, IOModel):
+    refreshed = EventHook()
+    
     """Base class for GPU-backed data models with file IO."""
     def __init__(self, name, data, *args, **kwargs):
         """Initialize the Data object."""
         super().__init__(data, *args, **kwargs)
         self.name = name
         
-    def _copy_from(self, other:'BaseDataModel'):
-        return super()._copy_from(other)
-    
-    def _deepcopy_from(self, other:'BaseDataModel'):
-        return super()._deepcopy_from(other)
-    
     def __str__(self):
-        
         msg = f"{self.__class__.__name__}:\n"
         msg += f"  Sample Name: {self.name}\n"
         msg += f"  Data Shape: {self.data.shape} Data Type: {self.data.dtype}\n"
         return msg
 
 class ImageAbstract(BaseDataModel):
+    added = EventHook()
+    removed = EventHook()
     
     def __init__(self, name, data, dims=None, pixel_size=1.0, metadata=None, *args, **kwargs):
         
@@ -54,7 +60,6 @@ class ImageAbstract(BaseDataModel):
     def values(self):
         return self.data.values
     
-
     @property
     def pixel_size(self):
         return self._data.attrs.get('pixel_size', 1.0)
@@ -65,20 +70,7 @@ class ImageAbstract(BaseDataModel):
         for dim in self.data.dims:
             if dim in ['x', 'y', 'z']:
                 self.data.coords[dim] = (self.data.coords[dim] * value)
-    def _copy_from(self, other:'ImageAbstract'):
-        super()._copy_from(other)
-        self.pixel_size = other.pixel_size
-        self.process_name = other.process_name
-        
-    def _deepcopy_from(self, other:'ImageAbstract', memo:dict={}):
-        super()._deepcopy_from(other, memo)
-        self.pixel_size = other.pixel_size
-        self.process_name = other.process_name
-       
-    def validate(self):
-        if not isinstance(self.data, xr.DataArray):
-            raise ValueError("Data must be an xarray DataArray or Dataset")
-      
+
     def __str__(self):
         msg = f"{self.__class__.__name__}:\n"
         msg += f"  Sample Name: {self.name}\n"
@@ -106,13 +98,17 @@ class ImageAbstract(BaseDataModel):
             return self
         else:
             raise ValueError(f"Axis {axis} not found in data dimensions {self.data.dims} or {data.dims}")  
-
+    
+    def insert(self):
+        self.added.emit()
+        
+    def remove(self):
+        self.removed.emit()
+    
     @classmethod
     def _from_dataarray(cls, dataarray):
         return cls(name=dataarray.name, data=dataarray)
     
-    @classmethod
-    def create(cls, name, data, dims, pixel_size=1.0, metadata=None, *args, **kwargs):
-        return cls(name, data, dims, pixel_size, metadata, *args, **kwargs)
+
     
     

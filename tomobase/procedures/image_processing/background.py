@@ -4,14 +4,14 @@ from copy import deepcopy, copy
 from scipy.ndimage import  binary_dilation
 from skimage.filters import threshold_otsu
 
-from ...data import Sinogram, ImageAbstract
-from ...core.registers import categories, processes
+from ...data import Sinogram
+from ...core import registers, base_classes
 
 
 
-subcategory = categories.add_category('Background Corrections', value=4, inheritor = 'Image Processing')
-@processes.register(category=subcategory)
-def background_subtract_median(image: ImageAbstract):
+subcategory = registers.categories.add_category('Background Corrections', value=4, inheritor = 'Image Processing')
+@registers.processes.register(category=subcategory)
+def background_subtract_median(image: base_classes.ImageAbstract):
     """Subtract the median of the sinogram from the sinogram."
 
     Args:

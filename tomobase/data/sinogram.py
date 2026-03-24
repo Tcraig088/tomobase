@@ -1,5 +1,6 @@
 
 import numpy as np
+import xarray as xr
 
 from ..core import registers, base_classes
 
@@ -31,12 +32,6 @@ class Sinogram(base_classes.ImageAbstract):
                 angles = ('projections', angles)
             )
 
-    def _copy_from(self, other:'Sinogram'):
-        return super()._copy_from(other)
-    
-    def _deepcopy_from(self, other:'Sinogram', memo:dict={}):
-        return super()._deepcopy_from(other, memo)
-    
     def sort(self, by='times'):
         # valid options for by are 'times' 'angles' and 'projections'
         if by not in ['times', 'angles', 'projections']:
@@ -45,11 +40,11 @@ class Sinogram(base_classes.ImageAbstract):
 
     def remove(self, projections: list[int]):
         self.data = self.data.drop_sel(projections=projections)
-
-    @classmethod
-    def create(cls, name, data, angles, dims, pixel_size=1.0, metadata=None, *args, **kwargs):
-        return cls(name, data, angles, dims, pixel_size, metadata, *args, **kwargs)
-    
+        self.removed.emit()
+        
+    def insert(self, data, axis):
+        self.data = xr.concat([self.data, data], dim='projections')
+        self.inserted.emit()
     
 Sinogram.readers = {}
 Sinogram.writers = {}

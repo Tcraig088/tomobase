@@ -15,11 +15,5 @@ class Volume(base_classes.ImageAbstract):
                 dims = ['signals', 'z', 'y', 'x']
         super().__init__(name, data, dims, pixelsize, metadata, *args, **kwargs)
 
-    def _copy_from(self, other:'Volume'):
-        return super()._copy_from(other=other)
-    
-    def _deepcopy_from(self, other:'Volume', memo:dict={}):
-        return super()._deepcopy_from(other=other, memo=memo)
-
 Volume.readers = {}
 Volume.writers = {}

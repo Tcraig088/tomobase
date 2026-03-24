@@ -1,15 +1,14 @@
 from copy import deepcopy
 
-from ...core.registers import categories, processes
-from ...core.environment import proxy
-from ...data import Sinogram, Image
 
+from ...data import Sinogram, Image
+from ...core import registers, proxy
 
 from magicgui.tqdm import tqdm
 
 
-subcategory = categories.add_category('Misalignments', value=5, inheritor = 'Image Processing')
-@processes.register(category=subcategory)
+subcategory = registers.categories.add_category('Misalignments', value=5, inheritor = 'Image Processing')
+@registers.processes.register(category=subcategory)
 def gaussian_filter(obj: Image, gaussian_sigma:float=1,):
     """Add Gaussian noise to the sinogram.
     Args:
@@ -22,7 +21,7 @@ def gaussian_filter(obj: Image, gaussian_sigma:float=1,):
     obj.data = proxy.scipy.ndimage.gaussian_filter(obj.data, gaussian_sigma)
     return obj
 
-@processes.register(category=subcategory)
+@registers.processes.register(category=subcategory)
 def poisson_noise(obj: Image, 
                   rescale:float=True):
     """Add Poisson noise to the sinogram.
@@ -39,7 +38,7 @@ def poisson_noise(obj: Image,
 
 
 
-@processes.register(category=subcategory)
+@registers.processes.register(category=subcategory)
 def translational_misalignment(sino: Sinogram, offset:float=0.25):
     """ Apply a random translational misalignment to the sinogram.
     Arguments:
@@ -65,8 +64,7 @@ def translational_misalignment(sino: Sinogram, offset:float=0.25):
     return sino, shifts
 
     
-    
-@processes.register(category=subcategory)
+@registers.processes.register(category=subcategory)
 def rotational_misalignment(sino: Sinogram, 
                             tilt_theta:float = 3,
                             tilt_alpha:float=2, 

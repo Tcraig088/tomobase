@@ -1,15 +1,7 @@
-import os
-import pathlib
+
 import copy
-from abc import ABC, abstractmethod
 
-from qtpy.QtCore import QObject, Slot, Signal
-from qtpy.QtWidgets import QApplication, QFileDialog
-
-from ...environment import GPUContext, proxy
-import magicgui
-
-from ...log import logger
+from qtpy.QtCore import QObject, Signal
 
 class QTModel(QObject):
     

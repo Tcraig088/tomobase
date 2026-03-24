@@ -38,4 +38,4 @@ def bootstrap(qt_enabled = False, jupyter_enabled = False):
 
     from .bootstraps import bootstrap_process
     for key, value in list(registers.processes.items()):
-        registers.processes[key] = bootstrap_process(value)
+        registers.processes[key] = bootstrap_process(**getattr(value, '_tomobase_kwargs', {}))(value)

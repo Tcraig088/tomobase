@@ -37,5 +37,5 @@ def bootstrap_process(**kwargs) -> Callable:
             
         else:
             raise ValueError("The process_hook decorator can only be applied to functions for now.")
-
+        return func
     return decorator

@@ -14,12 +14,3 @@ class Image(base_classes.ImageAbstract):
                 dims = ['y', 'x']
         super().__init__(name, data, dims, pixelsize, metadata, *args, **kwargs)
     
-    def _copy_from(self, other:'Image'):
-        return super()._copy_from(other=other)
-    
-    def _deepcopy_from(self, other:'Image', memo:dict={}):
-        return super()._deepcopy_from(other=other, memo=memo)
-    
-    @classmethod
-    def create(cls, name, data, dims, pixel_size=1, metadata=None, *args, **kwargs):
-        return cls(name, data, dims, pixel_size, metadata, *args, **kwargs)
