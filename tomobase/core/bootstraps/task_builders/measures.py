@@ -1,4 +1,4 @@
-from ....data import Measurement
+from ...data_classes import Measurement
 
 def _wrap_measure(func):
     def wrapper(*args, **kwargs):

@@ -1,6 +1,6 @@
 
-from ...data import Sinogram
-from ...tiltschemes import TiltScheme
+from ...core.data_classes import Sinogram
+from ...domain.tiltschemes import TiltScheme
 from typing import Union
 
 import holoviews as hv

@@ -1,6 +1,6 @@
 import coolname
 
-from .model_components import ContextModel, IOModel, EventHook
+from .model_components import ContextModel, IOModel, SignalModel
 
 import xarray as xr
 
@@ -14,9 +14,7 @@ import xarray as xr
 '''
 
 
-class BaseDataModel(ContextModel, IOModel):
-    refreshed = EventHook()
-    
+class BaseDataModel(ContextModel, SignalModel, IOModel):
     """Base class for GPU-backed data models with file IO."""
     def __init__(self, name, data, *args, **kwargs):
         """Initialize the Data object."""
@@ -30,9 +28,6 @@ class BaseDataModel(ContextModel, IOModel):
         return msg
 
 class ImageAbstract(BaseDataModel):
-    added = EventHook()
-    removed = EventHook()
-    
     def __init__(self, name, data, dims=None, pixel_size=1.0, metadata=None, *args, **kwargs):
         
         if not isinstance(data, xr.DataArray):

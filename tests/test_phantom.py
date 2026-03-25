@@ -1,5 +1,5 @@
-from tomobase.data import *
-from tomobase.phantoms import *
+from tomobase.core.data_classes import *
+from tomobase.domain.phantoms import *
 
 import pytest
 import numpy as np

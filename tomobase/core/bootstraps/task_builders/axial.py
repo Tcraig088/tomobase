@@ -1,7 +1,7 @@
 
 from itertools import zip_longest
 
-from ....data import Image, Measurement
+from ...data_classes import Image, Measurement
 from ...environment import proxy, GPUContext
 
 def _wrap_axial(func):

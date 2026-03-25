@@ -7,11 +7,11 @@ _initialized = False
 
 def get_backend_compatibility(pkg_name):
     compatibility = []
-    if module_exists(f"{pkg_name}.core.plugins"):
+    if module_exists(f"{pkg_name}.plugins"):
         compatibility.append("agnostic")
-    if module_exists(f"{pkg_name}.core.qt_plugins"):
+    if module_exists(f"{pkg_name}.qt_plugins"):
         compatibility.append("qt")
-    if module_exists(f"{pkg_name}.core.jupyter_plugins"):
+    if module_exists(f"{pkg_name}.jupyter_plugins"):
         compatibility.append("jupyter")
     return compatibility
 
@@ -30,11 +30,11 @@ def bootstrap(qt_enabled = False, jupyter_enabled = False):
             logger.warning(f"Package '{pkg}' does not have any compatible backends. Skipping.")
             continue
         if 'agnostic' in compatibility:
-            importlib.import_module(f"{pkg}.core.plugins")
+            importlib.import_module(f"{pkg}.plugins")
         if qt_enabled and 'qt' in compatibility:
-            importlib.import_module(f"{pkg}.core.qt_plugins")
+            importlib.import_module(f"{pkg}.qt_plugins")
         if jupyter_enabled and 'jupyter' in compatibility:
-            importlib.import_module(f"{pkg}.core.jupyter_plugins")
+            importlib.import_module(f"{pkg}.jupyter_plugins")
 
     from .bootstraps import bootstrap_process
     for key, value in list(registers.processes.items()):

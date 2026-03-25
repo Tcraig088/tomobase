@@ -1,6 +1,7 @@
 from typing import TypeVar, Generic, Callable, Type, Any
 from collections.abc import MutableMapping
-from qtpy.QtCore import QObject, Signal
+
+from blinker import Signal
 import copy
 
 from colorama import Fore, Style, init
@@ -12,47 +13,36 @@ from ..log import logger
 K = TypeVar("K")
 V = TypeVar("V")
 
-# Combine QObject's metaclass and MutableMapping's metaclass to avoid
-# "metaclass conflict" when inheriting both QObject and an ABC.
-try:
-    RegistryMeta = type("RegistryMeta", (type(QObject), type(MutableMapping)), {})
-except TypeError:
-    # Fallback: if combining metaclasses fails, use a simple type
-    RegistryMeta = type
-
-class Registry(QObject, MutableMapping, Generic[K, V], metaclass=RegistryMeta):
-    added = Signal(object, object)      # key, value
-    removed = Signal(object, object)    # key, old_value
-    renamed = Signal(object, object, object)  # key, old, new
-    updated = Signal()    # key, value
-
-    def __init__(self, key_type: Type[Any], value_type: Type[Any], parent=None):
-        super().__init__(parent)
+class Registry(MutableMapping, Generic[K, V]):
+    def __init__(self, key_type: Type[Any], value_type: Type[Any]):
         self._data: dict[K, V] = {}
         self._key_type = key_type
         self._value_type = value_type
-        self._hook = None
-        self._init = False
-        
         self._help = self._help_default
+
+        self.added = Signal()
+        self.removed = Signal()
+        self.renamed = Signal()
+        self.updated = Signal()
 
     def register(self, **kwargs) -> None:
         def decorator(func):
-            name = kwargs.pop('name', None)
+            name = kwargs.pop("name", None)
             if name is None:
-                func.tomobase_name = copy.deepcopy(func.__name__).replace('_', ' ').title()
+                func.tomobase_name = copy.deepcopy(func.__name__).replace("_", " ").title()
             else:
                 func.tomobase_name = name
 
-            category = kwargs.pop('category', None)
+            category = kwargs.pop("category", None)
             if category is not None:
                 func.tomobase_category = category
             else:
                 func.tomobase_category = 0
+
             func._tomobase_kwargs = kwargs
             self[func.tomobase_name] = func
             return func
-        
+
         return decorator
 
     def __getitem__(self, key: K) -> V:
@@ -61,10 +51,7 @@ class Registry(QObject, MutableMapping, Generic[K, V], metaclass=RegistryMeta):
     def __setitem__(self, key: K, value: V) -> None:
         if not isinstance(key, self._key_type):
             raise TypeError(f"Key must be {self._key_type}, got {type(key)}")
-        # Allow either an instance of the expected value type or a class
-        # that subclasses the expected value type. Some Qt-wrapped classes
-        # appear as SIP wrapper types, so we check for class-ness and use
-        # a safe issubclass check when appropriate.
+
         import inspect as _inspect
 
         if _inspect.isclass(value):
@@ -77,50 +64,52 @@ class Registry(QObject, MutableMapping, Generic[K, V], metaclass=RegistryMeta):
         else:
             if not isinstance(value, self._value_type):
                 raise TypeError(f"Value must be {self._value_type}, got {type(value)}")
-        
+
         if key in self._data:
             old = self._data[key]
             self._data[key] = value
-            self.renamed.emit(key, old, value)
+            self.updated.send(self, key=key, old_value=old, new_value=value)
         else:
             self._data[key] = value
-            self.added.emit(key, value)
+            self.added.send(self, key=key, value=value)
 
     def __delitem__(self, key: K) -> None:
         old = self._data.pop(key)
-        self.removed.emit(key, old)
+        self.removed.send(self, key=key, old_value=old)
 
     def __iter__(self):
         return iter(self._data)
 
     def __len__(self) -> int:
         return len(self._data)
-    
+
     def rename(self, old_key: K, new_key: K) -> None:
         if old_key not in self._data:
             raise KeyError(f"Key {old_key} not found")
         if new_key in self._data:
             raise KeyError(f"Key {new_key} already exists")
+
         value = self._data.pop(old_key)
         self._data[new_key] = value
-        self.renamed.emit(new_key, old_key, value)
-                                
+        self.renamed.send(self, old_key=old_key, new_key=new_key, value=value)
+
     def help(self) -> str:
-        self._help()
-    
+        return self._help()
+
     def set_help(self, help_func: Callable[[], None]):
-        self._help = lambda :help_func(self)
-        
+        self._help = lambda: help_func(self)
+
     def _help_default(self):
-        msg = f"{Fore.GREEN}{self.__class__.__name__}{Style.RESET_ALL}\n" 
+        msg = f"{Fore.GREEN}{self.__class__.__name__}{Style.RESET_ALL}\n"
         for key, value in self._data.items():
             msg += f"{Fore.BLUE}{key}{Style.RESET_ALL}: {value}\n"
         logger.info(msg)
+        return msg
 
 
 class CategoryRegistry(Registry):
-    def __init__(self, key_type: Type[Any], value_type: Type[Any], parent=None):
-        super().__init__(key_type, value_type, parent)
+    def __init__(self, key_type: Type[Any], value_type: Type[Any]):
+        super().__init__(key_type, value_type)
         self._shift = 8
         self._levels = 5
         self._nibble = (1 << self._shift) - 1  # 0xFF
@@ -162,12 +151,13 @@ class CategoryRegistry(Registry):
                 raise ValueError(f"Inherit category '{inheritor}' has no remaining sub-levels")
             new_code = inherited_index | ((value & self._nibble) << target_shift)
 
+
         # ensure code not already present
         if any(code == new_code for code in self._data.values()):
             raise ValueError(f"Resulting code {hex(new_code)} already exists in register")
 
         self._data[name] = int(new_code)
-        self.added.emit(name, int(new_code))
+        self.added.send(self, key=name, value=int(new_code))
         logger.debug(f"Added category '{name}' -> {hex(new_code)} (inheritor={inheritor})")
         return int(new_code)
         

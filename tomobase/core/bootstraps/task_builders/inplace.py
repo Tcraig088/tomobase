@@ -1,6 +1,6 @@
 import copy
 
-from ....data import Image
+from ...data_classes import Image
 
 def _wrap_inplace(func):
     def wrapper(*args, **kwargs):

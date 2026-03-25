@@ -1,0 +1,120 @@
+
+from ....core.data_classes import Sinogram
+from ....core import registers, proxy, base_classes
+
+subcategory = registers.categories.add_category('Scaling', value=6, inheritor = 'Image Processing')
+@registers.processes.register(name='Normalize', category=subcategory)
+def normalize(image: base_classes.ImageAbstract):
+    """Normalize the sinogram data to the range [0, 1].
+    
+    Args:
+        image (ImageAbstract): The input image data
+
+    Returns:
+        ImageAbstract: The result
+
+    """
+    image.data = (image.data - image.data.min()) / (image.data.max() - image.data.min())
+    return image
+
+@registers.processes.register(name='Bin Data', category=subcategory)
+def bin(obj: base_classes.ImageAbstract, factor: int = 2):
+    """Bin the sinogram data by a specified factor.
+
+    Args:
+        sino (Sinogram): The projection data
+        factor (int): The binning factor (default: 2)
+
+    Returns:
+        Sinogram: The result
+    """
+
+    skipped_axis = 1
+
+    #if isinstance(obj, Sinogram):
+    #    skipped_axis += 1
+    #if obj.data.ndim > obj.dim_default:
+    #    skipped_axis += 1
+
+    axes = range(obj.data.ndim)
+    factors = [1 if (i < skipped_axis) else factor for i in axes]
+
+
+     # Check divisibility
+    for i, (dim, b) in enumerate(zip(obj.data.shape, factors)):
+        if dim % b != 0:
+            raise ValueError(f"Axis {i} size {dim} not divisible by bin factor {b}")
+
+    # Compute new shape for reshaping
+    reshaped = []
+    for dim, b in zip(obj.data.shape, factors):
+        reshaped.extend([dim // b, b])
+    obj.data = obj.data.reshape(reshaped)
+
+    # Compute mean over binning axes
+    for i in reversed(range(obj.data.ndim // 2)):
+        obj.data = obj.data.mean(axis=i * 2 + 1) 
+
+    if not obj.pixelsize == 1.0:
+        obj.pixelsize = obj.pixelsize * factor
+    
+    return obj
+
+@registers.processes.register(name='Pad Sinogram', category=subcategory)
+def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0):
+    """ Pad the sinogram to the specified size.
+
+    Args:
+        sino (Sinogram): The projection data
+        x (int): The target size for the x dimension
+        y (int): The target size for the y dimension
+
+    Returns:
+        Sinogram: The result
+    """
+    
+    pad_x = x - sino.data.shape[-2]
+    pad_y = y - sino.data.shape[-1]
+    if pad_x < 0 or pad_y < 0:
+        raise ValueError("Cannot pad to a smaller size")
+    sino.data = proxy.xupy.pad(sino.data, ( (0, 0), (pad_x // 2, pad_x // 2), (pad_y // 2, pad_y // 2)), mode='constant')
+
+    return sino
+
+#@tomobase_hook_process(name='Crop Sinogram', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
+def crop_sinogram(sino: Sinogram, x: int = 0, y: int = 0):
+    """
+    Crop the sinogram to the specified size.
+
+    Parameters:
+    sino (Sinogram): Input sinogram to be cropped.
+    x (int): Target size for the x dimension.
+    y (int): Target size for the y dimension.
+    inplace (bool): Whether to modify the array in place or return a new array.
+
+    Returns:
+    Sinogram: Cropped sinogram.
+    """
+    crop_x = sino.data.shape[-2] - x
+    crop_y = sino.data.shape[-1] - y
+    if crop_x < 0 or crop_y < 0:
+        raise ValueError("Cannot crop to a smaller size")
+    sino.data = sino.data[:, :, crop_x // 2:-crop_x // 2, crop_y // 2:-crop_y // 2]
+
+    return sino
+
+#@tomobase_hook_process(name='Crop', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories = _subcategories)
+class CropSinogram:
+    def __init__(self, sino:Sinogram):
+        self.sino = sino
+        self._view()
+    
+    def _view(self):
+        self.view = stackview.crop(self.sino._transpose_to_view())
+        confirm = widgets.Button(description='Confirm')
+        confirm.on_click(self.on_confirm)
+        display(widgets.VBox([self.view, confirm]))
+
+    def on_confirm(self, b):
+        self.sino.data = Sinogram._transpose_from_view(self.view.crop())
+        return self.sino
