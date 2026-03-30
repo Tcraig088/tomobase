@@ -3,13 +3,15 @@ import pathlib
 from ...environment import GPUContext, proxy
 from ...log import logger
 
+from qtpy.QtWidgets import QApplication, QFileDialog
+
 
 class IOModel():
     readers: dict[str, callable] = {}
     writers: dict[str, callable] = {}
     
     def __init__(self, data, *args, **kwargs):
-        super().__init__(data, *args, **kwargs)
+        pass
     
     
     def write(self, filename: pathlib.Path| str | None = None, **kwargs):

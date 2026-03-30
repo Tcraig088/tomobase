@@ -18,22 +18,22 @@ def align_sinogram_xcorr(sino: Sinogram, shifts=None):
         Sinogram: The result
         shifts (xp.ndarray): The shifts in pixels
     """
-
+    xp = sino.data.values.__array_namespace__()
     if shifts is None:
-        shifts = proxy.xupy.zeros((sino.data.shape[0], 2))
-        fft_fixed = proxy.xupy.fft.fft2(sino.data[0, :, :])
+        shifts = xp.zeros((sino.data.shape[0], 2))
+        fft_fixed = xp.fft.fft2(sino.data[0, :, :])
         for i in tqdm(range(sino.data.shape[0] - 1), label='Calculating shifts with cross-correlation'):
-            fft_moving = proxy.xupy.fft.fft2(sino.data[i + 1, :, :])
-            xcorr = proxy.xupy.fft.ifft2(proxy.xupy.multiply(fft_fixed, proxy.xupy.conj(fft_moving)))
+            fft_moving = xp.fft.fft2(sino.data[i + 1, :, :])
+            xcorr = xp.fft.ifft2(xp.multiply(fft_fixed, xp.conj(fft_moving)))
             fft_fixed = fft_moving
-            rel_shift = proxy.xupy.asarray(proxy.xupy.unravel_index(proxy.xupy.argmax(xcorr), xcorr.shape))
+            rel_shift = xp.asarray(xp.unravel_index(xp.argmax(xcorr), xcorr.shape))
             shifts[i + 1, :] = shifts[i, :] + rel_shift
 
-        shifts %= proxy.xupy.asarray(sino.data.shape[1:])[None, :]
-        shifts = proxy.xupy.rint(shifts).astype(int)
+        shifts %= xp.asarray(sino.data.shape[1:])[None, :]
+        shifts = xp.rint(shifts).astype(int)
 
     for i in tqdm(range(sino.data.shape[0]), label='Aligning sinogram with cross-correlation'):
-        sino.data[i, :, :] = proxy.xupy.roll(sino.data[i, :, :], shifts[i, :], axis=(0, 1))
+        sino.data[i, :, :] = xp.roll(sino.data[i, :, :], shifts[i, :], axis=(0, 1))
 
     return sino, shifts
 
@@ -49,9 +49,9 @@ def align_sinogram_center_of_mass(sino: Sinogram):
         Sinogram: The result
         offset (xp.ndarray): The offset in pixels
     """
-
-    offset = proxy.xupy.asarray(sino.data.shape[1:]) / 2 - proxy.scipy.ndimage.center_of_mass(proxy.xupy.sum(sino.data, axis=0))
-    sino.data = proxy.xupy.shift(sino.data, (0, offset[0], offset[1]))
+    xp = sino.data.values.__array_namespace__()
+    offset = xp.asarray(sino.data.shape[1:]) / 2 - proxy.scipy.ndimage.center_of_mass(xp.sum(sino.data, axis=0))
+    sino.data = xp.shift(sino.data, (0, offset[0], offset[1]))
     return sino, offset
 
 
@@ -68,10 +68,11 @@ def weight_by_angle(sino: Sinogram):
     """
 
     #Dont bother progress tracking for short processes
-    indices = proxy.xupy.argsort(sino.angles)
+    xp = sino.data.values.__array_namespace__()
+    indices = xp.argsort(sino.angles)
     sino.angles = sino.angles[indices]
     sino.data = sino.data[indices, :, :]
-    weights = proxy.xupy.ones_like(sino.angles)
+    weights = xp.ones_like(sino.angles)
 
     sorted_angles = copy.deepcopy(sino.angles) + 90
     n_angles = len(sorted_angles)

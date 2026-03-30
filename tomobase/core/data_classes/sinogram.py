@@ -23,12 +23,17 @@ class Sinogram(base_classes.ImageAbstract):
 
 
         #if times and angles are not already coordinates, assign them as coordinates
+        xp = self._data.values.__array_namespace__()
+        
+        if times is None:
+            times_data = xp.arange(self._data.sizes['projections']) + 1
+        else:
+            times_data = times
         if 'times' not in self._data.coords or 'angles' not in self._data.coords:
-            xp = self._data.values.__array_namespace__()
             len_proj = self._data.sizes['projections']
-            self._data.assign_coords(
+            self._data = self._data.assign_coords(
                 projections = xp.arange(len_proj),
-                times = ('projections', times) if times is not None else xp.arange(len_proj)+1,
+                times = ('projections', times_data),
                 angles = ('projections', angles)
             )
 
@@ -45,6 +50,22 @@ class Sinogram(base_classes.ImageAbstract):
     def insert(self, data, axis):
         self.data = xr.concat([self.data, data], dim='projections')
         self.inserted.emit()
+
+    @property
+    def angles(self):
+        return self.data.coords['angles'].values
+    
+    @angles.setter
+    def angles(self, value):
+        self.data.coords['angles'] = value
+
+    @property
+    def times(self):
+        return self.data.coords['times'].values
+    
+    @times.setter
+    def times(self, value):
+        self.data.coords['times'] = value
     
 Sinogram.readers = {}
 Sinogram.writers = {}

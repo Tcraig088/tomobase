@@ -18,6 +18,7 @@ def gaussian_filter(obj: Image, gaussian_sigma:float=1,):
     Returns:
         Data: The result
     """
+
     obj.data = proxy.scipy.ndimage.gaussian_filter(obj.data, gaussian_sigma)
     return obj
 
@@ -32,8 +33,9 @@ def poisson_noise(obj: Image,
     Returns:
         Data: The result
     """
+    xp = obj.data.values.__array_namespace__()
     obj.data = obj.data*rescale
-    obj.data = proxy.xupy.random.poisson(obj.data)
+    obj.data = xp.random.poisson(obj.data)
     return obj
 
 
@@ -49,17 +51,16 @@ def translational_misalignment(sino: Sinogram, offset:float=0.25):
         sino (Sinogram): The result
         shifts (ndarray): The shifts applied to each projection (only if extend_return is True)
     """
-    
-    shifts = proxy.xupy.zeros((sino.data.shape[0], 2))
+    xp = sino.data.values.__array_namespace__()
+    shifts = xp.zeros((sino.data.shape[0], 2))
     for i in tqdm(range(sino.data.shape[0]), label='Translational Misalignment'):
         if i == 0:
             shifts[i, :] = 0
             continue
-        image_offset_x = int(proxy.xupy.round(sino.data.shape[1] * proxy.xupy.random.uniform(-offset, offset)))
-        image_offset_y = int(proxy.xupy.round(sino.data.shape[2] * proxy.xupy.random.uniform(-offset, offset)))
-        sino.data[i, :, :] = proxy.xupy.roll(sino.data[i, :, :], (image_offset_x, image_offset_y), axis=(0, 1))
+        image_offset_x = int(xp.round(sino.data.shape[1] * xp.random.uniform(-offset, offset)))
+        image_offset_y = int(xp.round(sino.data.shape[2] * xp.random.uniform(-offset, offset)))
+        sino.data[i, :, :] = xp.roll(sino.data[i, :, :], (image_offset_x, image_offset_y), axis=(0, 1))
         shifts[i, :] = (image_offset_x, image_offset_y)
-
 
     return sino, shifts
 
@@ -85,13 +86,15 @@ def rotational_misalignment(sino: Sinogram,
 
     angles_original =  deepcopy(sino.angles)  
     rotations = proxy.xupy.zeros(sino.data.shape[0])
+    xp = sino.data.values.__array_namespace__()
+    rotations = xp.zeros(sino.data.shape[0])
     for i in tqdm(range(sino.data.shape[0]), label='Rotational Misalignment'):
-        rotations[i] = tilt_theta * proxy.xupy.random.uniform(-1, 1)
+        rotations[i] = tilt_theta * xp.random.uniform(-1, 1)
         sino.data[i, :, : ] = proxy.scipy.ndimage.rotate(sino.data[i, :, :], rotations[i], reshape=False)
 
 
     for i in range(sino.data.shape[0]):
-        offset = tilt_alpha * proxy.xupy.random.uniform(-1, 1)
+        offset = tilt_alpha * xp.random.uniform(-1, 1)
         if i > 0:
             if backlash_backwards and sino.angles[i] < sino.angles[i-1]:
                 offset += backlash

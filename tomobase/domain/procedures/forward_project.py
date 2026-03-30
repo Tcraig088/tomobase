@@ -29,7 +29,7 @@ def project(volume:Volume, angles:Union[Tuple[TiltSchemeAbstract, slice], np.nda
     if isinstance(angles, tuple) and isinstance(angles[0], TiltSchemeAbstract):
         angles = angles[0].generate_angles_from_slice(angles[1])
         
-    data = np.transpose(volume.data, (2, 1, 0))  # ASTRA expects (z, y, x)
+    data = volume.data.transpose("z", "y", "x").values
     angles = np.asarray(angles)
     use_gpu = use_gpu and astra.use_cuda()
 
@@ -41,6 +41,6 @@ def project(volume:Volume, angles:Union[Tuple[TiltSchemeAbstract, slice], np.nda
         sino_id, sino[i, :, :] = astra.creators.create_sino(data[i, :, :], proj_id)
         astra.astra.delete(sino_id)
 
-    sinogram = Sinogram(np.transpose(sino, (1,0,2)), angles, volume.pixelsize)  # ASTRA gives (z, n, d)
+    sinogram = Sinogram(volume.name, np.transpose(sino, (1,0,2)), angles, volume.pixel_size)  # ASTRA gives (z, n, d)
     astra.astra.delete(proj_id)
     return sinogram

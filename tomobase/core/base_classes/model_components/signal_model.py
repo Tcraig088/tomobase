@@ -6,7 +6,7 @@ class SignalModel():
 
     def __init__(self, data, *args, **kwargs):
         """Initialize the Data object."""
-        super().__init__(*args, **kwargs)
+        super().__init__(data, *args, **kwargs)
 
         self.data_refreshed = Signal()
         self.data_appended = Signal()

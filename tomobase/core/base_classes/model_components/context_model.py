@@ -34,4 +34,10 @@ class ContextModel():
     def get_context(self):
         return self._current_context, self._current_device
     
-
+    @property
+    def data(self):
+        return self._data   
+    
+    @data.setter
+    def data(self, value):
+        self._data = value

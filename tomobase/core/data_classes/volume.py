@@ -10,9 +10,9 @@ class Volume(base_classes.ImageAbstract):
         
         if not isinstance(data, xr.DataArray):
             if len(data.shape) == 3:
-                dims = ['z', 'y', 'x']
+                dims = ['x', 'y', 'z']
             elif len(data.shape) == 4:
-                dims = ['signals', 'z', 'y', 'x']
+                dims = ['signals', 'x', 'y', 'z']
         super().__init__(name, data, dims, pixelsize, metadata, *args, **kwargs)
 
 Volume.readers = {}
