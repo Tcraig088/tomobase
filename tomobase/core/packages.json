@@ -1,4 +1,4 @@
 {
-    "packages": ["tomobase", "tomondt", "tdtomo"],
+    "packages": ["tomobase"],
     "paths": []
 }
