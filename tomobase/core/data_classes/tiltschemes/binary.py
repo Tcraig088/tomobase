@@ -1,8 +1,7 @@
 import numpy as np
 
-from ...core.base_classes.tiltscheme import TiltSchemeAbstract
-from ...core.registers import tiltschemes
-from ...core.log import logger
+from ...base_classes import TiltSchemeAbstract
+from ...registers import tiltschemes
 
 @tiltschemes.register(name='Binary Decomposition')
 class Binary(TiltSchemeAbstract):

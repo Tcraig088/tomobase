@@ -1,5 +1,5 @@
 
-from ....core.data_classes import Volume
+from ....core.data_classes.images import Volume
 from ....core import registers, proxy
 
 def _knockon(volume, knockon):
@@ -49,7 +49,7 @@ def _deform(obj, deform, normalize=True):
 
     return obj
 
-@registers.processes.register(name='Beam Damage', category=registers.categories['Deform'])
+@registers.procedures.register(name='Beam Damage', category=registers.categories['Deform'])
 def beamdamage(volume: Volume, knock_on: float = 0.01, elastic_deform:float=0.1, normalize:bool=True):
     """Apply beam damage simulation to a volume.
 

@@ -37,5 +37,5 @@ def bootstrap(qt_enabled = False, jupyter_enabled = False):
             importlib.import_module(f"{pkg}.jupyter_plugins")
 
     from .bootstraps import bootstrap_process
-    for key, value in list(registers.processes.items()):
-        registers.processes[key] = bootstrap_process(**getattr(value, '_tomobase_kwargs', {}))(value)
+    for key, value in list(registers.procedures.items()):
+        registers.procedures[key] = bootstrap_process(**getattr(value, '_tomobase_kwargs', {}))(value)

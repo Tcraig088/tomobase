@@ -13,7 +13,7 @@ from ..base_classes import ImageAbstract, TiltSchemeAbstract
 phantoms = Registry(str, Callable)
 image_types = Registry(str, ImageAbstract)
 tiltschemes = Registry(str, TiltSchemeAbstract)
-processes = Registry(str, Callable)
+procedures = Registry(str, Callable)
 
 def help_function(name, _dict):
     msg = f"\n{Fore.GREEN} {name} Registration {Style.RESET_ALL}\n" 
@@ -39,5 +39,5 @@ def help_processes(_dict):
 phantoms.set_help(partial(help_function, "Phantoms"))
 image_types.set_help(partial(help_function, "Image Types"))
 tiltschemes.set_help(partial(help_function, "Tilt Schemes"))     
-processes.set_help(help_processes)
+procedures.set_help(help_processes)
 

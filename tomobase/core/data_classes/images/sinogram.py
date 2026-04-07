@@ -2,7 +2,7 @@
 import numpy as np
 import xarray as xr
 
-from .. import registers, base_classes
+from ... import registers, base_classes
 
 @registers.image_types.register(name="Sinogram")
 class Sinogram(base_classes.ImageAbstract):

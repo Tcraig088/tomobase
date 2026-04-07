@@ -1,6 +1,6 @@
 
 import xarray as xr
-from .. import registers, base_classes
+from ... import registers, base_classes
 
 @registers.image_types.register(name="Volume")
 class Volume(base_classes.ImageAbstract):

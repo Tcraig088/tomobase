@@ -1,9 +1,9 @@
 
-from ....core.data_classes import Sinogram
+from ....core.data_classes.images import Sinogram
 from ....core import registers, proxy, base_classes
 
 subcategory = registers.categories.add_category('Scaling', value=6, inheritor = 'Image Processing')
-@registers.processes.register(name='Normalize', category=subcategory)
+@registers.procedures.register(name='Normalize', category=subcategory)
 def normalize(image: base_classes.ImageAbstract):
     """Normalize the sinogram data to the range [0, 1].
     
@@ -17,7 +17,7 @@ def normalize(image: base_classes.ImageAbstract):
     image.data = (image.data - image.data.min()) / (image.data.max() - image.data.min())
     return image
 
-@registers.processes.register(name='Bin Data', category=subcategory)
+@registers.procedures.register(name='Bin Data', category=subcategory)
 def bin(obj: base_classes.ImageAbstract, factor: int = 2):
     """Bin the sinogram data by a specified factor.
 
@@ -60,7 +60,7 @@ def bin(obj: base_classes.ImageAbstract, factor: int = 2):
     
     return obj
 
-@registers.processes.register(name='Pad Sinogram', category=subcategory)
+@registers.procedures.register(name='Pad Sinogram', category=subcategory)
 def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0):
     """ Pad the sinogram to the specified size.
 

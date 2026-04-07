@@ -4,7 +4,7 @@ import copy
 
 import numpy as np
 
-from ...core.data_classes import Volume
+from ...core.data_classes.images import Volume
 
 def _write_rec(self, filename, normalize=True, **kwargs):
     # Convert data to (X, Y, Z)

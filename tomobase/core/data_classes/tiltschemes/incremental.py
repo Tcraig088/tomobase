@@ -1,7 +1,7 @@
 import numpy as np
 
-from ...core.registers import tiltschemes
-from ...core.base_classes.tiltscheme import TiltSchemeAbstract
+from ...registers import tiltschemes
+from ...base_classes import TiltSchemeAbstract
 
 @tiltschemes.register(name='Incremental')
 class Incremental(TiltSchemeAbstract):

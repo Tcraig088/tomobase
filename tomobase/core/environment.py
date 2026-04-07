@@ -20,12 +20,10 @@ class EnvironmentContext():
             import cupy as cp
             self._cupy_enabled = True
         except ImportError:
-            logger.warning("CuPy is not installed. GPU acceleration will not be available.")
             self._cupy_enabled = False
 
         if self._cupy_enabled:
             self._available_devices = cp.cuda.runtime.getDeviceCount()
-            logger.info(f"CuPy is available. {self._available_devices} GPU devices detected.")
 
     @property
     def context(self):
@@ -38,6 +36,14 @@ class EnvironmentContext():
     def get_context(self):
         return self._context, self._device
     
+    def show_available_devices(self):
+        if self._cupy_enabled:
+            for i in range(self._available_devices):
+                import cupy as cp
+                device = cp.cuda.Device(i)
+                logger.info(f"Device {i}: {device}")
+        else:
+            logger.info("CuPy is not enabled. No GPU devices available.")
 
     def set_context(self, context: GPUContext, device: int = 0, set_param=True):
         if context == GPUContext.CUPY and not self._cupy_enabled:

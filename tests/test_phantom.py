@@ -1,14 +1,16 @@
-from tomobase.core.data_classes import *
-from tomobase.domain.phantoms import *
 
 import pytest
+
+from tomobase.core.data_classes import images, tiltschemes
+from tomobase.domain import phantoms
+
 import numpy as np
 
 def test_phantoms():
     """test phantoms are imported correctly and are type correct
     currently tests 3 phantoms nanocage, nanorod and nanocube
     """
-    phantom = get_nanocage()
+    phantom = phantoms.get_nanocage()
     assert phantom.data.shape == (307, 307, 307)
     assert phantom.pixelsize == 1.0
     assert np.isclose(np.max(phantom.data), 1.0, atol=1e4)

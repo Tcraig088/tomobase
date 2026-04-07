@@ -1,7 +1,6 @@
 import imageio as iio
 
-from ...core import proxy
-from ...core.data_classes import Image
+from ...core.data_classes.images import Image
 
 def _read_image(filename, **kwargs):
     return Image(proxy.asarray(iio.imread(filename), dtype=float))

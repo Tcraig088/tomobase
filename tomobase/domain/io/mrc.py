@@ -4,7 +4,7 @@ from pathlib import Path
 import mrcfile
 import numpy as np
 
-from ...core.data_classes import Sinogram
+from ...core.data_classes.images import Sinogram
 
 def _read_mrc(filename, **kwargs):
     filename = Path(filename)

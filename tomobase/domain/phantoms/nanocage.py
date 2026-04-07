@@ -1,7 +1,7 @@
 import os 
 import pickle
 
-from ...core.data_classes import Volume
+from ...core.data_classes.images import Volume
 from ...core import registers
 
 @registers.phantoms.register(name='Nanocage')

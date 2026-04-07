@@ -35,5 +35,5 @@ class QtRegistryBridge(QObject):
 qt_phantoms = QtRegistryBridge(registers.phantoms)
 qt_image_types = QtRegistryBridge(registers.image_types)
 qt_tiltschemes = QtRegistryBridge(registers.tiltschemes)
-qt_processes = QtRegistryBridge(registers.processes)
+qt_processes = QtRegistryBridge(registers.procedures)
 qt_categories = QtRegistryBridge(registers.categories)

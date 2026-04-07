@@ -4,7 +4,7 @@ import os
 import ncempy
 import numpy as np
  
-from ...core.data_classes import Sinogram, Image
+from ...core.data_classes.images import Sinogram, Image
 
 def _convert_time_to_seconds(date_str):
     time_str = date_str.split(' ')[3]

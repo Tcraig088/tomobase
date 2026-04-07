@@ -5,7 +5,7 @@ from typing import Union, Tuple
 from tomobase.core.base_classes.tiltscheme import TiltSchemeAbstract
 
 from ...utils import _create_projector
-from ...core.data_classes import Volume, Sinogram
+from ...core.data_classes.images import Volume, Sinogram
 
 from ...core import logger, base_classes, registers
 
@@ -15,7 +15,7 @@ from magicgui import magicgui
 from magicgui.tqdm import trange
 
 
-@registers.processes.register(name='Project', category=registers.categories['Project'], use_numpy=True)
+@registers.procedures.register(name='Project', category=registers.categories['Project'], use_numpy=True)
 def project(volume:Volume, angles:Union[Tuple[TiltSchemeAbstract, slice], np.ndarray], use_gpu:bool=True):
     """Create a sinogram from a volume using forward projection. The GPU Context is overriden due to underlying astra gpu usage. 
     Args:

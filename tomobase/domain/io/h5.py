@@ -2,8 +2,7 @@
 import h5py
 import numpy as np
 
-from ...core import proxy
-from ...core.data_classes import Sinogram
+from ...core.data_classes.images import Sinogram
 
 def _read_h5py(filename, **kwargs):
     f = h5py.File(filename, 'r')

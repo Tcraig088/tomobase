@@ -3,7 +3,7 @@ import numpy as np
 from magicgui import magicgui
 from magicgui.tqdm import trange, tqdm
 
-from ...core.data_classes import Volume
+from ...core.data_classes.images import Volume
 from ...core import registers
 
 @registers.phantoms.register(name='Nanorod')

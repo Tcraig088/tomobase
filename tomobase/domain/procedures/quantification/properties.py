@@ -1,8 +1,8 @@
-from ....core.data_classes import  Volume
+from ....core.data_classes.images import  Volume
 from ....core import registers, proxy
 
 subcategory = registers.categories.add_category('Properties', value=7, inheritor = 'Analyze')
-@registers.processes.register(name='Surface Area', category=subcategory, isquantification=True)
+@registers.procedures.register(name='Surface Area', category=subcategory, isquantification=True)
 def surface_area(volume: Volume, threshold: float = 0.0, ):
     if proxy.xupy.isclose(threshold, 0.0):
         threshold = proxy.skimage.filters.threshold_otsu(volume.data)
@@ -16,7 +16,7 @@ def surface_area(volume: Volume, threshold: float = 0.0, ):
     value = proxy.xupy.sum(mask) * volume.pixelsize**2
     return value
 
-@registers.processes.register(name='Volume', category=subcategory,isquantification=True)
+@registers.procedures.register(name='Volume', category=subcategory,isquantification=True)
 def volume(volume: Volume, threshold: float = 0.0):
     if proxy.xupy.isclose(threshold, 0.0):
         threshold = proxy.skimage.filters.threshold_otsu(volume.data)
@@ -25,7 +25,7 @@ def volume(volume: Volume, threshold: float = 0.0):
     value = proxy.xupy.sum(mask) * volume.pixelsize**3
     return value
 
-@registers.processes.register(name='Surface Area Volume Ratio', category=subcategory,  isquantification=True)
+@registers.procedures.register(name='Surface Area Volume Ratio', category=subcategory,  isquantification=True)
 def sav(volume: Volume, threshold: float = 0.0):
     if proxy.xupy.isclose(threshold, 0.0):
         threshold = proxy.skimage.filters.threshold_otsu(volume.data)
@@ -34,7 +34,7 @@ def sav(volume: Volume, threshold: float = 0.0):
     value = sa / vol
     return value
 
-@registers.processes.register(name='Alloying', category=subcategory, isquantification=True)
+@registers.procedures.register(name='Alloying', category=subcategory, isquantification=True)
 def alloying(volume: Volume, reference:Volume, materiala:float=0.0, materialb:float=0.0, std_homogenized:float=0.0):
     """Calculate the alloying of two materials in a volume.
     Args:

@@ -2,11 +2,11 @@ import copy
 
 from magicgui.tqdm import trange, tqdm
 
-from ....core.data_classes import Sinogram
+from ....core.data_classes.images import Sinogram
 from ....core import registers, proxy
 
 subcategory = registers.categories.add_category('Shift Corrections', value=6, inheritor = 'Align')
-@registers.processes.register(name='Align Sinogram XCorrelation', category=subcategory)
+@registers.procedures.register(name='Align Sinogram XCorrelation', category=subcategory)
 def align_sinogram_xcorr(sino: Sinogram, shifts=None):
     """Align the projection images using cross-correlation
     Arguments:
@@ -38,7 +38,7 @@ def align_sinogram_xcorr(sino: Sinogram, shifts=None):
     return sino, shifts
 
 
-@registers.processes.register(name='Centre of Mass', category=subcategory)
+@registers.procedures.register(name='Centre of Mass', category=subcategory)
 def align_sinogram_center_of_mass(sino: Sinogram):
     """Align the projection images using the center of mass
     Arguments:
@@ -55,7 +55,7 @@ def align_sinogram_center_of_mass(sino: Sinogram):
     return sino, offset
 
 
-@registers.processes.register(name='Weight by Angle', category=subcategory)
+@registers.procedures.register(name='Weight by Angle', category=subcategory)
 def weight_by_angle(sino: Sinogram):
     """Weight the sinogram by the angle
     Arguments:

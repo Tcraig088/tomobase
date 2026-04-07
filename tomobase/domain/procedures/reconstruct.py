@@ -4,13 +4,13 @@ from copy import deepcopy
 from scipy import ndimage
 
 from ...utils import _create_projector, _get_default_iterations, _circle_mask
-from ...core.data_classes import Volume, Sinogram
-from ...core.registers import categories, processes
+from ...core.data_classes.images import Volume, Sinogram
+from ...core.registers import categories, procedures
 
 from ...core.log import  logger
 from magicgui.tqdm import tqdm, trange
 
-@processes.register(name='OpTomo', category=categories['Reconstruct'], use_numpy=True)
+@procedures.register(name='OpTomo', category=categories['Reconstruct'], use_numpy=True)
 def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weighted:bool=False):
     """Reconstruct a volume from a given sinogram using SIRT ASTRA. Allows for projections to be weighted by angular distribution.
     Arguments:
@@ -89,7 +89,7 @@ def optomo_reconstruct(sino:Sinogram, iterations:int=0, use_gpu:bool=True, weigh
     return volume
 
 
-@processes.register(name='Astra', category=categories['Reconstruct'], use_numpy=True)
+@procedures.register(name='Astra', category=categories['Reconstruct'], use_numpy=True)
 def astra_reconstruct(sino:Sinogram, method:str='sirt', iterations:int=0, use_gpu:bool=True):
     """Reconstruct a volume from a given sinogram.
 
