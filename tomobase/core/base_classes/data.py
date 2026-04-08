@@ -49,7 +49,7 @@ class ImageAbstract(BaseDataModel):
   
     def _new_process_name(self):
         self._process_iter += 1
-        return f"{coolname.generate_slug(2)}_{self._process_iter}"
+        return f"{coolname.generate_slug(2)}-{self._process_iter}"
 
     @property
     def values(self):
