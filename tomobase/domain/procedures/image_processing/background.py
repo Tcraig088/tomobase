@@ -9,7 +9,7 @@ from ....core import registers, base_classes
 
 
 
-subcategory = registers.categories.add_category('Background Corrections', value=4, inheritor = 'Image Processing')
+subcategory = registers.categories.add_hierarchy('Background Corrections', value=4, parent = 'Image Processing')
 @registers.procedures.register(category=subcategory)
 def background_subtract_median(image: base_classes.ImageAbstract):
     """Subtract the median of the sinogram from the sinogram."

@@ -108,3 +108,7 @@ class LogWidget:
 
     def _handle_clear_clicked(self, _):
         self.clear()
+        
+def display_log():
+    log_widget = LogWidget()
+    log_widget.open()

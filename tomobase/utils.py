@@ -37,3 +37,10 @@ def set_numpy(array):
     
     ValueError('Array must be either Numpy or CuPy to use set_numpy')
     
+    
+def _create_projector_gpu_3d(x, y, z, angles):
+    print('Creating projector with geometry (x, y, z, n):', x, y, z, angles.shape[0])
+    proj_geom = astra.creators.create_proj_geom('parallel3d', 1, 1,  y, x, angles * np.pi / 180)
+    vol_geom = astra.creators.create_vol_geom(y,x,z)
+    proj_id = astra.creators.create_projector('cuda3d', proj_geom, vol_geom)
+    return proj_id

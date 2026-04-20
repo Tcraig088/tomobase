@@ -5,7 +5,7 @@ from magicgui.tqdm import trange, tqdm
 from ....core.data_classes.images import Sinogram
 from ....core import registers, proxy
 
-subcategory = registers.categories.add_category('Shift Corrections', value=6, inheritor = 'Align')
+subcategory = registers.categories.add_hierarchy('Shift Corrections', value=6, parent = 'Align')
 @registers.procedures.register(name='Align Sinogram XCorrelation', category=subcategory)
 def align_sinogram_xcorr(sino: Sinogram, shifts=None):
     """Align the projection images using cross-correlation

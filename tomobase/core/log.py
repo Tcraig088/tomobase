@@ -25,7 +25,7 @@ logging.Logger.trace = trace
 logging.Logger.verbose = verbose
 
 
-class TomobaseLogger:
+class Log_Handler:
     def __init__(self, name='tomobase_logger', level=logging.INFO):
         self.logger = logging.getLogger(name)
         self.logger.setLevel(level)
@@ -51,5 +51,5 @@ class TomobaseLogger:
         if self.handler is not None and self.handler in self.logger.handlers:
             self.logger.removeHandler(self.handler)
 
-tomobase_logger = TomobaseLogger()
+tomobase_logger = Log_Handler()
 logger = tomobase_logger.get_logger()

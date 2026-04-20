@@ -1,5 +1,7 @@
 from typing import TypeVar, Generic, Callable, Type, Any
 from collections.abc import MutableMapping
+import inspect
+from functools import wraps
 
 from blinker import Signal
 import copy
@@ -14,18 +16,19 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 class Registry(MutableMapping, Generic[K, V]):
-    def __init__(self, key_type: Type[Any], value_type: Type[Any]):
+    def __init__(self, key_type: Type[Any], value_type: Type[Any], parent=None):
         self._data: dict[K, V] = {}
         self._key_type = key_type
         self._value_type = value_type
         self._help = self._help_default
+        self._parent = parent
 
         self.added = Signal()
         self.removed = Signal()
         self.renamed = Signal()
         self.updated = Signal()
 
-    def register(self, **kwargs) -> None:
+    def register(self, **kwargs):
         def decorator(func):
             name = kwargs.pop("name", None)
             if name is None:
@@ -33,28 +36,42 @@ class Registry(MutableMapping, Generic[K, V]):
             else:
                 func.tomobase_name = name
 
-            category = kwargs.pop("category", None)
-            if category is not None:
-                func.tomobase_category = category
-            else:
-                func.tomobase_category = 0
-
             func._tomobase_kwargs = kwargs
             self[func.tomobase_name] = func
-            return func
+            
+            @wraps(func)
+            def thunk(*args, **kwargs):
+                current = self[func.tomobase_name]
+                return current(*args, **kwargs)
+            
+            return thunk
 
         return decorator
-
+    
+    def __getattr__(self, key):
+        key_attr = key.replace("_", " ")
+        if key_attr in self._data:
+            return self._data[key_attr]
+        elif self._parent is not None:
+            if key_attr in self._parent:
+                return self._parent[key_attr]
+        else:
+            raise AttributeError(f"{self.__class__.__name__!s} has no attribute {key!r}") from None
+             
     def __getitem__(self, key: K) -> V:
-        return self._data[key]
+        if key in self._data:
+            return self._data[key]
+        elif self._parent is not None:
+            return self._parent[key]
+        raise KeyError(f"Key {key!r} not found")
 
     def __setitem__(self, key: K, value: V) -> None:
         if not isinstance(key, self._key_type):
             raise TypeError(f"Key must be {self._key_type}, got {type(key)}")
 
-        import inspect as _inspect
+        
 
-        if _inspect.isclass(value):
+        if inspect.isclass(value):
             try:
                 is_sub = issubclass(value, self._value_type)
             except Exception:
@@ -78,10 +95,25 @@ class Registry(MutableMapping, Generic[K, V]):
         self.removed.send(self, key=key, old_value=old)
 
     def __iter__(self):
-        return iter(self._data)
+        seen = set()
 
-    def __len__(self) -> int:
-        return len(self._data)
+        # local first (so they override parent)
+        for key in self._data:
+            seen.add(key)
+            yield key
+
+        # then parent
+        if self._parent is not None:
+            for key in self._parent:
+                if key not in seen:
+                    yield key
+    
+    def __contains__(self, key):
+        return key in self._data or (
+            self._parent is not None and key in self._parent
+        )
+    def __len__(self):
+        return sum(1 for _ in self)
 
     def rename(self, old_key: K, new_key: K) -> None:
         if old_key not in self._data:
@@ -106,8 +138,14 @@ class Registry(MutableMapping, Generic[K, V]):
         logger.info(msg)
         return msg
 
-
-class CategoryRegistry(Registry):
+    def __str__(self):
+        msg = f"{self.__class__.__name__} with {len(self)} items"
+        msg += f": {list(self._data.keys())}"
+        msg += self._parent.__str__() if self._parent else ""
+        return msg
+    
+    
+class HierarchicalRegistry(Registry):
     def __init__(self, key_type: Type[Any], value_type: Type[Any]):
         super().__init__(key_type, value_type)
         self._shift = 8
@@ -115,10 +153,10 @@ class CategoryRegistry(Registry):
         self._nibble = (1 << self._shift) - 1  # 0xFF
         
     def __setitem__(self, key, value):
-        raise NotImplementedError("Use add_category to add items to CategoryRegistry")
+        raise NotImplementedError("Use add_hierarchy to add items to HierarchicalRegistry")
         
     def __delitem__(self, key):
-        raise NotImplementedError("Cannot delete items from CategoryRegistry")
+        raise NotImplementedError("Cannot delete items from HierarchicalRegistry")
     
     
     def _first_zero_byte_shift(self, code: int) -> int | None:
@@ -130,25 +168,25 @@ class CategoryRegistry(Registry):
                 return shift
         return None
     
-    def add_category(self, name: str, value: int = 0, inheritor: str | None = None) -> int:
+    def add_hierarchy(self, name: str, value: int = 0, parent: str | None = None) -> int:
         # validate
         if not (1 <= value <= self._nibble):
             raise ValueError(f"Value must be 1..{self._nibble} (got {value})")
 
         if name in self._data:
-            raise KeyError(f"Category name '{name}' already exists")
+            raise KeyError(f"Hierarchy name '{name}' already exists")
 
-        if inheritor is None:
+        if parent is None:
             # top-level: place in highest byte
             target_shift = (self._levels - 1) * self._shift
             new_code = (value & self._nibble) << target_shift
         else:
-            if inheritor not in self._data:
-                raise KeyError(f"Inherit category '{inheritor}' not found")
-            inherited_index = int(self[inheritor])
+            if parent not in self._data:
+                raise KeyError(f"Inherit hierarchy '{parent}' not found")
+            inherited_index = int(self[parent])
             target_shift = self._first_zero_byte_shift(inherited_index)
             if target_shift is None:
-                raise ValueError(f"Inherit category '{inheritor}' has no remaining sub-levels")
+                raise ValueError(f"Inherit hierarchy '{parent}' has no remaining sub-levels")
             new_code = inherited_index | ((value & self._nibble) << target_shift)
 
 
@@ -158,13 +196,13 @@ class CategoryRegistry(Registry):
 
         self._data[name] = int(new_code)
         self.added.send(self, key=name, value=int(new_code))
-        logger.debug(f"Added category '{name}' -> {hex(new_code)} (inheritor={inheritor})")
+        logger.debug(f"Added hierarchy '{name}' -> {hex(new_code)} (parent={parent})")
         return int(new_code)
         
-    def get_inheritor(self, category: str|int = 0) -> str | None:
+    def get_parent(self, category: str|int = 0) -> tuple[str | None, int | None]:
         if isinstance(category, str):
             if category not in self._data:
-                raise KeyError(f"Category '{category}' not found")
+                raise KeyError(f"Hierarchy '{category}' not found")
             else:
                 category = self._data[category]
         
@@ -187,10 +225,44 @@ class CategoryRegistry(Registry):
         # find registered key for parent_code if present
         parent_name = next((k for k, v in self._data.items() if int(v) == parent_code), None)
         if parent_name is None:
-            return None
+            return (None, None)
         return (parent_name, parent_code)
 
     def get_key(self, code: int) -> str | None:
         for key, val in self._data.items():
             if val == code:
                 return key
+            
+    def help_categories(self):
+        # list sorted by code
+        _dict = self
+        items = sorted(_dict._data.items(), key=lambda kv: int(kv[1]))
+
+        shift = getattr(_dict, "_shift", 8)
+        levels = getattr(_dict, "_levels", 5)
+        mask = (1 << shift) - 1
+
+        def split_levels(code: int):
+            parts = []
+            for i in range(levels):
+                s = (levels - 1 - i) * shift
+                parts.append((code >> s) & mask)
+            while parts and parts[-1] == 0:
+                parts.pop()
+            return parts
+
+        rows = []
+        for name, val in items:
+            code = int(val)
+            parts = split_levels(code)
+            parts_str = ".".join(f"{p:02X}" for p in parts) if parts else "00"
+            rows.append((name, f"0x{code:0{levels*2}X}", parts_str))
+
+        # compute column widths and render
+        name_w = max(len("Name"), max(len(r[0]) for r in rows))
+        code_w = max(len("Code"), max(len(r[1]) for r in rows))
+        lvl_w  = max(len("Levels"), max(len(r[2]) for r in rows))
+        hdr = f"{'Name':{name_w}}  {'Code':{code_w}}  {'Levels':{lvl_w}}"
+        sep = "-" * (name_w + code_w + lvl_w + 4)
+        lines = [hdr, sep] + [f"{n:{name_w}}  {c:{code_w}}  {l:{lvl_w}}" for n, c, l in rows]
+        logger.info("\n" + "\n".join(lines))

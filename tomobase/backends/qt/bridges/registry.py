@@ -4,6 +4,7 @@ from ....core import registers
 
 from qtpy.QtCore import QObject, Signal
 
+print("called qt")
 class QtRegistryBridge(QObject):
     added = Signal(object, object)
     removed = Signal(object, object)

@@ -2,12 +2,12 @@ import astra
 import numpy as np
 from typing import Union, Tuple
 
-from tomobase.core.base_classes.tiltscheme import TiltSchemeAbstract
-
 from ...utils import _create_projector
-from ...core.data_classes.images import Volume, Sinogram
 
-from ...core import logger, base_classes, registers
+from ...core import registers, progress
+from ...core.data_classes.images import Volume, Sinogram
+from ...core.base_classes import TiltSchemeCursor
+
 
 
 
@@ -16,7 +16,7 @@ from magicgui.tqdm import trange
 
 
 @registers.procedures.register(name='Project', category=registers.categories['Project'], use_numpy=True)
-def project(volume:Volume, angles:Union[Tuple[TiltSchemeAbstract, slice], np.ndarray], use_gpu:bool=True):
+def project(volume:Volume, angles:Union[TiltSchemeCursor, np.ndarray], use_gpu:bool=True):
     """Create a sinogram from a volume using forward projection. The GPU Context is overriden due to underlying astra gpu usage. 
     Args:
         volume (Volume): The input volume to be projected.
@@ -26,8 +26,8 @@ def project(volume:Volume, angles:Union[Tuple[TiltSchemeAbstract, slice], np.nda
         Sinogram: The resulting sinogram.
 
     """
-    if isinstance(angles, tuple) and isinstance(angles[0], TiltSchemeAbstract):
-        angles = angles[0].generate_angles_from_slice(angles[1])
+    if isinstance(angles, TiltSchemeCursor):
+        angles = np.array(angles.angles)
         
     data = volume.data.transpose("z", "y", "x").values
     angles = np.asarray(angles)
@@ -37,7 +37,9 @@ def project(volume:Volume, angles:Union[Tuple[TiltSchemeAbstract, slice], np.nda
     proj_id = _create_projector(x, y, angles, use_gpu)
 
     sino = np.empty((z, len(angles), max(x, y)))
-    for i in trange(z, label="Forward projecting"):
+    
+    progress_bar = progress.new(name="Forward projecting", total=z)
+    for i in progress_bar:
         sino_id, sino[i, :, :] = astra.creators.create_sino(data[i, :, :], proj_id)
         astra.astra.delete(sino_id)
 

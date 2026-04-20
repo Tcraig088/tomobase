@@ -42,14 +42,18 @@ class ImageAbstract(BaseDataModel):
         super().__init__(name, data, *args, **kwargs)
         self.pixel_size = pixel_size 
         self.metadata = metadata
+        self._process_id = self._instance_id
         self._process_iter =  0 
-        
-        self.process_name = self._new_process_name()
+        self._process_slug = coolname.generate_slug(2)
 
-  
-    def _new_process_name(self):
-        self._process_iter += 1
-        return f"{coolname.generate_slug(2)}-{self._process_iter}"
+
+    @property
+    def process_name(self):
+        if self._process_id != self._instance_id:
+            self._process_id = self._instance_id
+            self._process_iter += 1
+            self._process_slug = coolname.generate_slug(2)
+        return f"{self._process_slug}-{self._process_iter}"
 
     @property
     def values(self):

@@ -1,7 +1,7 @@
 from ....core.data_classes.images import  Volume
 from ....core import registers, proxy
 
-subcategory = registers.categories.add_category('Properties', value=7, inheritor = 'Analyze')
+subcategory = registers.categories.add_hierarchy('Properties', value=7, parent = 'Analyze')
 @registers.procedures.register(name='Surface Area', category=subcategory, isquantification=True)
 def surface_area(volume: Volume, threshold: float = 0.0, ):
     if proxy.xupy.isclose(threshold, 0.0):

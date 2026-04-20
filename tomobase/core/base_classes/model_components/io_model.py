@@ -1,19 +1,25 @@
 import pathlib
+from functools import partial
 
-from ...environment import GPUContext, proxy
-from ...log import logger
+from .. import registers
+from ... import log
 
+from typing import Callable
 from qtpy.QtWidgets import QApplication, QFileDialog
 
 
 class IOModel():
-    readers: dict[str, callable] = {}
-    writers: dict[str, callable] = {}
+    readers = registers.Registry(str, Callable)
+    writers = registers.Registry(str, Callable)
     
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls.readers = registers.Registry(str, Callable, parent=cls.readers)
+        cls.writers = registers.Registry(str, Callable, parent=cls.writers)
+
     def __init__(self, data, *args, **kwargs):
-        pass
-    
-    
+        super().__init__(data, *args, **kwargs)
+        
     def write(self, filename: pathlib.Path| str | None = None, **kwargs):
         """Save the data to a file."""
         if isinstance(filename, str):
@@ -23,7 +29,7 @@ class IOModel():
             app = QApplication.instance() or QApplication([])
             filters = ";;".join(
                 f"{ext.upper()} files (*.{ext})"
-                for ext in self.writers.keys()
+                for ext in self._writers.keys()
             )
             filename_str, _ = QFileDialog.getSaveFileName(
                 None, "Save File", "", filters
@@ -37,7 +43,7 @@ class IOModel():
         ext = filename.suffix.lower().lstrip(".")
 
         try:
-            writer = self.writers[f'.{ext}']
+            writer = self._writers[f'.{ext}']
         except KeyError:
             raise ValueError(f"The given file type {ext.upper()} is not supported.")
 
@@ -49,7 +55,7 @@ class IOModel():
         if isinstance(filename, str):
             filename = pathlib.Path(filename)
 
-        logger.debug(f"Attempting to load file {filename} with {cls.readers}")
+        log.logger.debug(f"Attempting to load file {filename} with {cls.readers}")
         if filename is None:
             app = QApplication.instance() or QApplication([])
             filters = ";;".join(
@@ -75,3 +81,4 @@ class IOModel():
 
         # reader should create and return an instance of cls
         return reader(str(filename), name=name,  **kwargs)
+    

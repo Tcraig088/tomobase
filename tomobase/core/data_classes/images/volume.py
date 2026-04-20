@@ -4,10 +4,6 @@ from ... import registers, base_classes
 
 @registers.image_types.register(name="Volume")
 class Volume(base_classes.ImageAbstract):
-    readers: dict[str, callable] = {}
-    writers: dict[str, callable] = {}
-    renderer = None
-
     def __init__(self, name, data, pixelsize: float = 1.0, metadata: dict = {}, *args, **kwargs):
         
         if not isinstance(data, xr.DataArray):
@@ -22,5 +18,3 @@ class Volume(base_classes.ImageAbstract):
             raise Exception("Must Enable Jupyter Backend to show volume data.")
         self.renderer.show(self, verbose)
 
-Volume.readers = {}
-Volume.writers = {}

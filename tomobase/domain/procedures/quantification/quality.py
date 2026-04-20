@@ -4,7 +4,7 @@ from ....core import registers, proxy, base_classes
 
 
 
-subcategory = registers.categories.add_category('Quality Metrics', value=9, inheritor = 'Analyze')
+subcategory = registers.categories.add_hierarchy('Quality Metrics', value=9, parent = 'Analyze')
 
 @registers.procedures.register(name='Structural Similarity',category=registers.categories['Quality Metrics'])
 def ssim( image:base_classes.ImageAbstract, reference:base_classes.ImageAbstract):

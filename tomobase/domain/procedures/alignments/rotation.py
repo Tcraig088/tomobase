@@ -13,7 +13,7 @@ from ..forward_project import project
 
 from ....core import registers, logger
 
-subcategory = registers.categories.add_category('Tilt Corrections', value=5, inheritor = 'Align')
+subcategory = registers.categories.add_hierarchy('Tilt Corrections', value=5, parent = 'Align')
 @registers.procedures.register(name='Tilt Shift', category=subcategory, subcategories=subcategory, use_numpy=True)
 def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=0.0, **kwargs):
     """Align the tilt axis shift of a sinogram using reprojection

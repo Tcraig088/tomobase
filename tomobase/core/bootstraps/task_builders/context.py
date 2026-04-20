@@ -34,14 +34,9 @@ def _wrap_restore_context(func):
                 if isinstance(value, ImageAbstract) or isinstance(value, Measurement):
                     value.set_context(GPUContext.NUMPY)
 
-            if not isinstance(results, tuple):
-                if isinstance(results, ImageAbstract) or isinstance(results, Measurement):
-                    results.set_context(GPUContext.NUMPY)
-                    
-            else:
-                for i, result in enumerate(results):
-                    if isinstance(result, ImageAbstract) or isinstance(result, Measurement):
-                        results[i].set_context(GPUContext.NUMPY)
+            for i, result in enumerate(results):
+                if isinstance(result, ImageAbstract) or isinstance(result, Measurement):
+                    results[i].set_context(GPUContext.NUMPY)
         return results
     return wrapper
 

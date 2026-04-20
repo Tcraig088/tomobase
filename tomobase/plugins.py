@@ -1,6 +1,6 @@
 import sys
 
-from .core import data_classes, logger
+from .core import data_classes, logger, progress
 from .domain import phantoms, procedures
 
 logger.debug("Importing Tomobase Plugins [Backend Agnostic]")

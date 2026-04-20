@@ -7,7 +7,7 @@ from ....core import registers, proxy
 from magicgui.tqdm import tqdm
 
 
-subcategory = registers.categories.add_category('Misalignments', value=5, inheritor = 'Image Processing')
+subcategory = registers.categories.add_hierarchy('Misalignments', value=5, parent = 'Image Processing')
 @registers.procedures.register(category=subcategory)
 def gaussian_filter(obj: Image, gaussian_sigma:float=1,):
     """Add Gaussian noise to the sinogram.

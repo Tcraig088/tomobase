@@ -2,7 +2,7 @@
 from ....core.data_classes.images import Sinogram
 from ....core import registers, proxy, base_classes
 
-subcategory = registers.categories.add_category('Scaling', value=6, inheritor = 'Image Processing')
+subcategory = registers.categories.add_hierarchy('Scaling', value=6, parent = 'Image Processing')
 @registers.procedures.register(name='Normalize', category=subcategory)
 def normalize(image: base_classes.ImageAbstract):
     """Normalize the sinogram data to the range [0, 1].

@@ -5,7 +5,7 @@ from colorama import Fore, Style, init
 init(autoreset=True)
 
 from ..log import logger
-from .base import Registry
+from ..base_classes.registers import Registry
 
 from ..base_classes import ImageAbstract, TiltSchemeAbstract
 
