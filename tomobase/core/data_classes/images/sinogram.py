@@ -55,7 +55,7 @@ class Sinogram(base_classes.ImageAbstract):
     
     @angles.setter
     def angles(self, value):
-        self.data.coords['angles'] = value
+        self.data.coords["angles"] = ("n", value)
 
     @property
     def times(self):
@@ -63,5 +63,5 @@ class Sinogram(base_classes.ImageAbstract):
     
     @times.setter
     def times(self, value):
-        self.data.coords['times'] = value
+        self.data.coords["times"] = ("n", value)
     

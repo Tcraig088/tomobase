@@ -1,10 +1,12 @@
 from copy import deepcopy
 
+import scipy
+
 
 from ....core.data_classes.images import Sinogram, Image
-from ....core import registers, proxy
+from ....core import registers, progress, logger
 
-from magicgui.tqdm import tqdm
+
 
 
 subcategory = registers.categories.add_hierarchy('Misalignments', value=5, parent = 'Image Processing')
@@ -19,16 +21,16 @@ def gaussian_filter(obj: Image, gaussian_sigma:float=1,):
         Data: The result
     """
 
-    obj.data = proxy.scipy.ndimage.gaussian_filter(obj.data, gaussian_sigma)
+    obj.data = scipy.ndimage.gaussian_filter(obj.data, gaussian_sigma)
     return obj
 
 @registers.procedures.register(category=subcategory)
 def poisson_noise(obj: Image, 
-                  rescale:float=True):
+                  rescale:float=1.0):
     """Add Poisson noise to the sinogram.
     Args:
         obj (Data): The input data object
-        rescale (float): Rescale the data to the range of the Poisson noise (default: True)
+        rescale (float): Rescale the data to the range of the Poisson noise (default: 1.0)
  
     Returns:
         Data: The result
@@ -52,14 +54,20 @@ def translational_misalignment(sino: Sinogram, offset:float=0.25):
         shifts (ndarray): The shifts applied to each projection (only if extend_return is True)
     """
     xp = sino.data.values.__array_namespace__()
-    shifts = xp.zeros((sino.data.shape[0], 2))
-    for i in tqdm(range(sino.data.shape[0]), label='Translational Misalignment'):
+    shifts = xp.zeros((sino.data.sizes['n'], 2))
+    
+    progress_bar = progress.new(name="Applying translational misalignment", total=sino.data.sizes['n'])
+    for i in progress_bar:
         if i == 0:
             shifts[i, :] = 0
             continue
-        image_offset_x = int(xp.round(sino.data.shape[1] * xp.random.uniform(-offset, offset)))
-        image_offset_y = int(xp.round(sino.data.shape[2] * xp.random.uniform(-offset, offset)))
-        sino.data[i, :, :] = xp.roll(sino.data[i, :, :], (image_offset_x, image_offset_y), axis=(0, 1))
+        image_offset_x = int(xp.round(sino.data.sizes['x'] * xp.random.uniform(-offset, offset)))
+        image_offset_y = int(xp.round(sino.data.sizes['y'] * xp.random.uniform(-offset, offset)))
+        
+        
+        sl = sino.data.isel(n=i)
+        rolled = xp.roll(sl.data,(image_offset_x, image_offset_y),axis=(0, 1))
+        sino.data.loc[dict(n=sl.coords["n"].item())] = rolled
         shifts[i, :] = (image_offset_x, image_offset_y)
 
     return sino, shifts
@@ -85,15 +93,18 @@ def rotational_misalignment(sino: Sinogram,
     """
 
     angles_original =  deepcopy(sino.angles)  
-    rotations = proxy.xupy.zeros(sino.data.shape[0])
     xp = sino.data.values.__array_namespace__()
-    rotations = xp.zeros(sino.data.shape[0])
-    for i in tqdm(range(sino.data.shape[0]), label='Rotational Misalignment'):
+    rotations = xp.zeros(sino.data.sizes['n'])
+
+    progress_bar = progress.new(name="Applying rotational misalignment", total=sino.data.sizes['n'])
+    for i in progress_bar:
         rotations[i] = tilt_theta * xp.random.uniform(-1, 1)
-        sino.data[i, :, : ] = proxy.scipy.ndimage.rotate(sino.data[i, :, :], rotations[i], reshape=False)
+        s1 = sino.data.isel(n=i)
+        rotated = scipy.ndimage.rotate(s1, rotations[i], reshape=False)
+        sino.data.loc[dict(n=s1.coords["n"].item())] = rotated
 
-
-    for i in range(sino.data.shape[0]):
+    progress_bar = progress.new(name="Applying rotational backlash", total=sino.data.sizes['n'])
+    for i in progress_bar:
         offset = tilt_alpha * xp.random.uniform(-1, 1)
         if i > 0:
             if backlash_backwards and sino.angles[i] < sino.angles[i-1]:
@@ -101,6 +112,7 @@ def rotational_misalignment(sino: Sinogram,
             elif not backlash_backwards and sino.angles[i] > sino.angles[i-1]:
                 offset += backlash
         sino.angles = sino.angles + offset
+    logger.trace(f"Data type: {sino.data}")
 
     return sino, rotations, angles_original
 

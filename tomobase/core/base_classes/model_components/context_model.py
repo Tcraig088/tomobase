@@ -26,6 +26,7 @@ class ContextModel():
         self._data[key] = value
         
     def set_context(self, context:GPUContext= GPUContext.NUMPY, device:int = 0):
+        logger.trace(f"data type: {type(self._data)}, current context: {self._current_context}, current device: {self._current_device}, requested context: {context}, requested device: {device}")
         self._data = proxy.set_array_context(self.data, self._current_context, self._current_device, context, device)
         self._current_context = context
         self._current_device = device

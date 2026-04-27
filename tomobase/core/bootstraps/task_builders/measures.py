@@ -1,9 +1,12 @@
 from ...data_classes import Measurement
+from ...log import logger
+from functools import wraps
 
 def _wrap_measurements_validate(func):
+    @wraps(func)
     def wrapper(*args, **kwargs):
         measurements = kwargs.get("measurements", None)
-        
+        logger.trace("Wrapped Execution: Checking wether measurements are valid")
         if measurements is not None:
             if not isinstance(measurements, list):
                 measurements = [measurements]
@@ -16,8 +19,9 @@ def _wrap_measurements_validate(func):
     return wrapper
 
 def _wrap_measurements_return(func):
+    @wraps(func)
     def wrapper(*args, **kwargs):
-        
+        logger.trace("Wrapped Execution: Adding new measurements to linked measurement list")
         measurements = kwargs.pop("measurements", None)
         results = func(*args, **kwargs)
 

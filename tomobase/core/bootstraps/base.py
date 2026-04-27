@@ -2,7 +2,7 @@ import inspect
 import copy
 from collections.abc import Callable
 
-from .task_builders import _wrap_axial, _wrap_use_numpy,_wrap_restore_context, _wrap_use_context, _wrap_inplace, _wrap_returns, _wrap_measure, _build_decorated_function, _wrap_history
+from .task_builders import _wrap_axial, _wrap_tuple, _wrap_use_numpy,_wrap_restore_context, _wrap_use_context, _wrap_inplace, _wrap_returns, _wrap_measurements_validate, _wrap_measurements_return, _build_decorated_function, _wrap_history
 
 def bootstrap_process(**kwargs) -> Callable:
     """A decorator used to mark a function or class as a tomography process. The function or class is either a standard function or class used to define the process or a QWidget used to attach to napari.
@@ -19,20 +19,30 @@ def bootstrap_process(**kwargs) -> Callable:
     def decorator(func):
         if inspect.isfunction(func):
             origin =  func
-            params = [("inplace", bool, True), ("verbose_outputs", bool, False), ("measurements", list | None, None), ("tomobase_name", str, func.tomobase_name)]
+            params = [("inplace", bool, True), ("verbose_outputs", bool, False), ("measurements", list | None, None)]
             
-            if enable_axial:
-                func = _wrap_axial(func)
-                params.append(("axial", int, -1))
-            func = _wrap_measure(func)
+            #if enable_axial:
+                #func = _wrap_axial(func)
+                #params.append(("axial", int, -1))
+            
+            #Be careful of the execution order
+            #Things happen in the reverse order they are defined
+            # However post execution steps are double reversed because the previous function is called in the new one 
+            
+            #post execution steps: execution order tuple -> returns
+            func = _wrap_tuple(func) # should be executedc before any process that works with returns
+            func = _wrap_measurements_return(func)
+            func = _wrap_history(func)
+            func = _wrap_restore_context(func)
+            func = _wrap_returns(func)
+            
+            #pre execution steps: execution order inplace -> validate
+            func = _wrap_measurements_validate(func)
             if use_numpy:
                 func = _wrap_use_numpy(func)
             else:
                 func = _wrap_use_context(func)
-            func = _wrap_restore_context(func)
             func = _wrap_inplace(func)
-            func = _wrap_returns(func)
-            
 
             func = _build_decorated_function(origin, func, params)
             

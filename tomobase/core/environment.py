@@ -61,10 +61,11 @@ class EnvironmentContext():
         return context, device
 
     def set_array_context(self, array, current_context, current_device, context: GPUContext, device: int = 0):
+        logger.trace(f"changing array type: {type(array)}, current context: {current_context}, current device: {current_device}, requested context: {context}, requested device: {device}")
         if isinstance(array.data, da.Array):
             xp = da
         else:
-            xp = array.data.__array_namespace__()
+            xp = array.values.__array_namespace__()
 
         valid_state = True
         if current_context == GPUContext.CUPY:

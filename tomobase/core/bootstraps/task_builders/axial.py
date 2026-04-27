@@ -6,6 +6,7 @@ from ...base_classes import ImageAbstract
 from ...environment import proxy, GPUContext
 
 def _wrap_axial(func):
+    #TODO: Fix implementation
     def wrapper(*args, **kwargs):
         axis = kwargs.get("axis", None)
 

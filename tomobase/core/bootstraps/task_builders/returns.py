@@ -1,9 +1,15 @@
 
+
+from functools import wraps
 from itertools import zip_longest
 import random
 from ...data_classes import Measurement
 from ...base_classes import ImageAbstract
 from ...environment import proxy, GPUContext
+from ...log import logger
+
+def is_array_like(x):
+    return hasattr(x, "shape") and hasattr(x, "dtype")
 
 def _wrap_tuple(func):
     """
@@ -14,7 +20,9 @@ def _wrap_tuple(func):
         Returns:
             callable: The decorated function that always returns a tuple.
     """
+    @wraps(func)
     def wrapper(*args, **kwargs):
+        logger.trace("Wrapped Execution: Packing Results into tuple")
         results = func(*args, **kwargs)
         if not isinstance(results, tuple):
             results = (results,)
@@ -30,11 +38,15 @@ def _wrap_returns(func):
         Returns:
             callable: The decorated function that respects the verbose_outputs flag.
     """
+    @wraps(func)
     def wrapper(*args, **kwargs):
+        logger.trace("Wrapped Execution: Unpacking tuple")
         verbose_outputs = kwargs.pop("verbose_outputs", False)
         results = func(*args, **kwargs)
 
         if verbose_outputs:
+            if len(results)==1:
+                return results[0]
             return results
         else:
             return results[0]
@@ -50,8 +62,9 @@ def _wrap_history(func):
         Returns:
             callable: The decorated function that records computational history.
     """
+    @wraps(func)
     def wrapper(*args, **kwargs):
-        
+        logger.trace("Wrapped Execution: Creating Event History")
         results = func(*args, **kwargs)
         
         _history = {}
@@ -59,9 +72,14 @@ def _wrap_history(func):
         his_kwargs.pop("measurements", None)
         for key, value in his_kwargs.items():
             if isinstance(value, ImageAbstract):
-                his_kwargs[key] = f'Image Data:{value.name}[{value.process_name}]'
+                his_kwargs[key] = f'{value.name}[{value.process_name}]'
             elif isinstance(value, Measurement):
-                his_kwargs[key] = f'Measurement Data:{value.name}'
+                his_kwargs[key] = f'{value.name}'
+            elif is_array_like(value):
+                his_kwargs[key] = f'array[{value.shape}]'
+            else:
+                his_kwargs[key] = str(value)
+            
 
         _history[func.__name__] = his_kwargs
         
