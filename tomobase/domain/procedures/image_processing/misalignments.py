@@ -3,7 +3,8 @@ from copy import deepcopy
 import scipy
 
 
-from ....core.data_classes.images import Sinogram, Image
+from ....core.data_classes.images import Sinogram
+from ....core.base_classes import ImageAbstract
 from ....core import registers, progress, logger
 
 
@@ -11,7 +12,7 @@ from ....core import registers, progress, logger
 
 subcategory = registers.categories.add_hierarchy('Misalignments', value=5, parent = 'Image Processing')
 @registers.procedures.register(category=subcategory)
-def gaussian_filter(obj: Image, gaussian_sigma:float=1,):
+def gaussian_filter(obj: ImageAbstract, gaussian_sigma:float=1,):
     """Add Gaussian noise to the sinogram.
     Args:
         obj (Data): The input data object
@@ -20,12 +21,18 @@ def gaussian_filter(obj: Image, gaussian_sigma:float=1,):
     Returns:
         Data: The result
     """
+    progress_bar = progress.new(name="Applying Gaussian filter", total=obj.data.sizes['n'])
+    for i in progress_bar:
+        filtered = scipy.ndimage.gaussian_filter(
+            obj.data.isel(n=i).values,
+            gaussian_sigma
+        )
 
-    obj.data = scipy.ndimage.gaussian_filter(obj.data, gaussian_sigma)
+        obj.data.loc[{ "n": obj.data.coords["n"].values[i] }] = filtered
     return obj
 
 @registers.procedures.register(category=subcategory)
-def poisson_noise(obj: Image, 
+def poisson_noise(obj: ImageAbstract, 
                   rescale:float=1.0):
     """Add Poisson noise to the sinogram.
     Args:
@@ -35,9 +42,15 @@ def poisson_noise(obj: Image,
     Returns:
         Data: The result
     """
+    if (obj.data < 0).any():
+        raise ValueError("Poisson noise requires non-negative input data.")
+
+    if rescale <= 0:
+        raise ValueError("Rescale factor must be positive.")
+    
     xp = obj.data.values.__array_namespace__()
     obj.data = obj.data*rescale
-    obj.data = xp.random.poisson(obj.data)
+    obj.data.values = xp.random.poisson(obj.data)
     return obj
 
 
@@ -92,7 +105,6 @@ def rotational_misalignment(sino: Sinogram,
         rotations (ndarray): The rotations applied to each projection (only if extend_return is True)
     """
 
-    angles_original =  deepcopy(sino.angles)  
     xp = sino.data.values.__array_namespace__()
     rotations = xp.zeros(sino.data.sizes['n'])
 
@@ -100,8 +112,8 @@ def rotational_misalignment(sino: Sinogram,
     for i in progress_bar:
         rotations[i] = tilt_theta * xp.random.uniform(-1, 1)
         s1 = sino.data.isel(n=i)
-        rotated = scipy.ndimage.rotate(s1, rotations[i], reshape=False)
-        sino.data.loc[dict(n=s1.coords["n"].item())] = rotated
+        rotated = scipy.ndimage.rotate(s1.values, rotations[i], reshape=False)
+        sino.data.loc[dict(n=s1.coords["n"].item())].values = rotated
 
     progress_bar = progress.new(name="Applying rotational backlash", total=sino.data.sizes['n'])
     for i in progress_bar:
@@ -111,10 +123,10 @@ def rotational_misalignment(sino: Sinogram,
                 offset += backlash
             elif not backlash_backwards and sino.angles[i] > sino.angles[i-1]:
                 offset += backlash
-        sino.angles = sino.angles + offset
+        sino.angles[i] = sino.angles[i] + offset
     logger.trace(f"Data type: {sino.data}")
 
-    return sino, rotations, angles_original
+    return sino, rotations
 
     
 

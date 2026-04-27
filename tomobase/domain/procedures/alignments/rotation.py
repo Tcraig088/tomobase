@@ -11,9 +11,9 @@ from ....core.data_classes.images import Sinogram
 from ..reconstruct import astra_reconstruct
 from ..forward_project import project
 
-from ....core import registers, logger
+from ....core import registers, logger, progress
 
-subcategory = registers.categories.add_hierarchy('Tilt Corrections', value=5, parent = 'Align')
+subcategory = registers.categories.add_hierarchy('Tilt Axis Corrections', value=5, parent = 'Align')
 @registers.procedures.register(name='Tilt Shift', category=subcategory, subcategories=subcategory, use_numpy=True)
 def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=0.0, **kwargs):
     """Align the tilt axis shift of a sinogram using reprojection
@@ -37,8 +37,10 @@ def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=0.0, *
     mse = np.zeros(len(offsets))
     sino_shifted = copy(sino)
 
-    for i in tqdm(range(len(offsets)), label='Aligning tilt axis shift'):
-        sino_shifted.data = shift(sino.data, (0, 0, offsets[i]), mode='wrap')
+    progress_bar = progress.new(name="Aligning tilt axis shift", total=len(offsets))
+    for i in progress_bar:
+        s1 = sino.data.isel(n=i)
+        sino_shifted.data = shift(s1.values, (0, 0, offsets[i]), mode='wrap')
         reproj = project(astra_reconstruct(sino_shifted, method, **kwargs), sino.angles)
         mse[i] = np.mean((sino_shifted.data - reproj.data) ** 2)
     offset = offsets[np.argmin(mse)]

@@ -1,13 +1,14 @@
 import copy
+import scipy
 
 from magicgui.tqdm import trange, tqdm
 
 from ....core.data_classes.images import Sinogram
-from ....core import registers, proxy
+from ....core import registers, progress
 
 subcategory = registers.categories.add_hierarchy('Shift Corrections', value=6, parent = 'Align')
 @registers.procedures.register(name='Align Sinogram XCorrelation', category=subcategory)
-def align_sinogram_xcorr(sino: Sinogram, shifts=None):
+def align_sinogram_xcorr(sino: Sinogram):
     """Align the projection images using cross-correlation
     Arguments:
         sino (Sinogram): The projection data
@@ -19,149 +20,69 @@ def align_sinogram_xcorr(sino: Sinogram, shifts=None):
         shifts (xp.ndarray): The shifts in pixels
     """
     xp = sino.data.values.__array_namespace__()
-    if shifts is None:
-        shifts = xp.zeros((sino.data.shape[0], 2))
-        fft_fixed = xp.fft.fft2(sino.data[0, :, :])
-        for i in tqdm(range(sino.data.shape[0] - 1), label='Calculating shifts with cross-correlation'):
-            fft_moving = xp.fft.fft2(sino.data[i + 1, :, :])
-            xcorr = xp.fft.ifft2(xp.multiply(fft_fixed, xp.conj(fft_moving)))
-            fft_fixed = fft_moving
-            rel_shift = xp.asarray(xp.unravel_index(xp.argmax(xcorr), xcorr.shape))
-            shifts[i + 1, :] = shifts[i, :] + rel_shift
 
-        shifts %= xp.asarray(sino.data.shape[1:])[None, :]
-        shifts = xp.rint(shifts).astype(int)
+    shifts = xp.zeros((sino.data.shape[0], 2))
+    fft_fixed = xp.fft.fft2(sino.data[0, :, :])
 
-    for i in tqdm(range(sino.data.shape[0]), label='Aligning sinogram with cross-correlation'):
-        sino.data[i, :, :] = xp.roll(sino.data[i, :, :], shifts[i, :], axis=(0, 1))
+    progress_bar = progress.new(name="Calculating shifts with cross-correlation", total=sino.data.sizes['n'] - 1)
+    for i in progress_bar:
+        s1 = sino.data.isel(n=i)
+        s2 = sino.data.isel(n=i + 1)
+
+        fft_moving = xp.fft.fft2(s2.values)
+        xcorr = xp.fft.ifft2(xp.multiply(fft_fixed, xp.conj(fft_moving)))
+        fft_fixed = fft_moving
+
+        rel_shift = xp.asarray(xp.unravel_index(xp.argmax(xcorr), xcorr.shape))
+        shifts[i + 1, :] = shifts[i, :] + rel_shift
+
+
+    spatial_dims = [d for d in sino.data.dims if d != "n"]
+    sizes = xp.asarray([sino.data.sizes[d] for d in spatial_dims])[None, :]
+    shifts %= sizes
+    shifts = xp.rint(shifts).astype(int)
+
+    progress_bar = progress.new(name="Aligning sinogram with cross-correlation", total=sino.data.sizes['n'])
+    for i in progress_bar:
+        s1 = sino.data.isel(n=i)
+        s1.values = xp.roll(s1.values, shifts[i, :], axis=(0, 1))
+        sino.data.loc[dict(n=s1.coords["n"].item())] = s1
 
     return sino, shifts
 
 
 @registers.procedures.register(name='Centre of Mass', category=subcategory)
 def align_sinogram_center_of_mass(sino: Sinogram):
-    """Align the projection images using the center of mass
-    Arguments:
-        sino (Sinogram): The projection data
-        inplace (bool): Whether to do the alignment in-place in the input data object (default: True)
-        extend_return (bool): If True, the return value will be a tuple with the offset in the second item (default: False)
-    Returns:
-        Sinogram: The result
-        offset (xp.ndarray): The offset in pixels
-    """
     xp = sino.data.values.__array_namespace__()
-    offset = xp.asarray(sino.data.shape[1:]) / 2 - proxy.scipy.ndimage.center_of_mass(xp.sum(sino.data, axis=0))
-    sino.data = xp.shift(sino.data, (0, offset[0], offset[1]))
+
+    spatial_dims = [d for d in sino.data.dims if d != "n"]
+    summed = sino.data.sum(dim="n")
+
+    center = xp.asarray([sino.data.sizes[d] / 2 for d in spatial_dims])
+    com = xp.asarray(scipy.ndimage.center_of_mass(summed.values))
+    offset = center - com
+
+    # build shift tuple in actual xarray dimension order
+    shift_by_dim = {
+        "n": 0,
+        spatial_dims[0]: float(offset[0]),
+        spatial_dims[1]: float(offset[1]),
+    }
+
+    shift_tuple = tuple(shift_by_dim[d] for d in sino.data.dims)
+
+    sino.data.values = scipy.ndimage.shift(
+        sino.data.values,
+        shift_tuple
+    )
+
     return sino, offset
 
 
-@registers.procedures.register(name='Weight by Angle', category=subcategory)
-def weight_by_angle(sino: Sinogram):
-    """Weight the sinogram by the angle
-    Arguments:
-        sino (Sinogram): The projection data
-        inplace (bool): Whether to do the alignment in-place in the input data object (default: True)
-        extend_return (bool): If True, the return value will be a tuple with the weights in the second item (default: False)
-    Returns:
-        Sinogram: The result
-        weights (xp.ndarray): The weights in pixels
-    """
-
-    #Dont bother progress tracking for short processes
-    xp = sino.data.values.__array_namespace__()
-    indices = xp.argsort(sino.angles)
-    sino.angles = sino.angles[indices]
-    sino.data = sino.data[indices, :, :]
-    weights = xp.ones_like(sino.angles)
-
-    sorted_angles = copy.deepcopy(sino.angles) + 90
-    n_angles = len(sorted_angles)
-
-    for i in range(len(sorted_angles)):
-        if i == 0:
-            weights[i] = 0.5 * (180 - sorted_angles[n_angles - 1] + sorted_angles[i + 1])
-        elif i == len(sorted_angles) - 1:
-            weights[i] = 0.5 * (180 - sorted_angles[n_angles - 2] + sorted_angles[0])
-        else:
-            weights[i] = 0.5 * ((sorted_angles[i + 1] - sorted_angles[i]) + (sorted_angles[i] - sorted_angles[i - 1]))
-    ratio = 180 / (n_angles - 1)
-    weights = weights / ratio
-
-    for i in range(sino.data.shape[0]):
-        sino.data[i, :, :] = sino.data[i, :, :] * weights[i]
-
-    return sino, weights
 
 
-#@tomobase_hook_process(name='Manual Translation', category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
-class TranslateSinogramManual:
-    def __init__(self, sino: Sinogram, inplace: bool = True):
-        self.sino = sino
-        self.shape = sino.data.shape
-        self.inplace = inplace
-        self.index = 0
-        self.x = 0
-        self.y = 0
-        self._view()
 
-    def _view(self):
-        self.data = self.sino._transpose_to_view(use_copy=True)
-        self.tick_box = widgets.Checkbox(value=False, description='Move Green')
-        self.shift_box = widgets.Checkbox(value=False, description='Shift All')
-        self.x_slider = widgets.IntSlider(min=-self.shape[1] // 2, max=self.shape[1] // 2, value=0, description='x')
-        self.y_slider = widgets.IntSlider(min=-self.shape[2] // 2, max=self.shape[2] // 2, value=0, description='y')
-        self.confirm = widgets.Button(description='Confirm')
-        self.view = stackview.side_by_side(self.data[0:-2], self.data[1:-1])
 
-        self.img_slider = self.view.children[0].children[0].children[1].children[0].children[1]
-        self.index = self.img_slider.value
-
-        self.img_slider.observe(self._on_image_change, names='value')
-        self.confirm.on_click(self._on_confirm)
-        self.x_slider.observe(self._on_x_change, names='value')
-        self.y_slider.observe(self._on_y_change, names='value')
-
-        self.group = widgets.VBox([self.x_slider, self.y_slider, self.view, self.tick_box, self.shift_box, self.confirm])
-        display(self.group)
-
-    def _on_confirm(self, change):
-        self.sino.data = Sinogram._transpose_from_view(self.data)
-        return self.sino
-
-    def _on_image_change(self, change):
-        self.index = change.new
-        self.x_slider.value = 0
-        self.y_slider.value = 0
-
-    def _on_x_change(self, change):
-        value = 0
-        if not self.shift_box.value:
-            if self.tick_box.value:
-                value = 1
-            x = change.new - self.x
-            self.data[self.index + value, :, :] = np.roll(self.data[self.index + value, :, :], (0, x), axis=(0, 1))
-            self.view.update()
-            self.x = change.new
-        else:
-            x = change.new - self.x
-            self.data[:, :, :] = np.roll(self.data[:, :, :], (0, x), axis=(1, 2))
-            self.view.update()
-            self.x = change.new
-
-    def _on_y_change(self, change):
-        value = 0
-        if not self.shift_box.value:
-            if self.tick_box.value:
-                value = 1
-            y = change.new - self.y
-            self.data[self.index + value, :, :] = np.roll(self.data[self.index + value, :, :], (y, 0), axis=(0, 1))
-            self.view.update()
-            self.y = change.new
-        else:
-            y = change.new - self.y
-            self.data[:, :, :] = np.roll(self.data[:, :, :], (y, 0), axis=(1, 2))
-            self.view.update()
-            self.y = change.new
 
 
 
