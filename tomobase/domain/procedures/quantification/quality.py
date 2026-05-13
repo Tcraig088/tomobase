@@ -8,34 +8,34 @@ subcategory = registers.categories.add_hierarchy('Quality Metrics', value=9, par
 
 @registers.procedures.register(name='Structural Similarity',category=registers.categories['Quality Metrics'])
 def ssim( image:base_classes.ImageAbstract, reference:base_classes.ImageAbstract):
-    if image.data.dtype == proxy.xupy.uint8:
+    if image.xr.dtype == proxy.xupy.uint8:
         data_range = 255
-    elif image.data.dtype == proxy.xupy.float32 or image.data.dtype == proxy.xupy.float64:
+    elif image.xr.dtype == proxy.xupy.float32 or image.xr.dtype == proxy.xupy.float64:
         data_range = 1.0
-        if image.data.max() > 1.0:
-            data_range = image.data.max() - image.data.min()
-    value = proxy.skimage.metrics.structural_similarity(image.data, reference.data, data_range=data_range)
+        if image.xr.max() > 1.0:
+            data_range = image.xr.max() - image.xr.min()
+    value = proxy.skimage.metrics.structural_similarity(image.xr, reference.xr, data_range=data_range)
     return value
 
 @registers.procedures.register(name='Peak Signal to Noise',category=registers.categories['Quality Metrics'])
 def psnr(image:base_classes.ImageAbstract, reference:base_classes.ImageAbstract):
-    if image.data.dtype == proxy.xupy.uint8:
+    if image.xr.dtype == proxy.xupy.uint8:
         data_range = 255
-    elif image.data.dtype == proxy.xupy.float32 or image.data.dtype == proxy.xupy.float64:
+    elif image.xr.dtype == proxy.xupy.float32 or image.xr.dtype == proxy.xupy.float64:
         data_range = 1.0
-        if image.data.max() > 1.0:
-            data_range = image.data.max() - image.data.min()
-    value = proxy.skimage.metrics.peak_signal_noise_ratio(image.data, reference.data, data_range=data_range)
+        if image.xr.max() > 1.0:
+            data_range = image.xr.max() - image.xr.min()
+    value = proxy.skimage.metrics.peak_signal_noise_ratio(image.xr, reference.xr, data_range=data_range)
     return value
 
 @registers.procedures.register(name='Root Mean Squared Error', category=registers.categories['Quality Metrics'])
 def mse(image:base_classes.ImageAbstract, reference:base_classes.ImageAbstract):
-    value = proxy.xupy.sqrt(proxy.skimage.metrics.mean_squared_error(image.data, reference.data)) * 100
+    value = proxy.xupy.sqrt(proxy.skimage.metrics.mean_squared_error(image.xr, reference.xr)) * 100
     return value
 
 @registers.procedures.register(name='Mean Absolute Error',category=registers.categories['Quality Metrics'])
 def mae(image:base_classes.ImageAbstract, reference:base_classes.ImageAbstract):
-    value = proxy.xupy.mean(proxy.xupy.abs(image.data - reference.data))*100
+    value = proxy.xupy.mean(proxy.xupy.abs(image.xr - reference.xr))*100
     return value
 
 @registers.procedures.register(name='Signal To Noise',category=registers.categories['Quality Metrics'])

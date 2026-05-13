@@ -21,9 +21,9 @@ class InfoWidgetAbstract(VBox):
         pixel_size_widget = Label(value=f"Pixel Size (nm): {image.pixel_size}")
 
         _data_info_widget = {
-            "Dimensions": str(image.data.dims),
-            "Shape": str(image.data.shape),
-            "Data Type": str(image.data.dtype),
+            "Dimensions": str(image.xr.dims),
+            "Shape": str(image.xr.shape),
+            "Data Type": str(image.xr.dtype),
             "Max Value": str(image.values.max()),
             "Min Value": str(image.values.min()),
         }

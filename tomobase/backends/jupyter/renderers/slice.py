@@ -46,9 +46,9 @@ class SliceInfoWidget(Accordion):
 
     def _coords_for_dim_index(self, dim, i):
         out = []
-        data = self.image.data
+        array = self.image.xr
 
-        for coord_name, coord in data.coords.items():
+        for coord_name, coord in array.coords.items():
             if coord.dims == (dim,):
                 out.append((coord_name, coord.values[i]))
 
@@ -131,7 +131,7 @@ class ImageSliceWidget(VBox):
         self.remake_widget()
 
     def _view_dims(self):
-        return [d for d in self.image.data.dims if d != "signals"]
+        return [d for d in self.image.xr.dims if d != "signals"]
 
     def _pairs(self):
         view_dims = self._view_dims()
@@ -173,12 +173,12 @@ class ImageSliceWidget(VBox):
         return buf.getvalue()
 
     def _build_current_slice(self):
-        data = self.image.data
+        array = self.image.xr
         selected_dims = self._current_selected_dims()
 
         # Slice every non-view dimension using current sliders.
         indexers = {}
-        for d in data.dims:
+        for d in array.dims:
             if d not in selected_dims:
                 if d in self.slider:
                     indexers[d] = self.slider[d].value
@@ -186,7 +186,7 @@ class ImageSliceWidget(VBox):
                     indexers[d] = 0
 
         # isel indexes by dimension name; transpose reorders into display order. :contentReference[oaicite:1]{index=1}
-        view = data.isel(indexers).transpose(*selected_dims)
+        view = array.isel(indexers).transpose(*selected_dims)
 
         # At this point it should be 2D
         return view.values
@@ -199,9 +199,9 @@ class ImageSliceWidget(VBox):
         old_values = old_values or {}
         sliders = {}
         _coord_dict  = {}
-        for d in self.image.data.dims:
+        for d in self.image.xr.dims:
             if d not in selected_dims:
-                max_index = self.image.data.sizes[d] - 1
+                max_index = self.image.xr.sizes[d] - 1
                 value = min(old_values.get(d, max_index//2), max_index)
 
                 sliders[d] = IntSlider(

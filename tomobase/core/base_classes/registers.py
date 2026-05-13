@@ -29,19 +29,22 @@ class Registry(MutableMapping, Generic[K, V]):
         self.updated = Signal()
 
     def register(self, **kwargs):
-        def decorator(func):
+        def decorator(obj):
             name = kwargs.pop("name", None)
             if name is None:
-                func.tomobase_name = copy.deepcopy(func.__name__).replace("_", " ").title()
+                obj.tomobase_name = copy.deepcopy(obj.__name__).replace("_", " ").title()
             else:
-                func.tomobase_name = name
+                obj.tomobase_name = name
 
-            func._tomobase_kwargs = kwargs
-            self[func.tomobase_name] = func
+            obj._tomobase_kwargs = kwargs
+            self[obj.tomobase_name] = obj
             
-            @wraps(func)
+            if isinstance(obj, type):
+                return obj
+            
+            @wraps(obj)
             def thunk(*args, **kwargs):
-                current = self[func.tomobase_name]
+                current = self[obj.tomobase_name]
                 return current(*args, **kwargs)
             
             return thunk

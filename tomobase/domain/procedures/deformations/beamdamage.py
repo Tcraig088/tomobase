@@ -63,8 +63,8 @@ def beamdamage(volume: Volume, knock_on: float = 0.01, elastic_deform:float=0.1,
         Volume: The deformed volume.
     """
     
-    volume.data = _deform(volume.data, elastic_deform, normalize)
-    volume.data = _knockon(volume.data, knock_on)
+    volume.xr = _deform(volume.xr, elastic_deform, normalize)
+    volume.xr = _knockon(volume.xr, knock_on)
     return volume
 
 

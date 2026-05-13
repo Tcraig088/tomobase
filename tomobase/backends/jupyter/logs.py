@@ -18,13 +18,11 @@ class OutputWidgetHandler(logging.Handler):
 
 
 class LogWidget:
-    _instance = None
+    _instances = 0
 
     def __new__(cls, *args, **kwargs):
-        if cls._instance is not None:
-            raise RuntimeError("Only one LogWidget instance is allowed.")
         instance = super().__new__(cls)
-        cls._instance = instance
+        cls._instances += 1
         return instance
 
     def __init__(self):
@@ -93,12 +91,13 @@ class LogWidget:
         if self.widget_handler in self.logger.handlers:
             self.logger.removeHandler(self.widget_handler)
 
-        self.tomobase_logger.enable_cli()
+        if LogWidget._instances == 1:
+            self.tomobase_logger.enable_cli()
         self.output.close()
         self.container.close()
 
         self.is_open = False
-        LogWidget._instance = None
+        LogWidget._instances -= 1
 
     def clear(self):
         self.output.clear_output()

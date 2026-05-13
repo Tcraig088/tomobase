@@ -1,14 +1,44 @@
 
 from ...data_classes import Measurement
 from ...base_classes import ImageAbstract
-from ...environment import proxy, GPUContext
+from ...environment import GPUContext
 from ...log import logger
+from ..process_variables import ProcessVariables
+from ...environment import proxy
 from functools import wraps
+import dataclasses
+
+
+def _wrap_strip_process_context(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        kwargs.pop("__tomobase_context_key__", None)
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+def _wrap_process_context(func, *, default_inplace=True, default_proxy=proxy):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        ctx = ProcessVariables(
+            inplace=kwargs.pop("inplace", default_inplace),
+            verbose_outputs=kwargs.pop("verbose_outputs", False),
+            measurements=kwargs.pop("measurements", None),
+            proxy=kwargs.pop("proxy", default_proxy),
+            restore_context=kwargs.pop("restore_context", True),
+        )
+
+        kwargs["__tomobase_context_key__"] = ctx
+        return func(*args, **kwargs)
+
+    return wrapper
 
 def _wrap_use_context(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         logger.trace("Wrapped Execution: Setting context to specified GPU/CPU")
+        proxy = kwargs.get("proxy", None)
         context = proxy.get_context()
         for item in args:
             if isinstance(item, ImageAbstract) or isinstance(item, Measurement):
@@ -42,6 +72,7 @@ def _wrap_restore_context(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         logger.trace("Wrapped Execution: Restoring Original Context")
+        proxy = kwargs.get("proxy", None)
         restore_context = kwargs.pop("restore_context", True)
         results = func(*args, **kwargs)
         

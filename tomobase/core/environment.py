@@ -1,7 +1,33 @@
 import enum
 import numpy as np
+import cupy as cp
 from tomobase.core.log import logger
 import dask.array as da
+
+
+
+def get_xp(arr):
+    if hasattr(arr, "__array_namespace__"):
+        try:
+            return arr.__array_namespace__()
+        except Exception:
+            pass
+
+    try:
+        import cupy as cp
+        if isinstance(arr, cp.ndarray):
+            return cp
+    except ImportError:
+        pass
+
+    try:
+        import dask.array as da
+        if isinstance(arr, da.Array):
+            return da
+    except ImportError:
+        pass
+
+    return np
 
 
 class GPUContext(enum.Enum):
@@ -65,14 +91,14 @@ class EnvironmentContext():
         if isinstance(array.data, da.Array):
             xp = da
         else:
-            xp = array.values.__array_namespace__()
+            xp = get_xp(array.data)
 
         valid_state = True
         if current_context == GPUContext.CUPY:
             if xp is not cp:
                 valid_state = False
             else:
-                if current_device != array.device.id:
+                if current_device != device:
                     valid_state = False
 
         elif current_context == GPUContext.NUMPY:
@@ -84,17 +110,17 @@ class EnvironmentContext():
         
         context, device = self.set_context(context, device, set_param=False)
         if context == GPUContext.CUPY:
-            cp.Device(device).use()
+            cp.cuda.Device(device).use()
             if xp is np:
-                array = cp.asarray(array)
+                array = array.copy(data=cp.asarray(array.data))
             else:
                 if device != current_device:
                     with cp.cuda.Device(device):
                         array = array.copy()
 
-        #elif context == GPUContext.NUMPY:
-            #if xp is not np:
-            #    array = array.get()
+        elif context == GPUContext.NUMPY:
+            if xp is not np:
+                array = array.copy(data=cp.asnumpy(array.data))
         return array
         
 proxy = EnvironmentContext()

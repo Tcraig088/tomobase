@@ -21,8 +21,8 @@ def background_subtract_median(image: base_classes.ImageAbstract):
         Data: The resulting image data
     """
     
-    median = image.data.median()
-    image.data = image.data.where(image.data >= median, 0)
+    median = image.xr.median()
+    image.xr = image.xr.where(image.xr >= median, 0)
 
     return image
 
@@ -117,5 +117,5 @@ class MaskBackgroundManual():
 
         self._update_mask()
         self.data[~self.mask] = 0
-        self.sino.data = Sinogram._transpose_from_view(self.data)
+        self.sino.xr = Sinogram._transpose_from_view(self.data)
         return self.sino

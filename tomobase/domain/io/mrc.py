@@ -39,7 +39,7 @@ def _write_mrc(sino, filename, **kwargs):
     filename = Path(filename)
 
     with mrcfile.new(filename, overwrite=True) as mrc:
-        mrc.set_data(np.asarray(sino.data))
+        mrc.set_data(np.asarray(sino.values))
         mrc.voxel_size = (sino.pixelsize, sino.pixelsize, sino.pixelsize)
 
     # write non-standard metadata to a sidecar json

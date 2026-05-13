@@ -22,6 +22,7 @@ def _wrap_tuple(func):
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
+        kwargs.pop("proxy", None)
         logger.trace("Wrapped Execution: Packing Results into tuple")
         results = func(*args, **kwargs)
         if not isinstance(results, tuple):

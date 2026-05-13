@@ -5,9 +5,9 @@ subcategory = registers.categories.add_hierarchy('Properties', value=7, parent =
 @registers.procedures.register(name='Surface Area', category=subcategory, isquantification=True)
 def surface_area(volume: Volume, threshold: float = 0.0, ):
     if proxy.xupy.isclose(threshold, 0.0):
-        threshold = proxy.skimage.filters.threshold_otsu(volume.data)
-    mask = proxy.xupy.zeros_like(volume.data)
-    mask[volume.data > threshold] = 1
+        threshold = proxy.skimage.filters.threshold_otsu(volume.xr)
+    mask = proxy.xupy.zeros_like(volume.xr)
+    mask[volume.xr > threshold] = 1
 
     kernel = proxy.xupy.ones((3, 3, 3))
     mask= proxy.scipy.ndimage.convolve(mask, kernel, mode='constant', cval=0.0)/27
@@ -19,16 +19,16 @@ def surface_area(volume: Volume, threshold: float = 0.0, ):
 @registers.procedures.register(name='Volume', category=subcategory,isquantification=True)
 def volume(volume: Volume, threshold: float = 0.0):
     if proxy.xupy.isclose(threshold, 0.0):
-        threshold = proxy.skimage.filters.threshold_otsu(volume.data)
-    mask = proxy.xupy.zeros_like(volume.data)
-    mask[volume.data > threshold] = 1
+        threshold = proxy.skimage.filters.threshold_otsu(volume.xr)
+    mask = proxy.xupy.zeros_like(volume.xr)
+    mask[volume.xr > threshold] = 1
     value = proxy.xupy.sum(mask) * volume.pixelsize**3
     return value
 
 @registers.procedures.register(name='Surface Area Volume Ratio', category=subcategory,  isquantification=True)
 def sav(volume: Volume, threshold: float = 0.0):
     if proxy.xupy.isclose(threshold, 0.0):
-        threshold = proxy.skimage.filters.threshold_otsu(volume.data)
+        threshold = proxy.skimage.filters.threshold_otsu(volume.xr)
     sa = surface_area(volume, threshold)
     vol = volume(volume, threshold)
     value = sa / vol
@@ -44,20 +44,20 @@ def alloying(volume: Volume, reference:Volume, materiala:float=0.0, materialb:fl
     Returns:
         float: The alloying value.
     """
-    std_reference = proxy.xupy.std(reference.data)
+    std_reference = proxy.xupy.std(reference.xr)
     if proxy.xupy.isclose(std_homogenized, 0.0) and proxy.xupy.isclose(std_reference, 0.0):
-        materiala_count = reference.data[proxy.xupy.isclose(reference.data, materiala)].count()
-        materiala_sum = reference.data[proxy.xupy.isclose(reference.data, materiala)].sum()
+        materiala_count = reference.xr[proxy.xupy.isclose(reference.xr, materiala)].count()
+        materiala_sum = reference.xr[proxy.xupy.isclose(reference.xr, materiala)].sum()
 
-        materialb_count = reference.data[proxy.xupy.isclose(reference.data, materialb)].count()
-        materialb_sum = reference.data[proxy.xupy.isclose(reference.data, materialb)].sum()
+        materialb_count = reference.xr[proxy.xupy.isclose(reference.xr, materialb)].count()
+        materialb_sum = reference.xr[proxy.xupy.isclose(reference.xr, materialb)].sum()
 
     
-        homogenized_data = proxy.xupy.zeros_like(reference.data)
-        homogenized_data[reference.data>0] = 1.0
+        homogenized_data = proxy.xupy.zeros_like(reference.xr)
+        homogenized_data[reference.xr>0] = 1.0
         homogenized_data *= (materiala_sum + materialb_sum)/(materiala_count + materialb_count)
 
         std_homogenized = proxy.xupy.std(homogenized_data)
-    std_volume = proxy.xupy.std(volume.data)
+    std_volume = proxy.xupy.std(volume.xr)
     value = (std_volume - std_reference)/(std_homogenized - std_reference)
     return value

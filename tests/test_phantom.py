@@ -11,9 +11,9 @@ def test_phantoms():
     currently tests 3 phantoms nanocage, nanorod and nanocube
     """
     phantom = phantoms.get_nanocage()
-    assert phantom.data.shape == (307, 307, 307)
+    assert phantom.xr.shape == (307, 307, 307)
     assert phantom.pixelsize == 1.0
-    assert np.isclose(np.max(phantom.data), 1.0, atol=1e4)
+    assert np.isclose(np.max(phantom.xr), 1.0, atol=1e4)
     assert isinstance(phantom, Volume)
     
     phantom = get_nanorod()

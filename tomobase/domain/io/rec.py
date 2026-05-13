@@ -8,7 +8,7 @@ from ...core.data_classes.images import Volume
 
 def _write_rec(self, filename, normalize=True, **kwargs):
     # Convert data to (X, Y, Z)
-    data = np.transpose(self.data.values, (1, 0, 2))
+    data = np.transpose(self.values, (1, 0, 2))
 
     # Create MRC header
     header = np.zeros(256, dtype='int32')

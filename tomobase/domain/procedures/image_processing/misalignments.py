@@ -1,11 +1,8 @@
 from copy import deepcopy
 
-import scipy
-
-
 from ....core.data_classes.images import Sinogram
 from ....core.base_classes import ImageAbstract
-from ....core import registers, progress, logger
+from ....core import registers, progress, logger, utils, GPUContext, get_xp
 
 
 
@@ -21,37 +18,42 @@ def gaussian_filter(obj: ImageAbstract, gaussian_sigma:float=1,):
     Returns:
         Data: The result
     """
-    progress_bar = progress.new(name="Applying Gaussian filter", total=obj.data.sizes['n'])
+    xp = get_xp(obj.data)
+    ndimage = utils.get_module('ndimage', obj.context)
+
+    total, indexer = utils.iter_indexers_with_len({d: obj.xr.sizes[d] for d in obj.non_spatial_dims}, obj.non_spatial_dims)
+    progress_bar = progress.new(name="Applying Gaussian filter", total=total)
     for i in progress_bar:
-        filtered = scipy.ndimage.gaussian_filter(
-            obj.data.isel(n=i).values,
+        idx = next(indexer)
+        filtered = ndimage.gaussian_filter(
+            obj.xr.isel(idx).values,
             gaussian_sigma
         )
 
-        obj.data.loc[{ "n": obj.data.coords["n"].values[i] }] = filtered
+        obj.xr.loc[idx] = filtered
     return obj
 
 @registers.procedures.register(category=subcategory)
-def poisson_noise(obj: ImageAbstract, 
+def poisson_noise(image: ImageAbstract, 
                   rescale:float=1.0):
     """Add Poisson noise to the sinogram.
     Args:
-        obj (Data): The input data object
+        image (ImageAbstract): The input data object
         rescale (float): Rescale the data to the range of the Poisson noise (default: 1.0)
  
     Returns:
-        Data: The result
+        ImageAbstract: The result
     """
-    if (obj.data < 0).any():
+    if (image.data < 0).any():
         raise ValueError("Poisson noise requires non-negative input data.")
 
     if rescale <= 0:
         raise ValueError("Rescale factor must be positive.")
     
-    xp = obj.data.values.__array_namespace__()
-    obj.data = obj.data*rescale
-    obj.data.values = xp.random.poisson(obj.data)
-    return obj
+    xp = get_xp(image.data)
+    image.data = image.data*rescale
+    image.data = xp.random.poisson(image.data)
+    return image
 
 
 
@@ -66,21 +68,23 @@ def translational_misalignment(sino: Sinogram, offset:float=0.25):
         sino (Sinogram): The result
         shifts (ndarray): The shifts applied to each projection (only if extend_return is True)
     """
-    xp = sino.data.values.__array_namespace__()
-    shifts = xp.zeros((sino.data.sizes['n'], 2))
+    xp = get_xp(sino.data)
+    shifts = xp.zeros((sino.xr.sizes['n'], 2))
     
-    progress_bar = progress.new(name="Applying translational misalignment", total=sino.data.sizes['n'])
+    total, indexer = utils.iter_indexers_with_len({d: sino.xr.sizes[d] for d in sino.non_spatial_dims}, sino.non_spatial_dims)
+    progress_bar = progress.new(name="Applying translational misalignment", total=total)
     for i in progress_bar:
+        idx = next(indexer)
         if i == 0:
             shifts[i, :] = 0
             continue
-        image_offset_x = int(xp.round(sino.data.sizes['x'] * xp.random.uniform(-offset, offset)))
-        image_offset_y = int(xp.round(sino.data.sizes['y'] * xp.random.uniform(-offset, offset)))
+        image_offset_x = int(xp.round(sino.xr.sizes['x'] * xp.random.uniform(-offset, offset)))
+        image_offset_y = int(xp.round(sino.xr.sizes['y'] * xp.random.uniform(-offset, offset)))
         
         
-        sl = sino.data.isel(n=i)
+        sl = sino.xr.isel(idx)
         rolled = xp.roll(sl.data,(image_offset_x, image_offset_y),axis=(0, 1))
-        sino.data.loc[dict(n=sl.coords["n"].item())] = rolled
+        sino.xr.loc[idx] = rolled
         shifts[i, :] = (image_offset_x, image_offset_y)
 
     return sino, shifts
@@ -105,17 +109,29 @@ def rotational_misalignment(sino: Sinogram,
         rotations (ndarray): The rotations applied to each projection (only if extend_return is True)
     """
 
-    xp = sino.data.values.__array_namespace__()
-    rotations = xp.zeros(sino.data.sizes['n'])
-
-    progress_bar = progress.new(name="Applying rotational misalignment", total=sino.data.sizes['n'])
+    xp = get_xp(sino.data)
+    ndimage = utils.get_module('ndimage', sino.context)
+        
+    rotations = xp.zeros(sino.xr.sizes['n'])
+    
+    if "signals" in sino.xr.dims:
+        dims = {"signals": 0, "n": 0}
+    else:
+        dims = {"n": 0}
+        
+    progress_bar = progress.new(name="Calculating rotational misalignment", total=sino.xr.sizes['n'])
     for i in progress_bar:
         rotations[i] = tilt_theta * xp.random.uniform(-1, 1)
-        s1 = sino.data.isel(n=i)
-        rotated = scipy.ndimage.rotate(s1.values, rotations[i], reshape=False)
-        sino.data.loc[dict(n=s1.coords["n"].item())].values = rotated
-
-    progress_bar = progress.new(name="Applying rotational backlash", total=sino.data.sizes['n'])
+        
+    total, indexer = utils.iter_indexers_with_len({d: sino.xr.sizes[d] for d in sino.non_spatial_dims}, sino.non_spatial_dims)   
+    progress_bar = progress.new(name="Applying rotational misalignment", total=total)
+    for i in progress_bar:
+        idx = next(indexer)
+        s1 = sino.xr.isel(dims)
+        rotated = ndimage.rotate(s1.data, rotations[idx["n"]], reshape=False)
+        sino.xr.loc[dims].data = rotated
+        
+    progress_bar = progress.new(name="Applying rotational backlash", total=sino.xr.sizes['n'])
     for i in progress_bar:
         offset = tilt_alpha * xp.random.uniform(-1, 1)
         if i > 0:
@@ -124,7 +140,7 @@ def rotational_misalignment(sino: Sinogram,
             elif not backlash_backwards and sino.angles[i] > sino.angles[i-1]:
                 offset += backlash
         sino.angles[i] = sino.angles[i] + offset
-    logger.trace(f"Data type: {sino.data}")
+    logger.trace(f"Data type: {sino.xr}")
 
     return sino, rotations
 

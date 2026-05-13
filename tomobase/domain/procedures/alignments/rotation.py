@@ -1,27 +1,24 @@
 
 import numpy as np
-from copy import copy
+import copy
 
-from scipy.ndimage import center_of_mass, shift, rotate
-from scipy.optimize import minimize_scalar
-
-from magicgui.tqdm import trange, tqdm
+import scipy
+import cupyx.scipy as cpscipy
 
 from ....core.data_classes.images import Sinogram
-from ..reconstruct import astra_reconstruct
-from ..forward_project import project
+from ..reconstruct import project, reconstruct_mlem
 
-from ....core import registers, logger, progress
+
+from ....core import registers, logger, progress, utils, GPUContext, get_xp
 
 subcategory = registers.categories.add_hierarchy('Tilt Axis Corrections', value=5, parent = 'Align')
-@registers.procedures.register(name='Tilt Shift', category=subcategory, subcategories=subcategory, use_numpy=True)
-def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=0.0, **kwargs):
+@registers.procedures.register(name='Tilt Shift', category=subcategory)
+def align_tilt_axis_shift(sino: Sinogram, **kwargs):
     """Align the tilt axis shift of a sinogram using reprojection
 
     Args:
         sino (Sinogram): The projection data
         method (str): The reconstruction algorithm (default: 'fbp')
-        offsets (np.ndarray): A list of offsets to try in pixels, if None is given it will use ``numpy.arange(-10, 11)`` (default: None)
         offset (float): A pre-calculated offset in pixels, this is useful for aligning multiple sinograms simultaneously (default: None)
         inplace (bool): Whether to do the alignment in-place in the input data object (default: True)
         extend_return (bool): If True, the return value will be a tuple with the offset in the second item (default: False)
@@ -31,27 +28,44 @@ def align_tilt_axis_shift(sino: Sinogram, method:str='fbp', offsets:float=0.0, *
         Sinogram: The result
         offset (float): The offset in pixels
     """
-    offset = None
-    if offsets == 0.0:
-        offsets = np.arange(-10, 11)
-    mse = np.zeros(len(offsets))
-    sino_shifted = copy(sino)
 
-    progress_bar = progress.new(name="Aligning tilt axis shift", total=len(offsets))
+    xp = get_xp(sino.data)
+    offsets = xp.arange(-10, 11)
+    mse = xp.zeros(len(offsets))
+    
+    try:
+        sino_shifted = sino.split('signals')[0]
+        s1 = sino.split('signals')[0]
+    except:
+        sino_shifted = copy.deepcopy(sino)
+        s1 = sino
+        
+    use_3d = kwargs.get('use_3D', True)
+    kernel = kwargs.get('kernel', 'astra')
+    kwargs['restore_context'] = False
+     
+    progress_bar = progress.new(name="Calculating tilt axis shift", total=len(offsets))
     for i in progress_bar:
-        s1 = sino.data.isel(n=i)
-        sino_shifted.data = shift(s1.values, (0, 0, offsets[i]), mode='wrap')
-        reproj = project(astra_reconstruct(sino_shifted, method, **kwargs), sino.angles)
-        mse[i] = np.mean((sino_shifted.data - reproj.data) ** 2)
-    offset = offsets[np.argmin(mse)]
+        sino_shifted.data = xp.roll(s1.data, offsets[i], axis=1)
+        reproj = project(reconstruct_mlem(sino_shifted, **kwargs), sino_shifted.angles, kernel=kernel, use_3D=use_3d, restore_context=False)
+        mse[i] = xp.mean((sino_shifted.data - reproj.data) ** 2)
+    offset = offsets[xp.argmin(mse)]
 
-    sino.data = shift(sino.data, (0, 0, offset), mode='wrap')
+
+    if "signals" in sino.xr.dims:
+        progress_bar = progress.new(name="Applying tilt axis shift", total=sino.xr.sizes['signals'])
+        for i in progress_bar:
+            s1 = sino.xr.isel(signals=i)
+            shifted = xp.roll(s1.data, offset, axis=1)
+            sino.xr.loc[dict(signals=s1.coords["signals"].item())] = shifted
+    else:
+        sino.data = xp.roll(sino.data, offset, axis=1)
 
     return sino, offset
 
 
-@registers.procedures.register(name='Tilt Rotation', category=subcategory, subcategories=subcategory, use_numpy=True)
-def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=0.0, **kwargs):
+@registers.procedures.register(name='Tilt Rotation', category=subcategory)
+def align_tilt_axis_rotation(sino:Sinogram, angle:float=0.0, **kwargs):
     """Align the tilt axis rotation of a sinogram using reprojection
     Args:
         sino (Sinogram): The projection data
@@ -66,26 +80,39 @@ def align_tilt_axis_rotation(sino:Sinogram, method:str='fbp', angle:float=0.0, *
         Sinogram: The result
         angle (float): The angle in degrees
     """
+    xp = get_xp(sino.data)
+    ndimage = utils.get_module('ndimage', sino.context)
     
-    #TODO: Add context shifting
-    angles=None
-
-
-    if angle == 0.0:
-        if angles is None:
-            angles = np.arange(-4, 5)
-        mse = np.zeros(len(angles))
-        sino_rot = copy(sino)
-
-        for i in tqdm(range(len(angles)), label='Aligning tilt axis rotation'):
-            sino_rot.data = rotate(sino.data, angles[i], reshape=False, axes=(2,1))
-            reproj = project(astra_reconstruct(sino_rot, method, **kwargs),
-                            sino.angles)
-            mse[i] = np.mean((sino_rot.data - reproj.data) ** 2)
+    angles = xp.arange(-5+angle, 5+angle)
+    mse = xp.zeros(len(angles))
+    
+    try:
+        sino_rot = sino.split('signals')[0]
+        s1 = sino.split('signals')[0]
+    except:
+        sino_rot = copy.deepcopy(sino)
+        s1 = sino
+    
+    use_3d = kwargs.get('use_3D', True)
+    kernel = kwargs.get('kernel', 'astra')
+    kwargs['restore_context'] = False
+     
+    progress_bar = progress.new(name="Aligning tilt axis rotation", total=len(angles))
+    for i in progress_bar:
+        sino_rot.xr.data = ndimage.rotate(s1.data, angles[i], reshape=False, axes=(1,2))
+        reproj = project(reconstruct_mlem(sino_rot, **kwargs), sino.angles, use_3D=use_3d, restore_context=False)
+        mse[i] = xp.mean((sino_rot.data - reproj.data) ** 2)
             
-        angle = angles[np.argmin(mse)]
-
-    sino.data = rotate(sino.data, angle, reshape=False, axes=(2,1))
+    angle = angles[xp.argmin(mse)]
+    
+    if "signals" in sino.xr.dims:
+        progress_bar = progress.new(name="Applying tilt axis rotation", total=sino.xr.sizes['signals'])
+        for i in progress_bar:
+            s1 = sino.xr.isel(signals=i)
+            rotated = ndimage.rotate(s1.data, angle, reshape=False, axes=(1,2))
+            sino.xr.loc[dict(signals=s1.coords["signals"].item())] = rotated
+    else:
+        sino.xr.data = ndimage.rotate(sino.xr.data, angle, reshape=False, axes=(1,2))
 
     return sino, angle
 
@@ -105,12 +132,12 @@ def backlash_correct(sino: Sinogram, tolerance:float= 10.0, method:str='bounded'
     """
     
     progress = 0
-
+    #TODO Implement 
     def objective_function(value, sino, indices):
         angles = copy(sino.angles)
         sino.angles[indices] += value
         reproj = project(astra_reconstruct(sino, 'fbp'), sino.angles[indices])        
-        error = np.sqrt(np.mean((sino.data[indices,:,: ] - reproj.data) ** 2))
+        error = np.sqrt(np.mean((sino.data[indices,:,: ] - reproj.xr) ** 2))
         sino.angles = angles
         logger.debug(f'Error: {error}')
         progress += 1

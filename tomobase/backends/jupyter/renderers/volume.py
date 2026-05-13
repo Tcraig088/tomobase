@@ -103,7 +103,7 @@ class ImageVolumeWidget(VBox):
         self.remake_widget()
 
     def _view_dims(self):
-        return [d for d in self.image.data.dims if d not in self._blocked_view_dims]
+        return [d for d in self.image.xr.dims if d not in self._blocked_view_dims]
 
     def _triplets(self):
         view_dims = self._view_dims()
@@ -121,12 +121,12 @@ class ImageVolumeWidget(VBox):
         return {d: w.value for d, w in self.slider.items()}
 
     def _build_current_volume(self):
-        data = self.image.data
+        array = self.image.xr
         selected_dims = self._current_selected_dims()
 
         # Slice every non-view dimension using current sliders.
         indexers = {}
-        for d in data.dims:
+        for d in array.dims:
             if d not in selected_dims:
                 if d in self.slider:
                     indexers[d] = self.slider[d].value
@@ -134,7 +134,7 @@ class ImageVolumeWidget(VBox):
                     indexers[d] = 0
 
         # Reorder into the displayed volume axis order.
-        view = data.isel(indexers).transpose(*selected_dims)
+        view = array.isel(indexers).transpose(*selected_dims)
         arr = np.asarray(view.values)
 
         if arr.ndim != 3:
@@ -165,9 +165,9 @@ class ImageVolumeWidget(VBox):
         old_values = old_values or {}
         sliders = {}
 
-        for d in self.image.data.dims:
+        for d in self.image.xr.dims:
             if d not in selected_dims:
-                max_index = self.image.data.sizes[d] - 1
+                max_index = self.image.xr.sizes[d] - 1
                 value = min(old_values.get(d, max_index // 2), max_index)
 
                 sliders[d] = IntSlider(

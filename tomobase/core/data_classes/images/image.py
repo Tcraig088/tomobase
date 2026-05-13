@@ -7,10 +7,6 @@ from ... import registers, base_classes
 class Image(base_classes.ImageAbstract):
     def __init__(self, name, data, pixelsize: float = 1.0, metadata: dict = {}, *args, **kwargs):
         
-        if not isinstance(data, xr.DataArray):
-            if len(data.shape) == 3:
-                dims = ['signals', 'y', 'x']
-            elif len(data.shape) == 2:
-                dims = ['y', 'x']
-        super().__init__(name, data, dims, pixelsize, metadata, *args, **kwargs)
+        data = super()._construct_data_array(data, pixel_size=pixelsize)
+        super().__init__(name, data, pixelsize, metadata)
     

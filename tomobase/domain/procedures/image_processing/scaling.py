@@ -14,54 +14,48 @@ def normalize(image: base_classes.ImageAbstract):
         ImageAbstract: The result
 
     """
-    image.data = (image.data - image.data.min()) / (image.data.max() - image.data.min())
+    if "signals" in image.xr.dims:
+        for i in range(image.xr.sizes['signals']):
+            sl = image.xr.isel(signals=i)
+            image.xr.loc[dict(signals=sl.coords["signals"].item())] = (sl - sl.min()) / (sl.max() - sl.min())
+    else:
+        image.xr = (image.xr - image.xr.min()) / (image.xr.max() - image.xr.min())
     return image
 
 @registers.procedures.register(name='Bin Data', category=subcategory)
-def bin(obj: base_classes.ImageAbstract, factor: int = 2):
-    """Bin the sinogram data by a specified factor.
+def bin(image: base_classes.ImageAbstract, factor: int = 2):
+    """Bin the image data by a specified factor.
 
     Args:
-        sino (Sinogram): The projection data
+        image (ImageAbstract): The input image data
         factor (int): The binning factor (default: 2)
 
     Returns:
-        Sinogram: The result
+        ImageAbstract: The result
     """
 
-    skipped_axis = 1
-
-    #if isinstance(obj, Sinogram):
-    #    skipped_axis += 1
-    #if obj.data.ndim > obj.dim_default:
-    #    skipped_axis += 1
-
-    axes = range(obj.data.ndim)
-    factors = [1 if (i < skipped_axis) else factor for i in axes]
-
-
-     # Check divisibility
-    for i, (dim, b) in enumerate(zip(obj.data.shape, factors)):
+    factors = [1 if dim in image.non_spatial_dims else factor for dim in image.xr.dims]
+    for i, (dim, b) in enumerate(zip(image.xr.shape, factors)):
         if dim % b != 0:
             raise ValueError(f"Axis {i} size {dim} not divisible by bin factor {b}")
 
-    # Compute new shape for reshaping
+
     reshaped = []
-    for dim, b in zip(obj.data.shape, factors):
+    for dim, b in zip(image.xr.shape, factors):
         reshaped.extend([dim // b, b])
-    obj.data = obj.data.reshape(reshaped)
+    data = image.xr.data.reshape(reshaped)
+    bin_axes = tuple(range(1, 2 * len(factors), 2))
+    data = data.mean(axis=bin_axes)
 
-    # Compute mean over binning axes
-    for i in reversed(range(obj.data.ndim // 2)):
-        obj.data = obj.data.mean(axis=i * 2 + 1) 
-
-    if not obj.pixelsize == 1.0:
-        obj.pixelsize = obj.pixelsize * factor
+    image.reshape_and_fill(data)
+    if not image.pixel_size == 1.0:
+        image.pixel_size = image.pixel_size * factor
     
-    return obj
+    return image
 
 @registers.procedures.register(name='Pad Sinogram', category=subcategory)
 def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0):
+    #TODO Fix
     """ Pad the sinogram to the specified size.
 
     Args:
@@ -73,11 +67,11 @@ def pad_sinogram(sino: Sinogram, x: int = 0, y: int = 0):
         Sinogram: The result
     """
     
-    pad_x = x - sino.data.shape[-2]
-    pad_y = y - sino.data.shape[-1]
+    pad_x = x - sino.xr.shape[-2]
+    pad_y = y - sino.xr.shape[-1]
     if pad_x < 0 or pad_y < 0:
         raise ValueError("Cannot pad to a smaller size")
-    sino.data = proxy.xupy.pad(sino.data, ( (0, 0), (pad_x // 2, pad_x // 2), (pad_y // 2, pad_y // 2)), mode='constant')
+    sino.xr = proxy.xupy.pad(sino.xr, ( (0, 0), (pad_x // 2, pad_x // 2), (pad_y // 2, pad_y // 2)), mode='constant')
 
     return sino
 
@@ -95,11 +89,11 @@ def crop_sinogram(sino: Sinogram, x: int = 0, y: int = 0):
     Returns:
     Sinogram: Cropped sinogram.
     """
-    crop_x = sino.data.shape[-2] - x
-    crop_y = sino.data.shape[-1] - y
+    crop_x = sino.xr.shape[-2] - x
+    crop_y = sino.xr.shape[-1] - y
     if crop_x < 0 or crop_y < 0:
         raise ValueError("Cannot crop to a smaller size")
-    sino.data = sino.data[:, :, crop_x // 2:-crop_x // 2, crop_y // 2:-crop_y // 2]
+    sino.xr = sino.xr[:, :, crop_x // 2:-crop_x // 2, crop_y // 2:-crop_y // 2]
 
     return sino
 
@@ -116,5 +110,5 @@ class CropSinogram:
         display(widgets.VBox([self.view, confirm]))
 
     def on_confirm(self, b):
-        self.sino.data = Sinogram._transpose_from_view(self.view.crop())
+        self.sino.xr = Sinogram._transpose_from_view(self.view.crop())
         return self.sino
