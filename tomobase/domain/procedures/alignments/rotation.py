@@ -57,7 +57,7 @@ def align_tilt_axis_shift(sino: Sinogram, **kwargs):
         for i in progress_bar:
             s1 = sino.xr.isel(signals=i)
             shifted = xp.roll(s1.data, offset, axis=1)
-            sino.xr.loc[dict(signals=s1.coords["signals"].item())] = shifted
+            sino.xr.loc[dict(signals=i)] = shifted
     else:
         sino.data = xp.roll(sino.data, offset, axis=1)
 
