@@ -49,7 +49,6 @@ def project(volume: Volume, angles: Union[TiltSchemeCursor, np.ndarray], kernel:
         idx = next(indices)
         vol_slice = volume.xr.isel(idx).data
         sino_slice = A(vol_slice)
-        print('sino slice shape', sino_slice.shape, idx)
         sinogram.xr.isel(idx).data[...] = sino_slice
 
     sinogram, volume = format_after_projection(sinogram, volume)

@@ -127,7 +127,7 @@ class ImageAbstract(BaseDataModel):
     def split(self, axis):
         if axis in self.xr.dims:
             for i in range(self.xr.sizes[axis]):
-                yield type(self)._from_dataarray(self.name, self.xr.isel({axis: i}))
+                yield type(self)._from_dataarray(self.name, self.xr.isel({axis: i})).set_context(self.context, self.device)
         else:
             raise ValueError(f"Axis {axis} not found in data dimensions {self.xr.dims}")
     

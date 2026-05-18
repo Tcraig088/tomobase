@@ -5,6 +5,8 @@ import copy
 import scipy
 import cupyx.scipy as cpscipy
 
+
+
 from ....core.data_classes.images import Sinogram
 from ..reconstruct import project, reconstruct_mlem
 
@@ -33,10 +35,11 @@ def align_tilt_axis_shift(sino: Sinogram, **kwargs):
     offsets = xp.arange(-10, 11)
     mse = xp.zeros(len(offsets))
     
-    try:
-        sino_shifted = sino.split('signals')[0]
-        s1 = sino.split('signals')[0]
-    except:
+    if "signals" in sino.xr.dims:
+        s1 = next(sino.split("signals"))
+        sino_shifted = copy.deepcopy(s1)
+
+    else:
         sino_shifted = copy.deepcopy(sino)
         s1 = sino
         
@@ -46,7 +49,7 @@ def align_tilt_axis_shift(sino: Sinogram, **kwargs):
      
     progress_bar = progress.new(name="Calculating tilt axis shift", total=len(offsets))
     for i in progress_bar:
-        sino_shifted.data = xp.roll(s1.data, offsets[i], axis=1)
+        sino_shifted.xr[...] = xp.roll(s1.data, offsets[i], axis=2)
         reproj = project(reconstruct_mlem(sino_shifted, **kwargs), sino_shifted.angles, kernel=kernel, use_3D=use_3d, restore_context=False)
         mse[i] = xp.mean((sino_shifted.data - reproj.data) ** 2)
     offset = offsets[xp.argmin(mse)]
@@ -56,11 +59,14 @@ def align_tilt_axis_shift(sino: Sinogram, **kwargs):
         progress_bar = progress.new(name="Applying tilt axis shift", total=sino.xr.sizes['signals'])
         for i in progress_bar:
             s1 = sino.xr.isel(signals=i)
-            shifted = xp.roll(s1.data, offset, axis=1)
-            sino.xr.loc[dict(signals=i)] = shifted
+            shifted = xp.roll(s1.data, offset, axis=2)
+            sino.xr[dict(signals=i)] = shifted
     else:
-        sino.data = xp.roll(sino.data, offset, axis=1)
-
+        sino.data = xp.roll(sino.data, offset, axis=2)
+    print("offsets:", offsets)
+    print("mse:", mse)
+    print("argmin:", xp.argmin(mse))
+    print("chosen:", offsets[xp.argmin(mse)])
     return sino, offset
 
 
@@ -86,10 +92,11 @@ def align_tilt_axis_rotation(sino:Sinogram, angle:float=0.0, **kwargs):
     angles = xp.arange(-5+angle, 5+angle)
     mse = xp.zeros(len(angles))
     
-    try:
-        sino_rot = sino.split('signals')[0]
-        s1 = sino.split('signals')[0]
-    except:
+    if "signals" in sino.xr.dims:
+        s1 = next(sino.split("signals"))
+        sino_rot = copy.deepcopy(s1)
+
+    else:
         sino_rot = copy.deepcopy(sino)
         s1 = sino
     
@@ -99,22 +106,27 @@ def align_tilt_axis_rotation(sino:Sinogram, angle:float=0.0, **kwargs):
      
     progress_bar = progress.new(name="Aligning tilt axis rotation", total=len(angles))
     for i in progress_bar:
-        sino_rot.xr.data = ndimage.rotate(s1.data, angles[i], reshape=False, axes=(1,2))
+        angle_i = float(angles[i].item())
+        sino_rot.xr.data = ndimage.rotate(s1.data, angle_i, reshape=False, axes=(1,2))
         reproj = project(reconstruct_mlem(sino_rot, **kwargs), sino.angles, use_3D=use_3d, restore_context=False)
         mse[i] = xp.mean((sino_rot.data - reproj.data) ** 2)
             
-    angle = angles[xp.argmin(mse)]
+    best_i = int(xp.argmin(mse).item())
+    angle = float(angles[best_i].item())
     
     if "signals" in sino.xr.dims:
         progress_bar = progress.new(name="Applying tilt axis rotation", total=sino.xr.sizes['signals'])
         for i in progress_bar:
             s1 = sino.xr.isel(signals=i)
             rotated = ndimage.rotate(s1.data, angle, reshape=False, axes=(1,2))
-            sino.xr.loc[dict(signals=s1.coords["signals"].item())] = rotated
+            sino.xr[dict(signals=i)] = rotated
     else:
-        sino.xr.data = ndimage.rotate(sino.xr.data, angle, reshape=False, axes=(1,2))
-
-    return sino, angle
+        sino.xr = ndimage.rotate(sino.xr.data, angle, reshape=False, axes=(1,2))
+    print("angles:", angles)
+    print("mse:", mse)
+    print("argmin:", xp.argmin(mse))
+    print("chosen:", angles[xp.argmin(mse)])
+    return (sino, angle)
 
 #This backlash correction is experimental and not fully tested
 #@tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)
