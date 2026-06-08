@@ -4,6 +4,10 @@ theme:
   name: readthedocs
 
 
+markdown_extensions:
+  - toc:
+      toc_depth: 4
+
 plugins:
   - autorefs
   - mkdocs-jupyter

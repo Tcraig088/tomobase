@@ -41,11 +41,11 @@ def _wrap_use_context(func):
         proxy = kwargs.get("proxy", None)
         context = proxy.get_context()
         for item in args:
-            if isinstance(item, ImageAbstract) or isinstance(item, Measurement):
+            if isinstance(item, ImageAbstract):
                 item.set_context(*context)
 
         for key, value in kwargs.items():
-            if isinstance(value, ImageAbstract) or isinstance(value, Measurement):
+            if isinstance(value, ImageAbstract):
                 value.set_context(*context)
 
         return func(*args, **kwargs)
@@ -58,11 +58,11 @@ def _wrap_use_numpy(func):
     def wrapper(*args, **kwargs):
         logger.trace("Wrapped Execution: Setting context to NUMPY")
         for item in args:
-            if isinstance(item, ImageAbstract) or isinstance(item, Measurement):
+            if isinstance(item, ImageAbstract):
                 item.set_context(GPUContext.NUMPY)
 
         for key, value in kwargs.items():
-            if isinstance(value, ImageAbstract) or isinstance(value, Measurement):
+            if isinstance(value, ImageAbstract):
                 value.set_context(GPUContext.NUMPY)
 
         return func(*args, **kwargs)
@@ -78,15 +78,15 @@ def _wrap_restore_context(func):
         
         if restore_context:
             for item in args:
-                if isinstance(item, ImageAbstract) or isinstance(item, Measurement):
+                if isinstance(item, ImageAbstract):
                     item.set_context(GPUContext.NUMPY)
 
             for key, value in kwargs.items():
-                if isinstance(value, ImageAbstract) or isinstance(value, Measurement):
+                if isinstance(value, ImageAbstract):
                     value.set_context(GPUContext.NUMPY)
 
             for i, result in enumerate(results):
-                if isinstance(result, ImageAbstract) or isinstance(result, Measurement):
+                if isinstance(result, ImageAbstract):
                     results[i].set_context(GPUContext.NUMPY)
         return results
     return wrapper

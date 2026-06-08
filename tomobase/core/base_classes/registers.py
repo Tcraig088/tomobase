@@ -149,6 +149,16 @@ class Registry(MutableMapping, Generic[K, V]):
     
     
 class HierarchicalRegistry(Registry):
+    """ A class that encodes hierarchical information as integer codes, where each level of the hierarchy is represented by a byte.
+    
+    Example usage:
+    ```python
+    hr = HierarchicalRegistry(str, int)
+    hr.add_hierarchy("A", value=1)  # top-level A -> 0x01000000
+    hr.add_hierarchy("B", value=2, parent="A")  # B -> 0x01020000 (inherits A's code and adds 2 in next byte)
+    hr.add_hierarchy("C", value=3, parent="B")  # C -> 0x01020300 (inherits A and B's code, adds 3 in next byte)
+    ```
+    """
     def __init__(self, key_type: Type[Any], value_type: Type[Any]):
         super().__init__(key_type, value_type)
         self._shift = 8

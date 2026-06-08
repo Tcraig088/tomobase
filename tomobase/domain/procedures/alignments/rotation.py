@@ -8,6 +8,7 @@ import cupyx.scipy as cpscipy
 
 
 from ....core.data_classes.images import Sinogram
+from ....core.data_classes import Measurement, Coordinate
 from ..reconstruct import project, reconstruct_mlem
 
 
@@ -33,7 +34,7 @@ def align_tilt_axis_shift(sino: Sinogram, **kwargs):
 
     xp = get_xp(sino.data)
     offsets = xp.arange(-10, 11)
-    mse = xp.zeros(len(offsets))
+    rmse = xp.zeros(len(offsets))
     
     if "signals" in sino.xr.dims:
         s1 = next(sino.split("signals"))
@@ -51,8 +52,8 @@ def align_tilt_axis_shift(sino: Sinogram, **kwargs):
     for i in progress_bar:
         sino_shifted.xr[...] = xp.roll(s1.data, offsets[i], axis=2)
         reproj = project(reconstruct_mlem(sino_shifted, **kwargs), sino_shifted.angles, kernel=kernel, use_3D=use_3d, restore_context=False)
-        mse[i] = xp.mean((sino_shifted.data - reproj.data) ** 2)
-    offset = offsets[xp.argmin(mse)]
+        rmse[i] = xp.sqrt(xp.mean((sino_shifted.data - reproj.data) ** 2))
+    offset = offsets[xp.argmin(rmse)]
 
 
     if "signals" in sino.xr.dims:
@@ -63,15 +64,18 @@ def align_tilt_axis_shift(sino: Sinogram, **kwargs):
             sino.xr[dict(signals=i)] = shifted
     else:
         sino.data = xp.roll(sino.data, offset, axis=2)
-    print("offsets:", offsets)
-    print("mse:", mse)
-    print("argmin:", xp.argmin(mse))
-    print("chosen:", offsets[xp.argmin(mse)])
-    return sino, offset
+
+    data = xp.zeros((len(offsets), 2))
+    data[:, 0] = offsets
+    data[:, 1] = rmse
+    
+    error = Measurement(name="Rotational Axis Shift", dims=[Coordinate(name="Offset", unit="pixels"), Coordinate(name="RMSE", unit="(a.u.)")], sample=sino, data=data)
+    
+    return sino, offset, error
 
 
 @registers.procedures.register(name='Tilt Rotation', category=subcategory)
-def align_tilt_axis_rotation(sino:Sinogram, angle:float=0.0, **kwargs):
+def align_tilt_axis_rotation(sino:Sinogram, angle:float=0.0, tilt_range=3, **kwargs):
     """Align the tilt axis rotation of a sinogram using reprojection
     Args:
         sino (Sinogram): The projection data
@@ -89,8 +93,8 @@ def align_tilt_axis_rotation(sino:Sinogram, angle:float=0.0, **kwargs):
     xp = get_xp(sino.data)
     ndimage = utils.get_module('ndimage', sino.context)
     
-    angles = xp.arange(-5+angle, 5+angle)
-    mse = xp.zeros(len(angles))
+    angles = xp.arange(-tilt_range+angle, tilt_range+1+angle)
+    rmse = xp.zeros(len(angles))
     
     if "signals" in sino.xr.dims:
         s1 = next(sino.split("signals"))
@@ -109,9 +113,9 @@ def align_tilt_axis_rotation(sino:Sinogram, angle:float=0.0, **kwargs):
         angle_i = float(angles[i].item())
         sino_rot.xr.data = ndimage.rotate(s1.data, angle_i, reshape=False, axes=(1,2))
         reproj = project(reconstruct_mlem(sino_rot, **kwargs), sino.angles, use_3D=use_3d, restore_context=False)
-        mse[i] = xp.mean((sino_rot.data - reproj.data) ** 2)
+        rmse[i] = xp.sqrt(xp.mean((sino_rot.data - reproj.data) ** 2))
             
-    best_i = int(xp.argmin(mse).item())
+    best_i = int(xp.argmin(rmse).item())
     angle = float(angles[best_i].item())
     
     if "signals" in sino.xr.dims:
@@ -122,11 +126,12 @@ def align_tilt_axis_rotation(sino:Sinogram, angle:float=0.0, **kwargs):
             sino.xr[dict(signals=i)] = rotated
     else:
         sino.xr = ndimage.rotate(sino.xr.data, angle, reshape=False, axes=(1,2))
-    print("angles:", angles)
-    print("mse:", mse)
-    print("argmin:", xp.argmin(mse))
-    print("chosen:", angles[xp.argmin(mse)])
-    return (sino, angle)
+
+    data = xp.zeros((len(angles), 2))
+    data[:, 0] = angles
+    data[:, 1] = rmse
+    error = Measurement(name="Rotational Axis Rotation", dims=[Coordinate(name="Offset", unit="degrees"), Coordinate(name="RMSE", unit="(a.u.)")], sample=sino, data=data)
+    return sino, angle, error
 
 #This backlash correction is experimental and not fully tested
 #@tomobase_hook_process(category=TOMOBASE_TRANSFORM_CATEGORIES.ALIGN.value, subcategories=_subcategories)

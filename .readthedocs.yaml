@@ -20,3 +20,6 @@ python:
       path: .       
     - requirements: docs/requirements.txt
         
+jobs: 
+  pre_build: 
+    - python scripts/generate_registry_docs.py

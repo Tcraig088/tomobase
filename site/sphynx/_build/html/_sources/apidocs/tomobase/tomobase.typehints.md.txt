@@ -1,0 +1,12 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.typehints`
+
+```{py:module} tomobase.typehints
+```
+
+```{autodoc2-docstring} tomobase.typehints
+:allowtitles:
+```

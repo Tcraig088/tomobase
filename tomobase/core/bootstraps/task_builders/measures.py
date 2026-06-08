@@ -31,10 +31,12 @@ def _wrap_measurements_return(func):
                 raise ValueError(f"The number of measurements returned by the process ({count_measurements}) is less than the number of measurements provided ({len(measurements)}).")
             
             j = 0
+            results_new = list(results)
             for i, result in enumerate(results):
                 if isinstance(result, Measurement):
-                    results[i] = measurements[j].stack(result)
+                    results_new[i] = measurements[j].stack(result)
                     j += 1
+            results = tuple(results_new)
 
         return results
     return wrapper

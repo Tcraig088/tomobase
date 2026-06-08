@@ -29,7 +29,7 @@ class IOModel():
             app = QApplication.instance() or QApplication([])
             filters = ";;".join(
                 f"{ext.upper()} files (*.{ext})"
-                for ext in self._writers.keys()
+                for ext in self.writers.keys()
             )
             filename_str, _ = QFileDialog.getSaveFileName(
                 None, "Save File", "", filters
@@ -43,7 +43,7 @@ class IOModel():
         ext = filename.suffix.lower().lstrip(".")
 
         try:
-            writer = self._writers[f'.{ext}']
+            writer = self.writers[f'.{ext}']
         except KeyError:
             raise ValueError(f"The given file type {ext.upper()} is not supported.")
 

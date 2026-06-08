@@ -37,7 +37,7 @@ def _circle_mask(n):
     y, x = np.meshgrid(np.linspace(-1, 1, n), np.linspace(-1, 1, n))
     return x ** 2 + y ** 2 <= 1
 
-def format_before_projection(image:ImageAbstract, angles=None, kernel="astra", default_value=0.0):
+def format_before_projection(image:ImageAbstract, angles=None, default_value=0.0):
     xp = get_xp(image.data)
     y, x = image.xr.sizes['y'], image.xr.sizes['x']
     if isinstance(image, Volume):
@@ -70,10 +70,7 @@ def format_before_projection(image:ImageAbstract, angles=None, kernel="astra", d
     
     angles = angles * np.pi / 180  
     sinogram = sinogram.transpose("y","n", "x")
-    if kernel == "tomosipo":
-        volume = volume.transpose("y", "x", "z")
-    else:
-        volume = volume.transpose("y", "z", "x")
+    volume = volume.transpose("y", "z", "x")
 
     sinogram.xr.data = sinogram.xr.data.astype(xp.float32)
     volume.xr.data = volume.xr.data.astype(xp.float32)
@@ -84,108 +81,7 @@ def format_after_projection(sinogram:Sinogram, volume:Volume):
     sinogram = sinogram.transpose("n", "y", "x")
     return sinogram, volume
 
-'''
-def _create_astra_2d_geom(volume:Volume, angles, use_gpu=False):
-    x, y, z = volume.xr.sizes['x'], volume.xr.sizes['y'], volume.xr.sizes['z']
-    proj_geom = astra.creators.create_proj_geom('parallel', 1, max(x, z), angles)
-    vol_geom = astra.creators.create_vol_geom(max(x, z), max(x, z))
-    if use_gpu:
-        proj_id = astra.creators.create_projector('cuda', proj_geom, vol_geom)
-    else:
-        proj_id = astra.creators.create_projector('linear', proj_geom, vol_geom)
-    return proj_id
 
-def _create_tomosipo_geom(volume:Volume, angles, use_3D=True):
-    x, z = volume.xr.sizes['x'], volume.xr.sizes['z']
-    angles += np.pi/2
-    if "y" not in volume.xr.dims or use_3D == False:
-        y = 1
-    else:
-        y = volume.xr.sizes['y']
-    project_geom = tomosipo.parallel(angles=angles, shape=(y,x), size=(1.0, 1.0))
-    vol_geom = tomosipo.volume(shape=np.asarray([y, z, x]), size=np.asarray([1.0, 1.0, 1.0]))
-    A = tomosipo.operator(vol_geom, project_geom)
-    return A
-
-
-class Projector:
-    def __init__(self, sinogram:Sinogram, volume:Volume, angles, kernel, use_3D=True):
-        xp = get_xp(volume.data)
-        x,y,z = sinogram.xr.sizes['x'], volume.xr.sizes['y'], volume.xr.sizes['z']
-        d = max(x, z)
-        
-        self.y_dim_sino = 0
-        self.y_dim_vol = 0
-        
-        self.use_3D = use_3D
-        self.proj_id = None
-        self.istomosipo = False
-        if kernel == "tomosipo":
-            self.istomosipo = True
-        
-        if hasattr(volume.xr.data, "__cuda_array_interface__"):
-            use_gpu = True
-        else:
-            use_gpu = False
-            
-        self.loopdims = list(volume.non_spatial_dims)
-        if not self.istomosipo:
-            self.loopdims.append("y")
-            self.proj_id = _create_astra_2d_geom(volume, angles, use_gpu=use_gpu)
-            self.operator = astra.OpTomo(self.proj_id)
-            self.domain_shape = (d, d)
-            self.range_shape = (sinogram.xr.sizes['n'], d)
-        elif kernel == "tomosipo":
-            if "y" not in volume.xr.dims or use_3D == False:
-                self.domain_shape = (d, 1, d)
-                self.range_shape = (1, len(angles), d)
-                self.loopdims.append("y")
-                self.operator = _create_tomosipo_geom(volume, angles, use_3D=False)
-            else:
-                self.domain_shape = (d, y, d)
-                self.range_shape = (y, len(angles), d)
-                self.operator = _create_tomosipo_geom(volume, angles, use_3D=True)
-        else:
-            raise ValueError(f"Unknown kernel: {kernel}")
-            
-    def T(self, x):
-        xp = get_xp(x)
-        if self.istomosipo:
-            if len(x.shape) < 3:
-                x = xp.expand_dims(x, axis=self.y_dim_sino)
-                x = self.operator.T(x)
-            else:
-                x = self.operator.T(x)
-            
-            if self.use_3D == False:
-                x = x.squeeze(self.y_dim_vol)
-            return x
-        return self.operator.BP(x)
-        
-    def __call__(self, x):
-        xp = get_xp(x)
-        if self.istomosipo:
-            if len(x.shape) < 3:
-                x = xp.expand_dims(x, axis=self.y_dim_vol)
-                x = self.operator(x)
-            else:
-                x = self.operator(x)
-                
-            if self.use_3D == False:
-                x = x.squeeze(self.y_dim_vol)
-            return x
-        return self.operator.FP(x)
-            
-    def delete(self):
-        if self.proj_id is not None:
-            astra.astra.delete(self.proj_id)
-            self.proj_id = None
-    
-    def get_iterators(self,volume, iterations=0):
-        total, idx = utils.iter_indexers_with_len({d: volume.xr.sizes[d] for d in self.loopdims}, self.loopdims)
-        return total, idx
-
-'''
 def _create_astra_2d_geom(volume:Volume, angles, use_gpu=False):
     x, y, z = volume.xr.sizes['x'], volume.xr.sizes['y'], volume.xr.sizes['z']
     proj_geom = astra.creators.create_proj_geom('parallel', 1, max(x, z), angles)
@@ -304,3 +200,4 @@ class Projector:
     
     def delete(self):
         self.deleter.delete(self.proj_id)
+        astra.clear()

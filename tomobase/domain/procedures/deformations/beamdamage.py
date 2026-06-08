@@ -1,15 +1,15 @@
 
 from ....core.data_classes.images import Volume
-from ....core import registers, proxy
+from ....core import registers, logger, progress, utils, GPUContext, get_xp
 
-def _knockon(volume, knockon):
-    kernel = proxy.xupy.ones((3, 3, 3))
+def _knockon(volume, knockon, xp=None, ndimage=None):
+    kernel = xp.ones((3, 3, 3))
     mask = (volume != 0).astype(int)
-    pmask = proxy.scipy.ndimage.convolve(mask, kernel, mode='constant', cval=0.0)
+    pmask = ndimage.convolve(mask, kernel, mode='constant', cval=0.0)
     mask_interior = (pmask >= 27)
 
-    pmask = proxy.xupy.power(knockon, pmask/3)
-    seed = proxy.xupy.random.rand(*volume.shape)
+    pmask = xp.power(knockon, pmask/3)
+    seed = xp.random.rand(*volume.shape)
     
     mask[pmask > seed] = 0
     mask[mask_interior] = 1
@@ -18,29 +18,28 @@ def _knockon(volume, knockon):
     return volume
 
 
-def _deform(obj, deform, normalize=True):
-    #something isnt quite right here the size keeps getting bigger 
+def _deform(obj, deform, normalize=True, xp=None, ndimage=None):
     sig = 10
-    coord = proxy.xupy.indices(obj.shape, dtype= proxy.xupy.float32)
-    seed = (proxy.xupy.random.rand(3, *obj.shape) * 2) - 1
-    seed_list = [proxy.scipy.ndimage.gaussian_filter(seed[i], sig) for i in range(3)]
-    amplitude = proxy.xupy.sqrt(sum(seed_list[i] ** 2 for i in range(3)))
+    coord = xp.indices(obj.shape, dtype= xp.float32)
+    seed = (xp.random.rand(3, *obj.shape) * 2) - 1
+    seed_list = [ndimage.gaussian_filter(seed[i], sig) for i in range(3)]
+    amplitude = xp.sqrt(sum(seed_list[i] ** 2 for i in range(3)))
 
     mask = (obj != 0).astype(int)
-    count = proxy.xupy.sum(mask)
+    count = xp.sum(mask)
 
     for i in range(3):
-        seed[i] = (seed[i] * deform) / amplitude
+        seed[i] = (seed_list[i] * deform) / amplitude
     coord = coord + seed
-    obj = proxy.scipy.ndimage.map_coordinates(obj, coord, order=1, mode='constant', cval=0.0)
+    obj = ndimage.map_coordinates(obj, coord, order=1, mode='constant', cval=0.0)
     
     if normalize:
         obj_flat = obj.flatten()
-        nonzero_indices = proxy.xupy.where(obj_flat != 0)[0]
+        nonzero_indices = xp.where(obj_flat != 0)[0]
         nonzero_values = obj_flat[nonzero_indices]
-        sorted_indices = proxy.xupy.argsort(nonzero_values)
+        sorted_indices = xp.argsort(nonzero_values)
         if len(nonzero_values) <= count:
-            threshold_value = proxy.xupy.min(nonzero_values)
+            threshold_value = xp.min(nonzero_values)
         else:
             threshold_value = nonzero_values[sorted_indices[-count]]
         obj_flat[obj_flat < threshold_value] = 0
@@ -63,8 +62,16 @@ def beamdamage(volume: Volume, knock_on: float = 0.01, elastic_deform:float=0.1,
         Volume: The deformed volume.
     """
     
-    volume.xr = _deform(volume.xr, elastic_deform, normalize)
-    volume.xr = _knockon(volume.xr, knock_on)
+    xp = get_xp(volume.data)
+    ndimage = utils.get_module('ndimage', volume.context)
+    
+    data = volume.xr.data
+    data = xp.asarray(data)
+    
+    data = _deform(data, elastic_deform, normalize, xp=xp, ndimage=ndimage)
+    data = _knockon(data, knock_on, xp=xp, ndimage=ndimage)
+    
+    volume.xr.data = data
     return volume
 
 

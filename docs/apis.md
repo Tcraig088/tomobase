@@ -2,128 +2,155 @@
 
 ## Top Level Module
 
-## Globals
+## Core
 This module contains registries that store data, functions or classes. Useful for registering items within this library or libraries built on Tomo Base. 
 
-::: tomobase.globals
+::: tomobase.core
     handler: python
     options:
       show_root_heading: false
       show_root_toc_entry: false
-      heading_level: 3
-      show_submodules: false
+      heading_level: 4
+      show_submodules: true
       members:
-        - GPUContext
-        - xp
         - logger
-        - ItemDictNonSingleton
-        - ItemDict
-        - Item
-        - TOMOBASE_TRANSFORM_CATEGORIES
-        - TOMOBASE_PROCESSES
-        - TOMOBASE_DATATYPES
-        - TOMOBASE_TILTSCHEMES
-        - TOMOBASE_PHANTOMS
-      members_order: source
-      separate_signature: true
-      inherited_members: false
-      docstring_style: google   # or "numpy"
-      filters:
-        - "!^_"   
+        - progress
+  
 
-
-
-## Data
-The Data module contains the data types supported by the Tomo Base library. Each module is registered with an id stored in TOMOBASE_DATATYPES in the global registers.
-
-::: tomobase.data
+### Registers
+::: tomobase.core.registers
     handler: python
     options:
       show_root_heading: false
       show_root_toc_entry: false
-      heading_level: 3
-      show_submodules: false
+      heading_level: 4
+      show_submodules: true
       members:
-        - Data
+        - image_types
+        - tiltschemes
+        - phantoms
+        - procedures
+        - categories
+        - Registry
+        - HierarchicalRegistry
+
+
+
+### Environment
+::: tomobase.core.environment
+    handler: python
+    options:
+      show_root_heading: false
+      show_root_toc_entry: false
+      heading_level: 4
+      show_submodules: true
+      members:
+        - get_xp
+        - GPUContext
+        - proxy
+        - EnvironmentContext
+  
+
+### Base Classes
+::: tomobase.core.base_classes
+    handler: python
+    options:
+      show_root_heading: false
+      show_root_toc_entry: false
+      heading_level: 4
+      show_submodules: true
+      members:
+        - BaseDataModel
+        - BaseMeasurementModel
+        - ImageAbstract
+        - MeasurementAbstract
+        - TiltSchemeAbstract
+        - TiltSchemeCursor
+
+
+### Data Classes
+::: tomobase.core.data_classes
+    handler: python
+    options:
+      show_root_heading: false
+      show_root_toc_entry: false
+      heading_level: 5
+      show_submodules: true
+      members:
+        - Coordinate
+        - Measurement
+
+#### Images
+::: tomobase.core.data_classes.images
+    handler: python
+    options:
+      show_root_heading: false
+      show_root_toc_entry: false
+      heading_level: 5
+      show_submodules: true
+      members:
         - Image
         - Sinogram
         - Volume
-      members_order: source
-      separate_signature: true
-      inherited_members: false
-      docstring_style: google   # or "numpy"
-      filters:
-        - "!^_"   
 
-## Phantoms 
-The phantoms functions are functions which generate a Volume class for sample data. Registered globally to the TOMOBASE_PHANTOMS register. To register a phantom to the library use the phantom_hook function. 
 
-::: tomobase.phantoms
+#### TiltSchemes
+::: tomobase.core.data_classes.tiltschemes
     handler: python
     options:
       show_root_heading: false
       show_root_toc_entry: false
-      heading_level: 3
+      heading_level: 5
       show_submodules: true
       members:
-       - get_nanocage
-       - get_nanorod
-       - get_nanocube
-      members_order: source
-      separate_signature: true
-      inherited_members: true
-      filters:
-        - "!^_" 
+        - Incremental
+        - GRS
+        - BD
 
-## Tilt Schemes
-This module contains classes used to implement a tilt scheme. Registered with TOMOBASE_TILTSCHEMES and added to the registration by using the decorator tiltscheme_hook.
 
-::: tomobase.tiltschemes
+## Domain
+### Phantoms
+::: tomobase.domain.phantoms
     handler: python
     options:
       show_root_heading: false
       show_root_toc_entry: false
-      heading_level: 3
+      heading_level: 4
       show_submodules: true
       members:
-       - TiltScheme
-       - Incremental
-       - Binary
-       - GRS
-      members_order: source
-      separate_signature: true
-      inherited_members: true
-      filters:
-        - "!^_" 
+        - get_nanocage
+        - get_nanorod
+        - get_nanocube
 
-
-
-## Hooks 
-::: tomobase.hooks
+### Procedures
+#### Alignments
+::: tomobase.domain.procedures
     handler: python
     options:
       show_root_heading: false
       show_root_toc_entry: false
-      heading_level: 3
+      heading_level: 5
       show_submodules: true
-      members_order: source
-      separate_signature: true
-      inherited_members: true
-      docstring_style: google   # or "numpy"
-      filters:
-        - "!^_"   
+      members:
+        - align_sinogram_center_of_mass
+        - align_sinogram_xcorr
+        - align_tilt_axis_rotation
+        - align_tilt_axis_shift
 
-## Processes
-::: tomobase.processes
+#### Image Processing
+::: tomobase.domain.procedures
     handler: python
     options:
       show_root_heading: false
       show_root_toc_entry: false
-      heading_level: 3
+      heading_level: 5
       show_submodules: true
-      members_order: source
-      separate_signature: true
-      inherited_members: true
-      docstring_style: google   # or "numpy"
-      filters:
-        - "!^_"   
+      members:
+        - bin
+        - normalize
+        - background_subtract_median
+        - pad_sinogram
+        - gaussian_filter
+        - poisson_noise
+        - rotational_misalignment
+        - translational_misalignment

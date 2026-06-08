@@ -1,0 +1,12 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.registrations.plots`
+
+```{py:module} tomobase.registrations.plots
+```
+
+```{autodoc2-docstring} tomobase.registrations.plots
+:allowtitles:
+```

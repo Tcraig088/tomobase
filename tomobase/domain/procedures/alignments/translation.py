@@ -1,6 +1,7 @@
 import copy
 
 from ....core.data_classes.images import Sinogram
+from ....core.data_classes import Measurement, Coordinate
 from ....core import registers, progress, logger, utils, GPUContext, get_xp
 
 subcategory = registers.categories.add_hierarchy('Shift Corrections', value=6, parent = 'Align')
@@ -54,8 +55,11 @@ def align_sinogram_xcorr(sino: Sinogram):
             axis=(0, 1)
         )
         sino.xr.loc[idx] = shifted
+    
+    shift_x = Measurement(name="Shifts X", dims=Coordinate(name="x Offset", unit="pixels"), sample=sino, data=shifts[:, 1], domain_dims=("n",))
+    shift_y = Measurement(name="Shifts Y", dims=Coordinate(name="y Offset",unit="pixels"), sample=sino, data=shifts[:, 0], domain_dims=("n",))
 
-    return sino, shifts
+    return sino, shift_x, shift_y
 
 
 @registers.procedures.register(name='Centre of Mass', category=subcategory)
@@ -94,8 +98,12 @@ def align_sinogram_center_of_mass(sino: Sinogram):
         s1 = sino.xr.isel(idx)
         shifted = xp.roll(s1.data,shift=tuple(offsets[idx["n"], :].tolist()),axis=(0, 1))
         sino.xr.loc[idx] = shifted
-        
-    return sino, offsets
+    
+    shift_x = Measurement(name="Shifts X", dims=Coordinate(name="x Offset", unit="pixels"), sample=sino, data=offsets[:, 1], domain_dims=("n",))
+    shift_y = Measurement(name="Shifts Y", dims=Coordinate(name="y Offset",unit="pixels"), sample=sino, data=offsets[:, 0], domain_dims=("n",))
+
+    
+    return sino, shift_x, shift_y
 
 
 #@registers.procedures.register(name='Align Slice (Manual)', category=subcategory)

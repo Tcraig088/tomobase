@@ -1,0 +1,12 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.phantoms.nanocage`
+
+```{py:module} tomobase.phantoms.nanocage
+```
+
+```{autodoc2-docstring} tomobase.phantoms.nanocage
+:allowtitles:
+```

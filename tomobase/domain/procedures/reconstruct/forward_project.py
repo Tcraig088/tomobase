@@ -39,8 +39,8 @@ def astra_project(volume:Volume, angles:Union[TiltSchemeCursor, np.ndarray]):
 
 
 @registers.procedures.register(name="Project", category=registers.categories["Project"])
-def project(volume: Volume, angles: Union[TiltSchemeCursor, np.ndarray], kernel: str = "tomosipo", use_3D: bool = True, **kwargs):
-    sinogram, volume, angles = format_before_projection(volume, angles, kernel=kernel)
+def project(volume: Volume, angles: Union[TiltSchemeCursor, np.ndarray], use_3D: bool = True, **kwargs):
+    sinogram, volume, angles = format_before_projection(volume, angles)
     A = Projector(sinogram, volume, angles, use_3D=use_3D)
 
     total, indices = A.get_iterators(volume)

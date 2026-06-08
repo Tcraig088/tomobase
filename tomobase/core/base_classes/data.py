@@ -22,6 +22,20 @@ class BaseDataModel(ContextModel, SignalModel, IOModel):
         msg += f"  Data Shape: {self.xr.shape} Data Type: {self.xr.dtype}\n"
         return msg
 
+
+class BaseMeasurementModel(SignalModel, IOModel):
+    """Base class for GPU-backed measurement models with file IO."""
+    def __init__(self, name, data, *args, **kwargs):
+        """Initialize the Measurement object."""
+        super().__init__(data, *args, **kwargs)
+        self.name = name
+        
+    def __str__(self):
+        msg = f"{self.__class__.__name__}:\n"
+        msg += f"  Sample Name: {self.name}\n"
+        msg += f"  Data Shape: {self.xr.shape} Data Type: {self.xr.dtype}\n"
+        return msg
+
 class ImageAbstract(BaseDataModel):
     _allowed_dims = ('signals', 'x', 'y')
     
@@ -234,3 +248,8 @@ class ImageAbstract(BaseDataModel):
         )
 
         return self
+    
+    
+class MeasurementAbstract(BaseMeasurementModel):
+    def __init__(self, name, data, metadata=None, *args, **kwargs):
+        super().__init__(name, data, *args, **kwargs)

@@ -1,0 +1,66 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.data.image`
+
+```{py:module} tomobase.data.image
+```
+
+```{autodoc2-docstring} tomobase.data.image
+:allowtitles:
+```
+
+## Module Contents
+
+### Classes
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`Image <tomobase.data.image.Image>`
+  - ```{autodoc2-docstring} tomobase.data.image.Image
+    :summary:
+    ```
+````
+
+### API
+
+`````{py:class} Image(data, pixelsize=1.0, metadata={})
+:canonical: tomobase.data.image.Image
+
+Bases: {py:obj}`tomobase.data.base.Data`
+
+```{autodoc2-docstring} tomobase.data.image.Image
+```
+
+```{rubric} Initialization
+```
+
+```{autodoc2-docstring} tomobase.data.image.Image.__init__
+```
+
+````{py:method} from_file(filename=None, **kwargs)
+:canonical: tomobase.data.image.Image.from_file
+:classmethod:
+
+````
+
+````{py:method} get_type_id()
+:canonical: tomobase.data.image.Image.get_type_id
+:classmethod:
+
+````
+
+````{py:method} to_file(filename=None, **kwargs)
+:canonical: tomobase.data.image.Image.to_file
+
+````
+
+````{py:method} to_data_tuple(attributes: dict = {}, metadata: dict = {})
+:canonical: tomobase.data.image.Image.to_data_tuple
+
+````
+
+`````

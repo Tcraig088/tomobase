@@ -1,0 +1,12 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.registrations.tiltschemes`
+
+```{py:module} tomobase.registrations.tiltschemes
+```
+
+```{autodoc2-docstring} tomobase.registrations.tiltschemes
+:allowtitles:
+```

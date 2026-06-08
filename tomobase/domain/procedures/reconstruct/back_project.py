@@ -11,10 +11,10 @@ from ....core.registers import categories, procedures
 from ....core import  logger, progress, proxy, GPUContext, utils, get_xp
 
 @procedures.register(name='TVM', category=categories['Reconstruct'], inplace=False, use_numpy=True)
-def reconstruct_tvm(sinogram:Sinogram, iterations:int=100, lambda_value:float=0.1, kernel:str="tomosipo", weighted:bool=True, use_3D:bool=True):
+def reconstruct_tvm(sinogram:Sinogram, iterations:int=100, lambda_value:float=0.1, weighted:bool=True, use_3D:bool=True):
     xp = get_xp(sinogram.data)
-    sinogram, volume, angles = format_before_projection(sinogram, kernel=kernel)
-    A = Projector(sinogram, volume, angles, kernel=kernel, use_3D=use_3D)
+    sinogram, volume, angles = format_before_projection(sinogram)
+    A = Projector(sinogram, volume, angles, use_3D=use_3D)
     
     R = 1/A(xp.ones(A.domain_shape))
     C = 1/A.T(xp.ones(A.range_shape))
@@ -41,9 +41,9 @@ def reconstruct_tvm(sinogram:Sinogram, iterations:int=100, lambda_value:float=0.
 
 
 @procedures.register(name='MLEM', category=categories['Reconstruct'], inplace=False)
-def reconstruct_mlem(sinogram:Sinogram, iterations:int=15, kernel:str="astra", weighted:bool=True, use_3D:bool=True, **kwargs):
+def reconstruct_mlem(sinogram:Sinogram, iterations:int=15, weighted:bool=True, use_3D:bool=True, **kwargs):
     xp = get_xp(sinogram.data)
-    sinogram, volume, angles = format_before_projection(sinogram, kernel=kernel, default_value=1.0)
+    sinogram, volume, angles = format_before_projection(sinogram, default_value=1.0)
     A = Projector(sinogram, volume, angles, use_3D=use_3D)
     
     eps = 10**-6
@@ -70,10 +70,10 @@ def reconstruct_mlem(sinogram:Sinogram, iterations:int=15, kernel:str="astra", w
     return volume
 
 @procedures.register(name='WBP', category=categories['Reconstruct'], inplace=False)
-def reconstruct_wbp(sinogram:Sinogram, kernel:str="tomosipo", weighted:bool=False, use_3D:bool=True):
+def reconstruct_wbp(sinogram:Sinogram, weighted:bool=False, use_3D:bool=True):
     xp = get_xp(sinogram.data)
-    sinogram, volume, angles = format_before_projection(sinogram, kernel=kernel)
-    A = Projector(sinogram, volume, angles, kernel=kernel, use_3D=use_3D)
+    sinogram, volume, angles = format_before_projection(sinogram)
+    A = Projector(sinogram, volume, angles, use_3D=use_3D)
     
 
     weights = _get_weights(sinogram, weighted, A)
@@ -91,10 +91,10 @@ def reconstruct_wbp(sinogram:Sinogram, kernel:str="tomosipo", weighted:bool=Fals
 
 
 @procedures.register(name='SIRT', category=categories['Reconstruct'], inplace=False)
-def reconstruct_sirt(sinogram:Sinogram, iterations:int=100, kernel:str="tomosipo", weighted:bool=True, use_3D:bool=True):
+def reconstruct_sirt(sinogram:Sinogram, iterations:int=100, weighted:bool=True, use_3D:bool=True):
     xp = get_xp(sinogram.data)
-    sinogram, volume, angles = format_before_projection(sinogram, kernel=kernel)
-    A = Projector(sinogram, volume, angles, kernel=kernel, use_3D=use_3D)
+    sinogram, volume, angles = format_before_projection(sinogram)
+    A = Projector(sinogram, volume, angles, use_3D=use_3D)
     
     R = 1/A(xp.ones(A.domain_shape))
     C = 1/A.T(xp.ones(A.range_shape))

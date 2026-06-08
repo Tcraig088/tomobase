@@ -1,0 +1,68 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.processes.image_processing.scaling`
+
+```{py:module} tomobase.processes.image_processing.scaling
+```
+
+```{autodoc2-docstring} tomobase.processes.image_processing.scaling
+:allowtitles:
+```
+
+## Module Contents
+
+### Functions
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`normalize <tomobase.processes.image_processing.scaling.normalize>`
+  - ```{autodoc2-docstring} tomobase.processes.image_processing.scaling.normalize
+    :summary:
+    ```
+* - {py:obj}`bin <tomobase.processes.image_processing.scaling.bin>`
+  - ```{autodoc2-docstring} tomobase.processes.image_processing.scaling.bin
+    :summary:
+    ```
+* - {py:obj}`pad_sinogram <tomobase.processes.image_processing.scaling.pad_sinogram>`
+  - ```{autodoc2-docstring} tomobase.processes.image_processing.scaling.pad_sinogram
+    :summary:
+    ```
+* - {py:obj}`crop_sinogram <tomobase.processes.image_processing.scaling.crop_sinogram>`
+  - ```{autodoc2-docstring} tomobase.processes.image_processing.scaling.crop_sinogram
+    :summary:
+    ```
+````
+
+### API
+
+````{py:function} normalize(sino: tomobase.data.Sinogram)
+:canonical: tomobase.processes.image_processing.scaling.normalize
+
+```{autodoc2-docstring} tomobase.processes.image_processing.scaling.normalize
+```
+````
+
+````{py:function} bin(obj: tomobase.data.Data, factor: int = 2)
+:canonical: tomobase.processes.image_processing.scaling.bin
+
+```{autodoc2-docstring} tomobase.processes.image_processing.scaling.bin
+```
+````
+
+````{py:function} pad_sinogram(sino: tomobase.data.Sinogram, x: int = 0, y: int = 0)
+:canonical: tomobase.processes.image_processing.scaling.pad_sinogram
+
+```{autodoc2-docstring} tomobase.processes.image_processing.scaling.pad_sinogram
+```
+````
+
+````{py:function} crop_sinogram(sino: tomobase.data.Sinogram, x: int = 0, y: int = 0)
+:canonical: tomobase.processes.image_processing.scaling.crop_sinogram
+
+```{autodoc2-docstring} tomobase.processes.image_processing.scaling.crop_sinogram
+```
+````

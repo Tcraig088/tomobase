@@ -1,0 +1,35 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.processes.image_processing.background`
+
+```{py:module} tomobase.processes.image_processing.background
+```
+
+```{autodoc2-docstring} tomobase.processes.image_processing.background
+:allowtitles:
+```
+
+## Module Contents
+
+### Functions
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`background_subtract_median <tomobase.processes.image_processing.background.background_subtract_median>`
+  - ```{autodoc2-docstring} tomobase.processes.image_processing.background.background_subtract_median
+    :summary:
+    ```
+````
+
+### API
+
+````{py:function} background_subtract_median(image: tomobase.data.Data)
+:canonical: tomobase.processes.image_processing.background.background_subtract_median
+
+```{autodoc2-docstring} tomobase.processes.image_processing.background.background_subtract_median
+```
+````

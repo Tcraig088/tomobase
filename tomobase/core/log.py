@@ -53,3 +53,15 @@ class Log_Handler:
 
 tomobase_logger = Log_Handler()
 logger = tomobase_logger.get_logger()
+""" 
+Python log module instance for tomobase. Provides custom log levels TRACE and VERBOSE, and a Log_Handler class to manage logging configuration. 
+The logger instance can be used throughout the tomobase codebase for consistent logging.
+
+By convention:\n
+- Use logger.trace() for very detailed debugging information, typically only useful structural developement lower than debug.\n
+- Use logger.debug() for general debugging information that may be useful during development of tomographic tools.\n
+- Use logger.verbose() for detailed information that is meant to be accessible to users on request.\n
+- Use logger.info() for general informational messages about the progress of operations.\n
+- Use logger.warning() for situations that are unexpected but do not prevent the program from functioning.\n
+- Beyond this point errors should throw exceptions\n
+"""

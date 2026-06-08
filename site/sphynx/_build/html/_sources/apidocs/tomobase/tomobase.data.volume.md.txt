@@ -1,0 +1,66 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.data.volume`
+
+```{py:module} tomobase.data.volume
+```
+
+```{autodoc2-docstring} tomobase.data.volume
+:allowtitles:
+```
+
+## Module Contents
+
+### Classes
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`Volume <tomobase.data.volume.Volume>`
+  - ```{autodoc2-docstring} tomobase.data.volume.Volume
+    :summary:
+    ```
+````
+
+### API
+
+`````{py:class} Volume(data, pixelsize=1.0, metadata={})
+:canonical: tomobase.data.volume.Volume
+
+Bases: {py:obj}`tomobase.data.base.Data`
+
+```{autodoc2-docstring} tomobase.data.volume.Volume
+```
+
+```{rubric} Initialization
+```
+
+```{autodoc2-docstring} tomobase.data.volume.Volume.__init__
+```
+
+````{py:method} from_file(filename=None, **kwargs)
+:canonical: tomobase.data.volume.Volume.from_file
+:classmethod:
+
+````
+
+````{py:method} get_type_id()
+:canonical: tomobase.data.volume.Volume.get_type_id
+:classmethod:
+
+````
+
+````{py:method} to_file(filename=None, **kwargs)
+:canonical: tomobase.data.volume.Volume.to_file
+
+````
+
+````{py:method} to_data_tuple(attributes: dict = {}, metadata: dict = {})
+:canonical: tomobase.data.volume.Volume.to_data_tuple
+
+````
+
+`````

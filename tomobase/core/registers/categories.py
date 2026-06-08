@@ -5,6 +5,9 @@ from colorama import Fore, Style, init
 init(autoreset=True)
 
 categories = HierarchicalRegistry(str, int)
+"""A registry used to categories the different functions inside Tomobase e.g. Alignment, Reconstruction, Visualization, etc. 
+See the HierarchicalRegistry class for more details on how to use it. 
+"""
 
 categories.add_hierarchy('Acquistion', value=60)
 categories.add_hierarchy('Tomography', value=68)

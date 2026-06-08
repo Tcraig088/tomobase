@@ -1,5 +1,3 @@
 from .beamdamage import beamdamage
+from .melting import melting
 
-__all__ = [
-    "beamdamage",
-]

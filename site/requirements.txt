@@ -1,0 +1,13 @@
+# MkDocs core
+mkdocs>=1.5
+
+# Python API rendering
+mkdocstrings>=0.25
+mkdocstrings-python>=1.10
+griffe>=0.44
+
+# Cross-page references
+mkdocs-autorefs>=1.0
+
+# Notebooks (.ipynb) in MkDocs
+mkdocs-jupyter>=0.24

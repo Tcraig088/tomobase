@@ -1,0 +1,12 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.data.quantification`
+
+```{py:module} tomobase.data.quantification
+```
+
+```{autodoc2-docstring} tomobase.data.quantification
+:allowtitles:
+```

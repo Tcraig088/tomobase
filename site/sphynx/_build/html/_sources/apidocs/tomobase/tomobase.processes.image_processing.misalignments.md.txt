@@ -1,0 +1,68 @@
+---
+orphan: true
+---
+
+# {py:mod}`tomobase.processes.image_processing.misalignments`
+
+```{py:module} tomobase.processes.image_processing.misalignments
+```
+
+```{autodoc2-docstring} tomobase.processes.image_processing.misalignments
+:allowtitles:
+```
+
+## Module Contents
+
+### Functions
+
+````{list-table}
+:class: autosummary longtable
+:align: left
+
+* - {py:obj}`gaussian_filter <tomobase.processes.image_processing.misalignments.gaussian_filter>`
+  - ```{autodoc2-docstring} tomobase.processes.image_processing.misalignments.gaussian_filter
+    :summary:
+    ```
+* - {py:obj}`poisson_noise <tomobase.processes.image_processing.misalignments.poisson_noise>`
+  - ```{autodoc2-docstring} tomobase.processes.image_processing.misalignments.poisson_noise
+    :summary:
+    ```
+* - {py:obj}`translational_misalignment <tomobase.processes.image_processing.misalignments.translational_misalignment>`
+  - ```{autodoc2-docstring} tomobase.processes.image_processing.misalignments.translational_misalignment
+    :summary:
+    ```
+* - {py:obj}`rotational_misalignment <tomobase.processes.image_processing.misalignments.rotational_misalignment>`
+  - ```{autodoc2-docstring} tomobase.processes.image_processing.misalignments.rotational_misalignment
+    :summary:
+    ```
+````
+
+### API
+
+````{py:function} gaussian_filter(sino: tomobase.data.Data, gaussian_sigma: float = 1)
+:canonical: tomobase.processes.image_processing.misalignments.gaussian_filter
+
+```{autodoc2-docstring} tomobase.processes.image_processing.misalignments.gaussian_filter
+```
+````
+
+````{py:function} poisson_noise(sino: tomobase.data.Data, rescale: float = True)
+:canonical: tomobase.processes.image_processing.misalignments.poisson_noise
+
+```{autodoc2-docstring} tomobase.processes.image_processing.misalignments.poisson_noise
+```
+````
+
+````{py:function} translational_misalignment(sino: tomobase.data.Sinogram, offset: float = 0.25)
+:canonical: tomobase.processes.image_processing.misalignments.translational_misalignment
+
+```{autodoc2-docstring} tomobase.processes.image_processing.misalignments.translational_misalignment
+```
+````
+
+````{py:function} rotational_misalignment(sino: tomobase.data.Sinogram, tilt_theta: float = 3, tilt_alpha: float = 2, backlash: float = 0.5, backlash_backwards: bool = True)
+:canonical: tomobase.processes.image_processing.misalignments.rotational_misalignment
+
+```{autodoc2-docstring} tomobase.processes.image_processing.misalignments.rotational_misalignment
+```
+````
