@@ -4,8 +4,18 @@ from ....core import registers
 
 from qtpy.QtCore import QObject, Signal
 
-print("called qt")
 class QtRegistryBridge(QObject):
+    """ A class to bridge blinker event to qt allowing them to be used with Qt threading and 
+
+    Attributes:
+        added (Signal): Signal emitted when an item is added to the registry. Emits the key and value of the added item.
+        removed (Signal): Signal emitted when an item is removed from the registry. Emits the key and old value of the removed item.
+        renamed (Signal): Signal emitted when an item is renamed in the registry. Emits the old key, new key, and value of the renamed item.
+        updated (Signal): Signal emitted when an item is updated in the registry. Emits the key, old value, and new value of the updated item.
+        
+    Args:
+        QObject (_type_): _description_
+    """
     added = Signal(object, object)
     removed = Signal(object, object)
     renamed = Signal(object, object, object)

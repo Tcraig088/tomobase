@@ -109,5 +109,8 @@ class LogWidget:
         self.clear()
         
 def display_log():
+    """Display the log widget in a Jupyter notebook.
+    This function creates and opens a log widget that captures log messages from the tomobase logger. All console logging is disabled until the log widget is closed to prevent log message clashing with jupyter displays.
+    """
     log_widget = LogWidget()
     log_widget.open()

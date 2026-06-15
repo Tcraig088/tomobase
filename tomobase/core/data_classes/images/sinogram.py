@@ -6,10 +6,43 @@ from ... import registers, base_classes, get_xp
 
 @registers.image_types.register(name="Sinogram")
 class Sinogram(base_classes.ImageAbstract):
+    """Data type for a sinogram.
+
+    Args:
+        name (str): Name of the sinogram.
+        data (numpy.ndarray): Projection data.
+        angles (numpy.ndarray): Projection angles in degrees.
+        pixelsize (float): Pixel size. Defaults to 1.0.
+        times (numpy.ndarray | None): Acquisition times. Defaults to None.
+        metadata (dict): Extra metadata.
+
+    Raises:
+        ValueError: If the angle/time dimensions do not match the data.
+
+    Returns:
+        Sinogram: A sinogram object.
+    """
     _allowed_dims = ['n', 'signals', 'y', 'x']
     
     def __init__(self, name, data, angles: np.ndarray, pixelsize: float = 1.0, times: np.ndarray | None = None, metadata: dict = {}, *args, **kwargs):
-                
+        """Data type for a sinogram.
+
+        Args:
+            name (str): Name of the sinogram.
+            data (numpy.ndarray): Projection data.
+            angles (numpy.ndarray): Projection angles in degrees.
+            pixelsize (float): Pixel size. Defaults to 1.0.
+            times (numpy.ndarray | None): Acquisition times. Defaults to None.
+            metadata (dict): Extra metadata.
+
+        Raises:
+            ValueError: If the angle/time dimensions do not match the data.
+
+        Returns:
+            Sinogram: A sinogram object.
+        """
+        
+               
         data = super()._construct_data_array(data, pixel_size=pixelsize)
         super().__init__(name, data, pixelsize, metadata, *args, **kwargs)
 
@@ -27,7 +60,13 @@ class Sinogram(base_classes.ImageAbstract):
             )
 
     def sort(self, by='times'):
-        # valid options for by are 'times' 'angles' and 'n'
+        """
+        Sort the sinogram by a specified coordinate.
+        Args:
+            by (str): The coordinate to sort by. Must be one of 'times', 'angles', or 'n'. Defaults to 'times'.
+        Raises:
+            ValueError: If the specified coordinate is not valid.           
+        """
         if by not in ['times', 'angles', 'n']:
             raise ValueError(f"Invalid sort option {by}. Valid options are 'times', 'angles', and 'n'.")
         self.xr = self.xr.sortby(by)
@@ -42,7 +81,11 @@ class Sinogram(base_classes.ImageAbstract):
 
     @property
     def angles(self):
-        return self.xr.coords['angles'].values
+        angles =self.xr.coords['angles'].data
+        if hasattr(angles, "get"):
+            angles = angles.get()
+
+        return np.asarray(angles)
     
     @angles.setter
     def angles(self, value):
@@ -50,7 +93,10 @@ class Sinogram(base_classes.ImageAbstract):
 
     @property
     def times(self):
-        return self.xr.coords['times'].values
+        times = self.xr.coords['times'].data
+        if hasattr(times, "get"):
+            times = times.get()
+        return np.asarray(times)
     
     @times.setter
     def times(self, value):

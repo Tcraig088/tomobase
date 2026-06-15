@@ -1,1 +1,1 @@
-from .base import bootstrap_process
+from .base import bootstap_procedure

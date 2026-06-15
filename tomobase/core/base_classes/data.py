@@ -1,7 +1,7 @@
 import coolname
 import copy
 
-from .model_components import ContextModel, IOModel, SignalModel
+from .components import ContextModel, IOModel, SignalModel
 from ...core.environment import get_xp, GPUContext
 
 import xarray as xr

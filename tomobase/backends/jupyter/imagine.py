@@ -7,7 +7,16 @@ from traitlets import link
 
 
 class SliceGrid(GridBox):
+    """A grid of slice views for multiple images.
+    """
+    
     def __init__(self, images, columns=2, **kwargs):
+        """Initialize the SliceGrid widget.
+
+        Args:
+            images (list of ImageAbstract): A list of images to display in the grid.
+            columns (int, optional): Number of columns in the grid. Defaults to 2.
+        """
         self.images = list(images)
         self.widgets = [img.interactive.slice_view() for img in self.images]
 

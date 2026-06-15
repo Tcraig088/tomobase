@@ -5,14 +5,27 @@ from collections.abc import Callable
 from ..environment import proxy, GPUContext, EnvironmentContext
 from .task_builders import _wrap_axial, _wrap_process_context, _wrap_strip_process_context, _wrap_tuple, _wrap_use_numpy,_wrap_restore_context, _wrap_use_context, _wrap_inplace, _wrap_returns, _wrap_measurements_validate, _wrap_measurements_return, _build_decorated_function, _wrap_history
 
-def bootstrap_process(**kwargs) -> Callable:
-    """A decorator used to mark a function or class as a tomography process. The function or class is either a standard function or class used to define the process or a QWidget used to attach to napari.
+def bootstap_procedure(**kwargs) -> Callable:
+    """A decorator used to mark a function or class as a tomography procedure. The function or class is either a standard function or class used to define the procedure or a QWidget used to attach to napari.
+    
+    This converts a function from
+    
+    ```python
+    def my_procedure(args, kwargs) -> np.ndarray:
+        # do something with data
+        return data
+    ```
+    
+    ```python
+    def my_procedure(args, kwargs, inplace: bool = True, verbose_outputs: bool = False, measurements: list | None = None, proxy: EnvironmentContext = proxy, restore_context: bool = True) -> np.ndarray:
+        # do something with data
+        return data
+    ```
+    
     Args:
-        name (str): the name of the process. Should be readable casing and spaces.
-        category (enum.TransformCategory or List[enum.TransformCategory]): the category of the process. Should be a member of the TransformCategories enum.
-        includes (list[enum.DataModules]): a list of data types that the process can handle. Either Numpy Cupy or Torch.
-        excludes (list[enum.DataModules]): a list of strings that define the data types that the process cannot handle. Cannot define both includes and excludes
-        subcategories (dict(enum.TransformCategory,[list[str]])): a list of strings that define the subcategories of the process. Used when adding the process to the napari menu.
+        name (str): the name of the procedure. Should be readable casing and spaces.
+        use_numpy (bool, optional): overrides the default behavior of EnvironmentContext to always set the context to Numpy useful when the function uses some library that is not compatible with this library
+        inplace (bool, optional): whether the procedure modifies the input data in place. Defaults to True.
     """
     use_numpy = kwargs.get("use_numpy", False)
     inplace = kwargs.get("inplace", True)

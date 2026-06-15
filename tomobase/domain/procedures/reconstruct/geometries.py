@@ -6,38 +6,30 @@ from ....core.data_classes.images import Sinogram, Volume
 from ....core.base_classes import ImageAbstract, TiltSchemeCursor
 from ....core import proxy, GPUContext, utils, logger, get_xp
 
-def _get_weights(sinogram, weighted, projector=None):
-    xp = get_xp(sinogram.data)
-    weights = xp.ones_like(sinogram.angles)
-    if weighted == True:
-        idx = xp.argsort(sinogram.angles)
-        sorted_angles = xp.take(sinogram.angles, idx) + 90
-        n_angles = len(sorted_angles)
-        for i in range(len(sorted_angles)):
-            if i == 0:
-                weights[idx[i]] = 0.5*(180 - sorted_angles[n_angles-1] + sorted_angles[i+1])
-            elif i == len(sorted_angles)-1:
-                weights[idx[i]] = 0.5*(180 - sorted_angles[n_angles-2] + sorted_angles[0])
-            else:
-                weights[idx[i]] = 0.5*((sorted_angles[i+1] - sorted_angles[i]) + (sorted_angles[i] - sorted_angles[i-1]))
-        ratio = 180/(n_angles-1)
-        weights = weights/ratio
-    
-    
-    if projector is None:
-        return weights
 
-    if len(projector.range_shape) == 3:
-        weights = weights[None, :, None]
-    else:
-        weights = weights[:,None]
-    return weights
 
 def _circle_mask(n):
     y, x = np.meshgrid(np.linspace(-1, 1, n), np.linspace(-1, 1, n))
     return x ** 2 + y ** 2 <= 1
 
 def format_before_projection(image:ImageAbstract, angles=None, default_value=0.0):
+    """Format the Volume or Sinogram to the necessary shape for projection operations for astra.
+    Either a Volume or a Sinogram can be provided as input. If a Volume is provided, a Sinogram will be created with the specified angles. If a Sinogram is provided, a Volume will be created with the same shape as the Sinogram.
+    The default value is used to fill the newly created image. The angles are expected to be in degrees and will be converted to radians for the projection operations.
+
+    Args:
+        image (ImageAbstract): The input image, either a Volume or a Sinogram.
+        angles (TiltSchemeCursor|xp.ndarray|None, optional): The angles for projection. Defaults to None.
+        default_value (float, optional): The default value to fill in the formatted image. Defaults to 0.0.
+
+
+    Raises:
+        ValueError: _angles_ must be provided for forward projection when a Volume is provided.
+        ValueError: _image_ must be either a Volume or a Sinogram.
+
+    Returns:
+        tuple[Sinogram, Volume, xp.ndarray]: A tuple containing the formatted Sinogram, Volume, and angles in radians.
+    """
     xp = get_xp(image.data)
     y, x = image.xr.sizes['y'], image.xr.sizes['x']
     if isinstance(image, Volume):
@@ -77,6 +69,15 @@ def format_before_projection(image:ImageAbstract, angles=None, default_value=0.0
     return sinogram, volume, angles
 
 def format_after_projection(sinogram:Sinogram, volume:Volume):
+    """Format the Volume and Sinogram back to their original shapes after projection operations.
+    
+    Args:
+        sinogram (Sinogram): The formatted Sinogram.
+        volume (Volume): The formatted Volume.
+
+    Returns:
+        tuple[Sinogram, Volume]: A tuple containing the Sinogram and Volume in their original shapes.
+    """
     volume = volume.transpose("x", "y", "z")
     sinogram = sinogram.transpose("n", "y", "x")
     return sinogram, volume
@@ -104,6 +105,15 @@ def _create_astra_3d_geom(volume:Volume, angles, use_gpu=False):
     return proj_id, proj_geom, vol_geom
 
 class Projector:
+    """A class to handle forward and back projection operations using the ASTRA toolbox.
+    This class initializes the necessary geometries and configurations for performing forward and back projection operations on a given Volume and Sinogram. It supports both 2D and 3D projections, as well as GPU acceleration if available.
+    
+    Args:
+        sinogram (Sinogram): The sinogram object containing projection angles.
+        volume (Volume): The volume object to be projected.
+        angles (xp.ndarray): The angles for projection in radians.
+        use_3D (bool, optional): Whether to use 3D projection. Defaults to True.
+    """
     def __init__(self, sinogram, volume, angles, use_3D=True):
         self.loopdims = list(volume.non_spatial_dims)
         self.use_gpu = False
@@ -153,6 +163,16 @@ class Projector:
         
             
     def __call__(self, x, y=None):
+        """Performs the forward projection operation.
+
+        Args:
+            x (xp.ndarray): The input volume data.
+            y (xp.ndarray|None, optional): The output sinogram data. Defaults to None.
+
+        Returns:
+            xp.ndarray: The resulting sinogram data.
+        """
+
         x = self.xp.ascontiguousarray(x, dtype=self.xp.float32)
         vol_id = self.linker.link('-vol', self.vol_geom, x)
         if y is None:
@@ -174,6 +194,15 @@ class Projector:
         return y
     
     def T(self, y, x=None):
+        """Performs the backprojection operation.
+
+        Args:
+            y (xp.ndarray): The input sinogram data.
+            x (xp.ndarray|None, optional): The output volume data. Defaults to None.
+
+        Returns:
+            xp.ndarray: The resulting volume data.
+        """
         y = self.xp.ascontiguousarray(y, dtype=self.xp.float32)
         sino_id = self.linker.link('-sino', self.proj_geom, y)
         if x is None:
@@ -201,3 +230,41 @@ class Projector:
     def delete(self):
         self.deleter.delete(self.proj_id)
         astra.clear()
+        
+def _get_weights(sinogram: Sinogram, weighted: bool, projector:Projector|None=None):
+    """Weights projection angles based on their spacing.
+
+    Args:
+        sinogram (Sinogram): The sinogram object containing projection angles.
+        weighted (bool): Whether to weight the projection angles based on their spacing.
+        projector (Projector|None, optional): The projector object. Defaults to None.
+
+    Returns:
+        xp.ndarray: The weights for each projection angle.
+    """
+    
+    xp = get_xp(sinogram.data)
+    weights = xp.ones_like(sinogram.angles)
+    if weighted == True:
+        idx = xp.argsort(sinogram.angles)
+        sorted_angles = xp.take(sinogram.angles, idx) + 90
+        n_angles = len(sorted_angles)
+        for i in range(len(sorted_angles)):
+            if i == 0:
+                weights[idx[i]] = 0.5*(180 - sorted_angles[n_angles-1] + sorted_angles[i+1])
+            elif i == len(sorted_angles)-1:
+                weights[idx[i]] = 0.5*(180 - sorted_angles[n_angles-2] + sorted_angles[0])
+            else:
+                weights[idx[i]] = 0.5*((sorted_angles[i+1] - sorted_angles[i]) + (sorted_angles[i] - sorted_angles[i-1]))
+        ratio = 180/(n_angles-1)
+        weights = weights/ratio
+    
+    
+    if projector is None:
+        return weights
+
+    if len(projector.range_shape) == 3:
+        weights = weights[None, :, None]
+    else:
+        weights = weights[:,None]
+    return weights

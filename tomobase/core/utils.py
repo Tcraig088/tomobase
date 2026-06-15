@@ -4,7 +4,17 @@ import numpy as np
 
 from ..core.environment import GPUContext
 
-def iter_indexers_with_len(shape, dims):
+def iter_indexers_with_len(shape: dict[str, int], dims: list[str]):
+    """Creates a generator that yields all permutations of the specified dimensions. This allows user to iterate over all combinations of the specified dimensions in a multi-dimensional array or dataset.
+
+    Args:
+        shape (dict[str, int]): A dictionary mapping dimension names to their sizes.
+        dims (list[str]): A list of dimension names to iterate over.
+
+    Returns:
+        tuple[int, generator[dict[str, int]]]: A tuple containing the total number of combinations and a generator that yields dictionaries mapping dimension names to their current values.
+
+    """
     total = 1
     for d in dims:
         total *= shape[d]
