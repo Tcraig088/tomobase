@@ -28,5 +28,7 @@ def _build_decorated_function(func, wrapper, new_params):
     new_sig = original_sig.replace(parameters=params)
     new_func = makefun.with_signature(new_sig)(functools.wraps(func)(wrapper))
     new_func._tomobase_kwargs = func._tomobase_kwargs
-    new_func._tomobase_name = func.tomobase_name
+    new_func._tomobase_name = func._tomobase_name
+    new_func._tomobase_category = func._tomobase_category
+    new_func._raw = func  
     return new_func

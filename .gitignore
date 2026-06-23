@@ -7,7 +7,8 @@ __pycache__/
 *.py[cod]
 build/
 .vscode/
-docs/_build/*
+docs/build/*
+docs/jupyter_execute/*
 docs/.doctrees/*
 docs/_static/*
 docs/_sources/*

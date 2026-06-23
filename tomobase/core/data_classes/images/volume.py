@@ -2,7 +2,7 @@
 import xarray as xr
 from ... import registers, base_classes
 
-@registers.image_types.register(name="Volume")
+@registers.images.register(name="Volume")
 class Volume(base_classes.ImageAbstract):
     _allowed_dims = ['signals', 'x', 'y', 'z']
     

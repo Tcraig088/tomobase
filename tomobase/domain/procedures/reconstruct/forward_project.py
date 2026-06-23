@@ -38,8 +38,8 @@ def astra_project(volume:Volume, angles:Union[TiltSchemeCursor, np.ndarray]):
     return sinogram
 
 
-@registers.procedures.register(name="Project", category=registers.categories["Project"])
-def project(volume: Volume, angles: Union[TiltSchemeCursor, np.ndarray], use_3D: bool = True, **kwargs):
+@registers.procedures.register(name="forward project", category=registers.categories["Project"])
+def forward_project(volume: Volume, angles: Union[TiltSchemeCursor, np.ndarray], use_3D: bool = True, **kwargs):
     sinogram, volume, angles = format_before_projection(volume, angles)
     A = Projector(sinogram, volume, angles, use_3D=use_3D)
 

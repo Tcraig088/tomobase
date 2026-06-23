@@ -9,7 +9,7 @@ import cupyx.scipy as cpscipy
 
 from ....core.data_classes.images import Sinogram
 from ....core.data_classes import Measurement, Coordinate
-from ..reconstruct import project, reconstruct_mlem
+from ..reconstruct import forward_project, reconstruct_mlem
 
 
 from ....core import registers, logger, progress, utils, GPUContext, get_xp
@@ -51,7 +51,7 @@ def align_tilt_axis_shift(sino: Sinogram, **kwargs):
     progress_bar = progress.new(name="Calculating tilt axis shift", total=len(offsets))
     for i in progress_bar:
         sino_shifted.xr[...] = xp.roll(s1.data, offsets[i], axis=2)
-        reproj = project(reconstruct_mlem(sino_shifted, **kwargs), sino_shifted.angles, kernel=kernel, use_3D=use_3d, restore_context=False)
+        reproj = forward_project(reconstruct_mlem(sino_shifted, **kwargs), sino_shifted.angles, kernel=kernel, use_3D=use_3d, restore_context=False)
         rmse[i] = xp.sqrt(xp.mean((sino_shifted.data - reproj.data) ** 2))
     offset = offsets[xp.argmin(rmse)]
 
@@ -112,7 +112,7 @@ def align_tilt_axis_rotation(sino:Sinogram, angle:float=0.0, tilt_range=3, **kwa
     for i in progress_bar:
         angle_i = float(angles[i].item())
         sino_rot.xr.data = ndimage.rotate(s1.data, angle_i, reshape=False, axes=(1,2))
-        reproj = project(reconstruct_mlem(sino_rot, **kwargs), sino.angles, use_3D=use_3d, restore_context=False)
+        reproj = forward_project(reconstruct_mlem(sino_rot, **kwargs), sino.angles, use_3D=use_3d, restore_context=False)
         rmse[i] = xp.sqrt(xp.mean((sino_rot.data - reproj.data) ** 2))
             
     best_i = int(xp.argmin(rmse).item())
@@ -153,7 +153,7 @@ def backlash_correct(sino: Sinogram, tolerance:float= 10.0, method:str='bounded'
     def objective_function(value, sino, indices):
         angles = copy(sino.angles)
         sino.angles[indices] += value
-        reproj = project(astra_reconstruct(sino, 'fbp'), sino.angles[indices])        
+        reproj = forward_project(astra_reconstruct(sino, 'fbp'), sino.angles[indices])        
         error = np.sqrt(np.mean((sino.data[indices,:,: ] - reproj.xr) ** 2))
         sino.angles = angles
         logger.debug(f'Error: {error}')

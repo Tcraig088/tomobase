@@ -3,7 +3,7 @@ import xarray as xr
 
 from ... import registers, base_classes
 
-@registers.image_types.register(name="Image")
+@registers.images.register(name="Image")
 class Image(base_classes.ImageAbstract):
     def __init__(self, name, data, pixelsize: float = 1.0, metadata: dict = {}, *args, **kwargs):
         

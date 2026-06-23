@@ -8,6 +8,8 @@ from ...base_classes import ImageAbstract
 from ...environment import proxy, GPUContext
 from ...log import logger
 
+from .wrapper import wraps_tomobase
+
 def is_array_like(x):
     return hasattr(x, "shape") and hasattr(x, "dtype")
 
@@ -20,7 +22,7 @@ def _wrap_tuple(func):
         Returns:
             callable: The decorated function that always returns a tuple.
     """
-    @wraps(func)
+    @wraps_tomobase(func)
     def wrapper(*args, **kwargs):
         kwargs.pop("proxy", None)
         logger.trace("Wrapped Execution: Packing Results into tuple")
@@ -39,7 +41,7 @@ def _wrap_returns(func):
         Returns:
             callable: The decorated function that respects the verbose_outputs flag.
     """
-    @wraps(func)
+    @wraps_tomobase(func)
     def wrapper(*args, **kwargs):
         logger.trace("Wrapped Execution: Unpacking tuple")
         verbose_outputs = kwargs.pop("verbose_outputs", False)
@@ -63,7 +65,7 @@ def _wrap_history(func):
         Returns:
             callable: The decorated function that records computational history.
     """
-    @wraps(func)
+    @wraps_tomobase(func)
     def wrapper(*args, **kwargs):
         logger.trace("Wrapped Execution: Creating Event History")
         results = func(*args, **kwargs)

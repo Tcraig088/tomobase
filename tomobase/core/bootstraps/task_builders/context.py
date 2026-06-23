@@ -1,16 +1,15 @@
-
-from ...data_classes import Measurement
 from ...base_classes import ImageAbstract
 from ...environment import GPUContext
 from ...log import logger
 from ..process_variables import ProcessVariables
 from ...environment import proxy
 from functools import wraps
-import dataclasses
+
+from .wrapper import wraps_tomobase
 
 
 def _wrap_strip_process_context(func):
-    @wraps(func)
+    @wraps_tomobase(func)
     def wrapper(*args, **kwargs):
         kwargs.pop("__tomobase_context_key__", None)
         return func(*args, **kwargs)
@@ -19,7 +18,7 @@ def _wrap_strip_process_context(func):
 
 
 def _wrap_process_context(func, *, default_inplace=True, default_proxy=proxy):
-    @wraps(func)
+    @wraps_tomobase(func)
     def wrapper(*args, **kwargs):
         ctx = ProcessVariables(
             inplace=kwargs.pop("inplace", default_inplace),
@@ -35,7 +34,7 @@ def _wrap_process_context(func, *, default_inplace=True, default_proxy=proxy):
     return wrapper
 
 def _wrap_use_context(func):
-    @wraps(func)
+    @wraps_tomobase(func)
     def wrapper(*args, **kwargs):
         logger.trace("Wrapped Execution: Setting context to specified GPU/CPU")
         proxy = kwargs.get("proxy", None)
@@ -54,7 +53,7 @@ def _wrap_use_context(func):
 
 
 def _wrap_use_numpy(func):
-    @wraps(func)
+    @wraps_tomobase(func)
     def wrapper(*args, **kwargs):
         logger.trace("Wrapped Execution: Setting context to NUMPY")
         for item in args:
@@ -69,7 +68,7 @@ def _wrap_use_numpy(func):
     return wrapper
 
 def _wrap_restore_context(func):
-    @wraps(func)
+    @wraps_tomobase(func)
     def wrapper(*args, **kwargs):
         logger.trace("Wrapped Execution: Restoring Original Context")
         proxy = kwargs.get("proxy", None)

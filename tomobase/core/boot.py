@@ -36,6 +36,8 @@ def bootstrap(qt_enabled = False, jupyter_enabled = False):
         if jupyter_enabled and 'jupyter' in compatibility:
             importlib.import_module(f"{pkg}.jupyter_plugins")
 
-    from .bootstraps import bootstap_procedure
-    for key, value in list(registers.procedures.items()):
-        registers.procedures[key] = bootstap_procedure(**getattr(value, '_tomobase_kwargs', {}))(value)
+    from .bootstraps import bootstrap_procedure
+    from ..core.registers import procedures
+    
+    procedures.set_initialization_function(bootstrap_procedure)
+    procedures.initialize()

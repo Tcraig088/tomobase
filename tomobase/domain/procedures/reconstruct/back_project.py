@@ -10,17 +10,19 @@ from ....core.registers import categories, procedures
 
 from ....core import  logger, progress, proxy, GPUContext, utils, get_xp
 
-@procedures.register(name='TVM', category=categories['Reconstruct'], inplace=False, use_numpy=True)
-def reconstruct_tvm(sinogram:Sinogram, iterations:int=100, lambda_value:float=0.1, weighted:bool=True, use_3D:bool=True):
+
+
+@procedures.register(name='TVM', category=categories['Reconstruct'])
+def reconstruct_tvm(sinogram: Sinogram, iterations: int=100, tv_weight: float=1e-3,
+                    tv_iters: int=10, weighted: bool=True, use_3D: bool=True):
     xp = get_xp(sinogram.data)
     sinogram, volume, angles = format_before_projection(sinogram)
     A = Projector(sinogram, volume, angles, use_3D=use_3D)
-    
-    R = 1/A(xp.ones(A.domain_shape))
-    C = 1/A.T(xp.ones(A.range_shape))
+
+    R = 1 / A(xp.ones(A.domain_shape))
+    C = 1 / A.T(xp.ones(A.range_shape))
     R = xp.minimum(R, 1 / 10**-6)
     C = xp.minimum(C, 1 / 10**-6)
-    
 
     weights = _get_weights(sinogram, weighted, A)
 
@@ -31,14 +33,63 @@ def reconstruct_tvm(sinogram:Sinogram, iterations:int=100, lambda_value:float=0.
         for _ in progress_bar_dim:
             idx = next(indices)
             vol_slice = volume.xr.isel(idx).data
-            gradient = denoise_tv_chambolle(vol_slice, weight=lambda_value)
             sino_slice = sinogram.xr.isel(idx).data * weights
-            volume.xr.isel(idx).data[...] += C*A.T(R*(sino_slice - (A(vol_slice)*weights))) + gradient
-    
+
+            # SIRT gradient step
+            volume.xr.isel(idx).data[...] += C * A.T(R * (sino_slice - (A(vol_slice) * weights)))
+
+            # TV proximal step (Chambolle's algorithm)
+            vol_slice = volume.xr.isel(idx).data
+            tau = 1.0 / (4 * vol_slice.ndim)
+            p = xp.zeros((*vol_slice.shape, vol_slice.ndim), dtype=vol_slice.dtype)
+            for _ in range(tv_iters):
+                div_p = _divergence(p, xp)
+                grad_arg = _gradient(vol_slice - tv_weight * div_p, xp)
+                p_new = p + tau * grad_arg
+                norms = xp.maximum(1.0, xp.sqrt((p_new**2).sum(axis=-1, keepdims=True)))
+                p = p_new / norms
+            volume.xr.isel(idx).data[...] = vol_slice - tv_weight * _divergence(p, xp)
+
     sinogram, volume = format_after_projection(sinogram, volume)
     A.delete()
     return volume
 
+
+def _gradient(arr, xp):
+    """Forward differences gradient, output shape (*arr.shape, arr.ndim)."""
+    grads = []
+    for ax in range(arr.ndim):
+        g = xp.zeros_like(arr)
+        slc_fwd = [slice(None)] * arr.ndim
+        slc_cur = [slice(None)] * arr.ndim
+        slc_fwd[ax] = slice(1, None)
+        slc_cur[ax] = slice(None, -1)
+        g[tuple(slc_cur)] = arr[tuple(slc_fwd)] - arr[tuple(slc_cur)]
+        grads.append(g)
+    return xp.stack(grads, axis=-1)
+
+
+def _divergence(p, xp):
+    """Backward differences divergence of a vector field p (*shape, ndim)."""
+    div = xp.zeros(p.shape[:-1], dtype=p.dtype)
+    for ax in range(p.shape[-1]):
+        comp = p[..., ax]
+        d = xp.zeros_like(comp)
+        slc_fwd = [slice(None)] * comp.ndim
+        slc_cur = [slice(None)] * comp.ndim
+        slc_last = [slice(None)] * comp.ndim
+        slc_prev = [slice(None)] * comp.ndim
+        slc_fwd[ax]  = slice(1, None)
+        slc_cur[ax]  = slice(None, -1)
+        slc_last[ax] = slice(-1, None)
+        slc_prev[ax] = slice(-2, -1)
+        d[tuple(slc_fwd)] = comp[tuple(slc_fwd)] - comp[tuple(slc_cur)]
+        slc_first = [slice(None)] * comp.ndim
+        slc_first[ax] = slice(0, 1)
+        d[tuple(slc_first)] = comp[tuple(slc_first)]
+        d[tuple(slc_last)]  = -comp[tuple(slc_prev)]
+        div += d
+    return div
 
 @procedures.register(name='MLEM', category=categories['Reconstruct'], inplace=False)
 def reconstruct_mlem(sinogram:Sinogram, iterations:int=15, weighted:bool=True, use_3D:bool=True, **kwargs):

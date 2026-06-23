@@ -8,155 +8,16 @@ import copy
 
 from colorama import Fore, Style, init
 
+from .components.register import RegistryBase, Node, _safe_name
+
 init(autoreset=True)
 
 from ..log import logger
 
-K = TypeVar("K")
-V = TypeVar("V")
 
-class Registry(MutableMapping, Generic[K, V]):
-    def __init__(self, key_type: Type[Any], value_type: Type[Any], parent=None):
-        self._data: dict[K, V] = {}
-        self._key_type = key_type
-        self._value_type = value_type
-        self._help = self._help_default
-        self._parent = parent
-
-        self.added = Signal()
-        self.removed = Signal()
-        self.renamed = Signal()
-        self.updated = Signal()
-
-    def register(self, **kwargs):
-        def decorator(obj):
-            name = kwargs.pop("name", None)
-            if name is None:
-                obj.tomobase_name = copy.deepcopy(obj.__name__).replace("_", " ").title()
-            else:
-                obj.tomobase_name = name
-
-            obj._tomobase_kwargs = kwargs
-            self[obj.tomobase_name] = obj
-            
-            if isinstance(obj, type):
-                return obj
-            
-            @wraps(obj)
-            def thunk(*args, **kwargs):
-                current = self[obj.tomobase_name]
-                return current(*args, **kwargs)
-            
-            return thunk
-
-        return decorator
-    
-    def __getattr__(self, key):
-        key_attr = key.replace("_", " ")
-        if key_attr in self._data:
-            return self._data[key_attr]
-        elif self._parent is not None:
-            if key_attr in self._parent:
-                return self._parent[key_attr]
-        else:
-            raise AttributeError(f"{self.__class__.__name__!s} has no attribute {key!r}") from None
-             
-    def __getitem__(self, key: K) -> V:
-        if key in self._data:
-            return self._data[key]
-        elif self._parent is not None:
-            return self._parent[key]
-        raise KeyError(f"Key {key!r} not found")
-
-    def __setitem__(self, key: K, value: V) -> None:
-        if not isinstance(key, self._key_type):
-            raise TypeError(f"Key must be {self._key_type}, got {type(key)}")
-
-        
-
-        if inspect.isclass(value):
-            try:
-                is_sub = issubclass(value, self._value_type)
-            except Exception:
-                is_sub = False
-            if not is_sub:
-                raise TypeError(f"Value must be subclass of {self._value_type}, got {type(value)}")
-        else:
-            if not isinstance(value, self._value_type):
-                raise TypeError(f"Value must be {self._value_type}, got {type(value)}")
-
-        if key in self._data:
-            old = self._data[key]
-            self._data[key] = value
-            self.updated.send(self, key=key, old_value=old, new_value=value)
-        else:
-            self._data[key] = value
-            self.added.send(self, key=key, value=value)
-
-    def __delitem__(self, key: K) -> None:
-        old = self._data.pop(key)
-        self.removed.send(self, key=key, old_value=old)
-
-    def __iter__(self):
-        seen = set()
-
-        # local first (so they override parent)
-        for key in self._data:
-            seen.add(key)
-            yield key
-
-        # then parent
-        if self._parent is not None:
-            for key in self._parent:
-                if key not in seen:
-                    yield key
-    
-    def __contains__(self, key):
-        return key in self._data or (
-            self._parent is not None and key in self._parent
-        )
-    def __len__(self):
-        return sum(1 for _ in self)
-
-    def rename(self, old_key: K, new_key: K) -> None:
-        if old_key not in self._data:
-            raise KeyError(f"Key {old_key} not found")
-        if new_key in self._data:
-            raise KeyError(f"Key {new_key} already exists")
-
-        value = self._data.pop(old_key)
-        self._data[new_key] = value
-        self.renamed.send(self, old_key=old_key, new_key=new_key, value=value)
-
-    def help(self) -> str:
-        return self._help()
-
-    def set_help(self, help_func: Callable[[], None]):
-        self._help = lambda: help_func(self)
-
-    def _help_default(self):
-        msg = f"{Fore.GREEN}{self.__class__.__name__}{Style.RESET_ALL}\n"
-        for key, value in self._data.items():
-            msg += f"{Fore.BLUE}{key}{Style.RESET_ALL}: {value}\n"
-        logger.info(msg)
-        return msg
-
-    def __str__(self):
-        msg = f"{self.__class__.__name__} with {len(self)} items"
-        msg += f": {list(self._data.keys())}"
-        msg += self._parent.__str__() if self._parent else ""
-        return msg
-    
-    
-class HierarchicalRegistry(Registry):
+class HierarchicalRegistry(RegistryBase):
     """ A class that encodes hierarchical information as integer codes, where each level of the hierarchy is represented by a byte.
-    
-    Example usage:
-        .. code-block:: python
-            hr = HierarchicalRegistry(str, int)
-            hr.add_hierarchy("A", value=1)  # top-level A -> 0x01000000
-            hr.add_hierarchy("B", value=2, parent="A")  # B -> 0x01020000 (inherits A's code and adds 2 in next byte)
-            hr.add_hierarchy("C", value=3, parent="B")  # C -> 0x01020300 (inherits A and B's code, adds 3 in next byte)
+
     """
     def __init__(self, key_type: Type[Any], value_type: Type[Any]):
         super().__init__(key_type, value_type)
@@ -208,7 +69,6 @@ class HierarchicalRegistry(Registry):
 
         self._data[name] = int(new_code)
         self.added.send(self, key=name, value=int(new_code))
-        logger.debug(f"Added hierarchy '{name}' -> {hex(new_code)} (parent={parent})")
         return int(new_code)
         
     def get_parent(self, category: str|int = 0) -> tuple[str | None, int | None]:
@@ -239,6 +99,17 @@ class HierarchicalRegistry(Registry):
         if parent_name is None:
             return (None, None)
         return (parent_name, parent_code)
+    
+    def get_tree(self, code: int) -> list:
+        """ Returns a list of the parent keys for the individual hierarchies in the registry"""
+        tree = [self.get_key(code)]
+        parent_name, parent_code = self.get_parent(code)
+        while parent_name is not None:
+            tree.append(parent_name)
+            parent_name, parent_code = self.get_parent(parent_code)
+            
+        tree = tree[::-1]
+        return tree
 
     def get_key(self, code: int) -> str | None:
         for key, val in self._data.items():
@@ -278,3 +149,155 @@ class HierarchicalRegistry(Registry):
         sep = "-" * (name_w + code_w + lvl_w + 4)
         lines = [hdr, sep] + [f"{n:{name_w}}  {c:{code_w}}  {l:{lvl_w}}" for n, c, l in rows]
         logger.info("\n" + "\n".join(lines))
+        
+        
+class Registry(RegistryBase):
+    """ 
+    A registry that supports storing key-value pairs with ease of use functions including, initialization, signals, help functions, and hierarchical registration.
+    """
+    def __init__(self, key_type: Type[Any], value_type: Type[Any], parent=None):
+        super().__init__(key_type, value_type, parent)
+        self._hierarchy = None  
+        self._initialized = False
+
+    def register(self, name: str | None = None, category: int | None = None, **kwargs):
+        base_decorator = super().register(name=name, category=category, **kwargs)
+
+        def decorator(obj):
+            registered_obj = base_decorator(obj)
+            actual_name = obj._tomobase_key
+
+            if self._hierarchy is not None and category is not None:
+                node = self._get_node(category)
+                node.add_item(name=actual_name, obj=registered_obj)
+            else: 
+                setattr(self, actual_name, registered_obj)
+            
+            
+            if self._initialized:
+                self._initialize_item(actual_name, self._data[actual_name])
+            return registered_obj
+
+        return decorator
+    
+    
+    def set_initialization_function(self, func):
+        """ Sets the initialization function for the registry. This function will be called on each registered item when the registry is initialized.
+        
+        Args:
+            func (Callable): A function that takes a registered item and returns an initialized version of it.
+        """
+        self.initialization_function = func
+        
+    def initialize(self):
+        """ Initializes all registered items in the registry using the initialization function. This is typically called after all items have been registered.
+        """
+        if not hasattr(self, 'initialization_function'):
+            raise AttributeError("Initialization function not set. Use set_inizialization_function to set it.")
+        
+        for key in self._data:
+            self._initialize_item(key, self._data[key])
+            
+        self._initialized = True
+        
+        
+    def _initialize_item(self, key, value):
+        
+        func = copy.deepcopy(value)
+        category = func._tomobase_category if hasattr(func, "_tomobase_category") else None
+        self._data[key] = self.initialization_function(value)
+        
+        if self._hierarchy is not None:
+            node = self._get_node(category)
+            setattr(node, _safe_name(key, islower=False), self._data[key])
+        else:
+            setattr(self, _safe_name(key, islower=False), self._data[key])
+        
+    def _set_node(self, key:str, code:int|None):
+        """ Adds an attribute to the registry using the key code of a hierarchy
+        Args:
+            key (str): The name of the hierarchy to set as an attribute.
+            code (int | None): The code of the hierarchy to set as an attribute.
+        """
+        
+        
+        tree = self.hierarchy.get_tree(code)
+        node = self
+        excluded = self.hierarchy.get_key(self._exclude_code)
+        for part in tree:
+            if part == excluded:
+                pass
+            else:
+                if not hasattr(node, _safe_name(part)):
+                    if node is not Node:
+                        setattr(node, _safe_name(part, islower=True), Node(name=part, code=code, parent=node))
+                    else: 
+                        node.add_child(name=_safe_name(part, islower=True), code=code)
+                node = getattr(node, _safe_name(part))
+       
+    def _get_node(self, code:int) -> Node:
+        """ Gets a node from the registry hierarchy.
+        
+        Args:
+            code (int): The code of the hierarchy to get.
+        """
+        tree = self.hierarchy.get_tree(code)
+        node = self
+        excluded = self.hierarchy.get_key(self._exclude_code)
+        for part in tree:
+            if part == excluded:
+                continue
+            else:
+                node = getattr(node, _safe_name(part), None)
+                if node is None:
+                    raise ValueError(f"Node not found for hierarchy code {code} ")  
+        return node
+    
+    def _remove_node(self, key:str):
+        """ Removes a node from the registry hierarchy.
+        
+        Args:
+            key (str): The name of the hierarchy to remove.
+        """
+        node = getattr(self, _safe_name(key), None)
+        if node is not None:
+            parent_node = node.parent
+            if parent_node is not None:
+                del parent_node.children[key]
+                delattr(parent_node, _safe_name(key))
+            else:
+                delattr(self, _safe_name(key))
+    
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        if self._initialized:
+            self._data[key] = self.initialization_function(self._data[key])
+        
+            
+    @property
+    def hierarchy(self) -> HierarchicalRegistry | None:
+        return self._hierarchy
+    
+
+    def set_hierarchy(self, hierarchy: HierarchicalRegistry, code:int):
+        if not isinstance(hierarchy, HierarchicalRegistry):
+            raise TypeError("Hierarchy must be a HierarchicalRegistry")
+        if self._hierarchy is not None:
+            raise ValueError("Hierarchy has already been set and cannot be changed")
+        if code not in hierarchy._data.values():
+            raise ValueError("Code must be a valid hierarchy code in the provided hierarchy")
+        
+        self._hierarchy = hierarchy
+        self._exclude_code = code
+        items = sorted(self.hierarchy._data.items(), key=lambda kv: int(kv[1]))
+        for key, value in items:
+            self._set_node(key, value)
+            
+        self.hierarchy.added.connect(self._on_hierarchy_added)
+        self.hierarchy.removed.connect(self._on_hierarchy_removed)
+        
+    def _on_hierarchy_added(self, sender, key, value):
+        self._set_node(key, value)
+
+    def _on_hierarchy_removed(self, sender, key, old_value):
+        self._remove_node(key)

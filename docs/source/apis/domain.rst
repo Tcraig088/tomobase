@@ -15,9 +15,9 @@ Phantoms
 
 Functions to generate or fetch saved phantoms as :py:mod:`Volume`
 
-.. autofunction:: tomobase.domain.phantoms.get_nanocage
-.. autofunction:: tomobase.domain.phantoms.get_nanocube
-.. autofunction:: tomobase.domain.phantoms.get_nanorod
+.. autofunction:: tomobase.domain.procedures.phantoms.get_nanocage
+.. autofunction:: tomobase.domain.procedures.phantoms.get_nanocube
+.. autofunction:: tomobase.domain.procedures.phantoms.get_nanorod
 
 Deformations
 ************

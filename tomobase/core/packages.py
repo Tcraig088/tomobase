@@ -15,7 +15,8 @@ def add_path(path: Union[str, pathlib.Path]) -> None:
     json_path = os.path.join(json_path, 'packages.json')
     
     _dict = json.load(open(json_path, 'r'))
-    _dict['paths'].append(path)
+    if path not in _dict['paths']:
+        _dict['paths'].append(path)
     json.dump(_dict, open(json_path, 'w'), indent=4)
     
 def add_package(name: str) -> None:

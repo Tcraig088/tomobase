@@ -5,10 +5,10 @@ Basic tutorials for the usage of the TomoBase code can be found here.
 
 **Contents**
 
-- [1. Simple Tomography](tomography_tutorial.ipynb#1-core-functionality)
-- [2. Using Jupyter](tomography_tutorial.ipynb#1-core-functionality)
-- [3. Using Napari/Qt](tomography_tutorial.ipynb#1-core-functionality)
-- [4. MultiDimensional Tomography](tomography_tutorial.ipynb#1-core-functionality)
+- [Basic Tomography](tomography.ipynb#basic-tomography)
+- [Extending Tomobase](extensions.ipynb#extending-tomobase)
+- [Using Jupyter](jupyter.ipynb#using-jupyter)
+- [Using Napari](qt.ipynb#using-napari)
 
 
 ```{toctree}
@@ -16,4 +16,7 @@ Basic tutorials for the usage of the TomoBase code can be found here.
 :maxdepth: 1
 
 tomography.ipynb
+extensions.ipynb
+jupyter.ipynb
+qt.ipynb
 ```

@@ -1,2 +1,3 @@
 from .measurement import Measurement, Coordinate
-from . import images, tiltschemes
+from . import tiltschemes
+from .images import Sinogram, Volume, Image

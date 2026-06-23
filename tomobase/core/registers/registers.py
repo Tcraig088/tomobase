@@ -7,13 +7,16 @@ init(autoreset=True)
 from ..log import logger
 from ..base_classes.registers import Registry
 
-from ..base_classes import ImageAbstract, TiltSchemeAbstract
-
+from ..base_classes import ImageAbstract, TiltSchemeAbstract, MeasurementAbstract
+from .categories import categories
     
-phantoms = Registry(str, Callable)
-image_types = Registry(str, ImageAbstract)
+modules = Registry(str, Callable)
+images = Registry(str, ImageAbstract)
 tiltschemes = Registry(str, TiltSchemeAbstract)
 procedures = Registry(str, Callable)
+measurements = Registry(str, MeasurementAbstract)
+    
+procedures.set_hierarchy(categories, categories['Tomography'])
 
 def help_function(name, _dict):
     msg = f"\n{Fore.GREEN} {name} Registration {Style.RESET_ALL}\n" 
@@ -36,8 +39,8 @@ def help_processes(_dict):
     logger.info(msg)
 
 
-phantoms.set_help(partial(help_function, "Phantoms"))
-image_types.set_help(partial(help_function, "Image Types"))
+images.set_help(partial(help_function, "Image Types"))
 tiltschemes.set_help(partial(help_function, "Tilt Schemes"))     
 procedures.set_help(help_processes)
+measurements.set_help(partial(help_function, "Measurements"))
 

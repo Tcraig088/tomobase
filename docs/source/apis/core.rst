@@ -46,20 +46,6 @@ tomobase.core
      - None
      - Hierarchical registry for categorizing reconstruction procedures
 
-Registers
----------
-tomobase.core.base_classes.registers.Registry
-
-.. autoclass:: tomobase.core.base_classes.registers.Registry
-   :members:
-   :member-order: bysource
-   :show-inheritance:
-
-.. autoclass:: tomobase.core.base_classes.registers.HierarchicalRegistry
-   :members:
-   :member-order: bysource
-   :show-inheritance:
-
 
 Environment
 ---------
@@ -96,26 +82,36 @@ Utilities
 tomobase.core.utils
 
 .. autofunction:: tomobase.core.utils.iter_indexers_with_len
-.. autofunction:: tomobase.domain.procedures.reconstruct.geometries._get_weights
-.. autofunction:: tomobase.domain.procedures.reconstruct.geometries.format_before_projection
-.. autofunction:: tomobase.domain.procedures.reconstruct.geometries.format_after_projection
-.. autoclass:: tomobase.domain.procedures.reconstruct.geometries.Projector
+.. autofunction:: tomobase.core.utils.geometries._get_weights
+.. autofunction:: tomobase.core.utils.geometries.format_before_projection
+.. autofunction:: tomobase.core.utils.geometries.format_after_projection
+.. autoclass:: tomobase.core.utils.geometries.Projector
    :members:
    :member-order: bysource
    :show-inheritance:    
 
 
-Abstract Classes
+Base Classes
 ---------
 
 tomobase.core.base_classes
 
-.. autoclass:: tomobase.core.base_classes.ImageAbstract
+.. autoclass:: tomobase.core.base_classes.registers.Registry
    :members:
    :member-order: bysource
    :show-inheritance:
 
-.. autoclass:: tomobase.core.base_classes.MeasurementAbstract
+.. autoclass:: tomobase.core.base_classes.registers.HierarchicalRegistry
+   :members:
+   :member-order: bysource
+   :show-inheritance:
+
+.. autoclass:: tomobase.core.base_classes.image.ImageAbstract
+   :members:
+   :member-order: bysource
+   :show-inheritance:
+
+.. autoclass:: tomobase.core.base_classes.measurement.MeasurementAbstract
    :members:
    :member-order: bysource
    :show-inheritance:
@@ -130,10 +126,11 @@ tomobase.core.base_classes
    :member-order: bysource
    :show-inheritance:
 
-.. autoclass:: tomobase.core.base_classes.BaseDataModel
-   :members:
-   :member-order: bysource
-   :show-inheritance:
+
+Components
+**********
+
+
 
 .. autoclass:: tomobase.core.base_classes.components.context_model.ContextModel
    :members:
@@ -146,6 +143,11 @@ tomobase.core.base_classes
    :show-inheritance:
 
 .. autoclass:: tomobase.core.base_classes.components.io_model.IOModel
+   :members:
+   :member-order: bysource
+   :show-inheritance:
+
+.. autoclass:: tomobase.core.base_classes.components.register.RegistryBase
    :members:
    :member-order: bysource
    :show-inheritance:

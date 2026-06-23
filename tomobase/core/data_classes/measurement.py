@@ -6,7 +6,7 @@ import numpy as np
 import xarray as xr
 
 from .. import base_classes
-
+from ..registers import measurements
 
 
 @dataclass
@@ -15,7 +15,7 @@ class Coordinate:
     unit: str = "a.u."
     scale: float = 1.0
 
-
+@measurements.register()
 class Measurement(base_classes.MeasurementAbstract):
     def __init__(
         self,

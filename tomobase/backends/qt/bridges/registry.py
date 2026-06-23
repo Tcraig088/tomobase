@@ -43,8 +43,7 @@ class QtRegistryBridge(QObject):
         self.updated.emit(key, old_value, new_value)
 
 
-qt_phantoms = QtRegistryBridge(registers.phantoms)
-qt_image_types = QtRegistryBridge(registers.image_types)
+qt_image_types = QtRegistryBridge(registers.images)
 qt_tiltschemes = QtRegistryBridge(registers.tiltschemes)
 qt_processes = QtRegistryBridge(registers.procedures)
 qt_categories = QtRegistryBridge(registers.categories)

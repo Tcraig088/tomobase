@@ -4,7 +4,7 @@ import xarray as xr
 
 from ... import registers, base_classes, get_xp
 
-@registers.image_types.register(name="Sinogram")
+@registers.images.register(name="Sinogram")
 class Sinogram(base_classes.ImageAbstract):
     """Data type for a sinogram.
 
@@ -58,6 +58,7 @@ class Sinogram(base_classes.ImageAbstract):
                 times = ('n', times_data),
                 angles = ('n', angles)
             )
+        self.coords_to_numpy()
 
     def sort(self, by='times'):
         """

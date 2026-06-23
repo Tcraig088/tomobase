@@ -23,7 +23,7 @@ thebe_config = {
 }
 
 autosummary_generate = True
-nb_execution_mode = "off"
+nb_execution_mode = "off" #force
 
 add_module_names = False
 autodoc_member_order = "bysource"

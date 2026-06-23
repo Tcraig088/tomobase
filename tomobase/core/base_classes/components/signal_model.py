@@ -26,8 +26,8 @@ class SignalModel():
         
         self.interactive = registers.Registry(str, object)
         for key, value in self.ipywidgets.items():
-            self.interactive[key] = partial(value, self)
-
+            self.interactive.register(name=value._tomobase_name)(partial(value, self))
+            
         self.ipywidgets.added.connect(self.added_interactive, weak=False)
         self.ipywidgets.removed.connect(self.remove_interactive, weak=False)
         self.ipywidgets.updated.connect(self.update_interactive, weak=False)

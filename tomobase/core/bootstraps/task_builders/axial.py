@@ -1,40 +1,68 @@
 
-from itertools import zip_longest
+from functools import wraps
+
+import xarray as xr
 
 from ...data_classes import Measurement
 from ...base_classes import ImageAbstract
 from ...environment import proxy, GPUContext
 
 def _wrap_axial(func):
-    #TODO: Fix implementation
+    @wraps(func)
     def wrapper(*args, **kwargs):
-        axis = kwargs.get("axis", None)
+        axis = kwargs.pop("axis", None)
 
-        if axis is not None:
+        if axis is None:
+            return func(*args, **kwargs)
+
+        i_img_args = [i for i, arg in enumerate(args) if isinstance(arg, ImageAbstract)]
+        key_img_kwargs = [key for key, value in kwargs.items() if isinstance(value, ImageAbstract)]
+
+        if not i_img_args and not key_img_kwargs:
+            return func(*args, **kwargs)
+
+        image_list = [args[i] for i in i_img_args]
+        image_list.extend(kwargs[key] for key in key_img_kwargs)
+
+        axis_size = image_list[0].xr.sizes[axis]
+        for img in image_list[1:]:
+            if img.xr.sizes[axis] != axis_size:
+                raise ValueError(f"Image sizes along axis {axis!r} do not match.")
+
+        results = None
+        results_was_tuple = True
+
+        for i, outs in enumerate(zip(*(img.split(axis) for img in image_list))):
             args_i = list(args)
             kwargs_i = dict(kwargs)
-            
-            i_img_args = [i for i, arg in enumerate(args) if isinstance(arg, ImageAbstract)]
-            key_img_kwargs = [key for key, value in kwargs.items() if isinstance(value, ImageAbstract)]
-            image_list = [args[i] for i in i_img_args] + [kwargs[key] for key in key_img_kwargs]
-            for i, outs in enumerate(zip_longest(*[img.split(axis) for img in image_list], fillvalue=None)):
-                args_i[i_img_args] = outs[:len(i_img_args)]
-                kwargs_i.update({key_img_kwargs[j]: outs[len(i_img_args) + j] for j in range(len(key_img_kwargs))})
-                results_i = func(*args_i, **kwargs_i)
-                if i == 0:
-                    results = results_i
+
+            for arg_index, image_slice in zip(i_img_args, outs):
+                args_i[arg_index] = image_slice
+
+            offset = len(i_img_args)
+            for key, image_slice in zip(key_img_kwargs, outs[offset:]):
+                kwargs_i[key] = image_slice
+
+            results_i = func(*args_i, **kwargs_i)
+            if not isinstance(results_i, tuple):
+                results_was_tuple = False
+                results_i = (results_i,)
+
+            if i == 0:
+                results = list(results_i)
+                continue
+
+            for j, result_i in enumerate(results_i):
+                result = results[j]
+                if isinstance(result, ImageAbstract):
+                    result.xr = xr.concat([result.xr, result_i.xr], dim=axis)
+                elif isinstance(result, Measurement):
+                    result.stack(result_i)
                 else:
-                    for j in range(len(results_i)):
-                        if isinstance(results_i[j], ImageAbstract):
-                            results[j] = results[j].insert(results_i[j], axis=axis)
-                        elif isinstance(results_i[j], Measurement):
-                            results[j] = results[j].insert(results_i[j])
-                        else:
-                            raise TypeError(f"Unsupported result type: {type(results_i[j])}")
+                    raise TypeError(f"Unsupported result type: {type(result_i)}")
 
-        else:
-            results = func(*args, **kwargs)
-
-        return results
+        if results_was_tuple:
+            return tuple(results)
+        return results[0]
     return wrapper
 

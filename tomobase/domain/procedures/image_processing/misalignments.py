@@ -58,34 +58,42 @@ def poisson_noise(image: ImageAbstract,
 
 
 @registers.procedures.register(category=subcategory)
-def translational_misalignment(sino: Sinogram, offset:float=0.25):
-    """ Apply a random translational misalignment to the sinogram.
-    Arguments:
-        sino (Sinogram): The projection data
-        offset (float): The maximum offset in pixels (default: 0.25)
-
-    Returns:
-        sino (Sinogram): The result
-        shifts (ndarray): The shifts applied to each projection (only if extend_return is True)
-    """
+def translational_misalignment(sino: Sinogram, offset: float = 0.25):
     xp = get_xp(sino.data)
-    shifts = xp.zeros((sino.xr.sizes['n'], 2))
-    
-    total, indexer = utils.iter_indexers_with_len({d: sino.xr.sizes[d] for d in sino.non_spatial_dims}, sino.non_spatial_dims)
-    progress_bar = progress.new(name="Applying translational misalignment", total=total)
+    shifts = xp.zeros((sino.xr.sizes["n"], 2), dtype=xp.int32)
+
+    total, indexer = utils.iter_indexers_with_len(
+        {d: sino.xr.sizes[d] for d in sino.non_spatial_dims},
+        sino.non_spatial_dims,
+    )
+
+    progress_bar = progress.new(
+        name="Applying translational misalignment",
+        total=total,
+    )
+
     for i in progress_bar:
         idx = next(indexer)
+
         if i == 0:
-            shifts[i, :] = 0
+            shifts[i, :] = xp.asarray([0, 0], dtype=shifts.dtype)
             continue
-        image_offset_x = int(xp.round(sino.xr.sizes['x'] * xp.random.uniform(-offset, offset)))
-        image_offset_y = int(xp.round(sino.xr.sizes['y'] * xp.random.uniform(-offset, offset)))
-        
-        
+
+        image_offset_x = int(
+            xp.round(sino.xr.sizes["x"] * xp.random.uniform(-offset, offset))
+        )
+        image_offset_y = int(
+            xp.round(sino.xr.sizes["y"] * xp.random.uniform(-offset, offset))
+        )
+
         sl = sino.xr.isel(idx)
-        rolled = xp.roll(sl.data,(image_offset_x, image_offset_y),axis=(0, 1))
+        rolled = xp.roll(sl.data, (image_offset_x, image_offset_y), axis=(0, 1))
+
         sino.xr.loc[idx] = rolled
-        shifts[i, :] = (image_offset_x, image_offset_y)
+        shifts[i, :] = xp.asarray(
+            [image_offset_x, image_offset_y],
+            dtype=shifts.dtype,
+        )
 
     return sino, shifts
 

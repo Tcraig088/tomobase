@@ -45,12 +45,15 @@ class SliceInfoWidget(Accordion):
         return box
 
     def _coords_for_dim_index(self, dim, i):
+        array = self.widget.image.xr
         out = []
-        array = self.image.xr
 
         for coord_name, coord in array.coords.items():
             if coord.dims == (dim,):
-                out.append((coord_name, coord.values[i]))
+                data = coord.data
+                if hasattr(data, "get"):
+                    data = data.get()
+                out.append((coord_name, np.asarray(data)[i]))
 
         if not out:
             out.append(("index", i))
